@@ -9,7 +9,11 @@ const URL_API = (m) => `https://generativelanguage.googleapis.com/v1beta/models/
 
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ''; if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch { return ''; } };
 export const lerChave = () => ls(CHAVE_LS);
-export const salvarChave = (c) => ls(CHAVE_LS, (c || '').trim());
+/** Limpa o que veio colado (espaços, quebras de linha, aspas). */
+export const limparChave = (c) => String(c || '').replace(/[\s"'`]/g, '');
+/** Checagem leve: chaves do Google podem ter letras, números, _ - e ponto (formato novo "AQ.…"). Quem valida de fato é a API. */
+export const chaveValida = (c) => /^[\w.-]{20,}$/.test(limparChave(c));
+export const salvarChave = (c) => ls(CHAVE_LS, limparChave(c));
 
 const PROMPT = `Você é um nutricionista brasileiro. Na foto há uma refeição. Identifique cada alimento visível,
 estime o peso em gramas (pela proporção do prato, talheres e porções caseiras brasileiras) e calcule kcal,

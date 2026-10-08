@@ -1,5 +1,5 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v8';   // manter igual a js/versao.js
+const VERSAO = 'v9';   // manter igual a js/versao.js
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',

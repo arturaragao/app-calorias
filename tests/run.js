@@ -356,7 +356,14 @@ t('Service worker lista todos os módulos JS', () => {
 });
 
 // ---------- Estimativa por foto (IA) e backup no Drive ----------
-const { normalizarEstimativa, mensagemErro } = await import('../js/ia.js');
+const { normalizarEstimativa, mensagemErro, chaveValida, limparChave } = await import('../js/ia.js');
+t('IA: aceita chave antiga (AIza…), nova com ponto (AQ.…) e colada com espaços', () => {
+  eq(chaveValida('AIzaSyD-abc_DEF1234567890abcdefghijk'), true);
+  eq(chaveValida('AQ.Ab8RN6Kx_y-Z0123456789abcdefGHIJ'), true);
+  eq(chaveValida(' AIzaSyD-abc_DEF12345\n67890abcdefghijk '), true);
+  eq(limparChave(' "AQ.abc"\n'), 'AQ.abc');
+  eq(chaveValida('curta'), false); eq(chaveValida('https://aistudio.google.com/apikey'), false);
+});
 t('IA: normaliza resposta, descarta inválidos e limita valores', () => {
   const r = normalizarEstimativa({ itens: [
     { nome: ' Arroz branco cozido ', gramas: 150, kcal: 192, prot: 3.8, carb: 42, gord: 0.3, fibra: 2.4 },

@@ -3,7 +3,7 @@
 import { estado, lerDia, gravarDia } from '../state.js';
 import { criarItemRapido, adicionarItem } from '../diary.js';
 import { comprimir, fotosDe, gravarFotos } from '../photos.js';
-import { estimarFoto, lerChave, salvarChave } from '../ia.js';
+import { estimarFoto, lerChave, salvarChave, chaveValida } from '../ia.js';
 import { abrirFolha, fecharFolha, aviso, esc, $, $$, ICONES } from '../ui.js';
 import { fmtKcal, fmtMacro, fmtNum, lerNumero, uid } from '../utils.js';
 
@@ -50,7 +50,7 @@ function folhaChave(depois) {
   $('#fk', p).onsubmit = (e) => {
     e.preventDefault();
     const c = e.target.chave.value.trim();
-    if (!/^[\w-]{30,}$/.test(c)) { $('#erro', p).textContent = 'Copie a chave inteira do AI Studio.'; return; }
+    if (!chaveValida(c)) { $('#erro', p).textContent = 'Isso não parece uma chave do Gemini: copie de novo no AI Studio.'; return; }
     salvarChave(c);
     fecharFolha();
     setTimeout(depois, 350);

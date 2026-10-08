@@ -6,7 +6,7 @@ import { aplicarTema } from '../app.js';
 import { uid, chaveData, fmtNum, fmtKcal } from '../utils.js';
 import { exportar, apagarTudo } from '../backup.js';
 import { cartaoDrive, ligarCartaoDrive, confirmarEImportar } from './drive-ui.js';
-import { lerChave, salvarChave } from '../ia.js';
+import { lerChave, salvarChave, chaveValida } from '../ia.js';
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
 
@@ -81,7 +81,7 @@ export async function render(tela) {
   $('#f-ia', tela).onsubmit = (e) => {
     e.preventDefault();
     const c = e.target.chave.value.trim();
-    if (!/^[\w-]{30,}$/.test(c)) return aviso('Chave inválida: copie a chave inteira do AI Studio.');
+    if (!chaveValida(c)) return aviso('Isso não parece uma chave do Gemini: copie de novo em aistudio.google.com/apikey.');
     salvarChave(c); aviso('Chave do Gemini salva'); render(tela);
   };
 
