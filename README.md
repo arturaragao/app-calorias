@@ -1,6 +1,6 @@
 # Calorias e Macros
 
-App pessoal (PWA) para registrar alimentação, metas, peso, água e composição corporal. Funciona offline, sem conta e sem custo. Os dados ficam só no celular.
+App pessoal (PWA) para registrar alimentação, metas, peso, água e composição corporal. Funciona offline, sem conta e sem custo. Os dados ficam no celular (e, se você quiser, num backup no seu Google Drive).
 
 **Endereço:** https://arturaragao.github.io/app-calorias/
 
@@ -16,6 +16,26 @@ Os dados ficam só neste aparelho. Em **Ajustes › Backup**:
 - **Exportar backup** gera um arquivo `.json` (com ou sem fotos). Guarde-o no Drive ou mande por e-mail para você.
 - **Importar backup** substitui os dados atuais pelos do arquivo. O app confere o arquivo e pede confirmação antes.
 - Se você passar 30 dias sem backup, aparece um lembrete no Diário.
+
+### Backup automático no Google Drive
+Em **Ajustes › Backup no Google Drive › Conectar ao Drive**. O app guarda um arquivo `app-calorias-backup.json` no seu Drive (o Drive mantém versões anteriores) e só enxerga esse arquivo (permissão `drive.file`).
+- Envia sozinho, uma vez por dia, quando há novidades e o app está aberto. Como o app não tem servidor, o Google só dá acesso por ~1 h por login; quando vence, o Diário mostra **☁️ tocar para enviar** (um toque, sem digitar nada).
+- **Celular novo:** instale o app e, na tela de boas-vindas, toque em **Trocou de celular? › Do Google Drive**.
+
+**Configuração única (no PC, ~5 min, grátis):**
+1. Abra https://console.cloud.google.com → crie um projeto (ex.: `app-calorias`). Não precisa de faturamento.
+2. **APIs e serviços › Biblioteca** → procure **Google Drive API** → **Ativar**.
+3. **Google Auth Platform** (tela de permissão OAuth) → **Começar**: nome `Calorias`, seu e-mail, público **Externo**. Em **Público › Usuários de teste**, adicione o seu Gmail.
+4. **Clientes › Criar cliente** → tipo **Aplicativo da Web** → em **Origens JavaScript autorizadas** coloque `https://arturaragao.github.io` → **Criar**.
+5. Copie o **ID do cliente** (termina em `.apps.googleusercontent.com`) e cole em Ajustes (ou mande ao Claude para fixar no código, o que faz o botão "Do Google Drive" aparecer já na instalação).
+6. No 1º login o Google avisa que o app "não foi verificado": é o seu próprio app → **Continuar**.
+
+## Estimar calorias por foto (IA)
+No menu **⋯** de uma refeição → **Estimar por foto (IA)**, ou **Por foto** na tela Adicionar. Tire a foto do prato (e, se quiser, escreva uma dica); o Gemini devolve cada alimento com peso estimado, kcal e macros. Você confere, ajusta e lança: cada alimento entra como **Adição rápida**, e a foto fica guardada na refeição.
+- Chave gratuita: https://aistudio.google.com/apikey → **Create API key** → cole em **Ajustes › Estimativa por foto**. A chave fica só no aparelho.
+- **Custo zero:** não ative faturamento no projeto. Sem faturamento a API usa só a cota gratuita; passou do limite (por minuto ou por dia), ela recusa e o app avisa — nunca cobra.
+- Na cota gratuita o Google pode usar as imagens enviadas para melhorar os produtos dele.
+- É uma estimativa (erro típico de 20–30% nas porções): confira os pesos.
 
 ## Base de alimentos
 - **TACO 4ª ed.** (NEPA/UNICAMP, 2011): 597 alimentos, valores por 100 g.

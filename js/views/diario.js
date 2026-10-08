@@ -16,6 +16,9 @@ import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha } from '
 import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
+import { folhaFotoIA } from './foto-ia.js';
+import { pendenteToque } from '../drive.js';
+import { enviarAgora } from './drive-ui.js';
 
 let tela, dia, meta, fotosCont = {}, ignorarClique = false;
 
@@ -94,6 +97,7 @@ async function desenhar() {
   const ag = { ...AGUA_PADRAO, ...(estado.config.agua || {}) }, mlAgua = totalAgua(agua);
   tela.innerHTML = `
     ${faixaSemana(ativos)}
+    ${ehHoje && pendenteToque() ? '<button class="nota" data-drive>☁️ Backup diário no Google Drive pendente — tocar para enviar.</button>' : ''}
     ${bk.dias > 30 && ehHoje ? `<a class="nota" href="#config">💾 ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar.</a>` : ''}
     ${dias > 30 && ehHoje ? `<a class="nota" href="#registros?aba=dobras">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
     <section class="card" data-detalhe tabindex="0" role="button" aria-label="Resumo do dia. Toque para ver fibra, sódio e totais.">
@@ -204,6 +208,8 @@ async function clique(e) {
     return aviso(`+${fmtNum(ag.copoMl)} ml de água`, { acao: async () => { r.itens.pop(); await db.put('water', estado.dataAtual, r); desenhar(); } });
   }
   if (e.target.closest('[data-detalhe]')) return detalheDia();
+  const dr = e.target.closest('[data-drive]');
+  if (dr) { dr.disabled = true; try { await enviarAgora(); dr.remove(); } catch (err) { aviso(err.message, { ms: 8000 }); dr.disabled = false; } return; }
   if (e.target.closest('[data-copiar-dia]')) return copiarDeOntem(null);
   const sec = e.target.closest('[data-ref]');
   if (!sec) return;
@@ -234,12 +240,14 @@ async function clique(e) {
   if (e.target.closest('[data-menu]')) {
     const p = abrirFolha(nomeRef, `<div class="menu-lista">
       <button class="btn" data-op="rapida">${ICONES.raio} Adição rápida (kcal e macros)</button>
+      <button class="btn" data-op="ia">${ICONES.camera} Estimar por foto (IA)</button>
       <button class="btn" data-op="copiar">${ICONES.copiar} Copiar ${esc(nomeRef)} de ontem</button>
       <button class="btn" data-op="fotos">${ICONES.camera} Foto da refeição ${fotosCont[refId] ? `(${fotosCont[refId]})` : ''}</button>
       <button class="btn" data-op="scan">${ICONES.codigo} Ler código de barras</button></div>`);
     p.onclick = (ev) => {
       const op = ev.target.closest('[data-op]')?.dataset.op;
       if (op === 'rapida') folhaRapida(null, refId);
+      if (op === 'ia') { fecharFolha(); setTimeout(() => folhaFotoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
       if (op === 'copiar') { fecharFolha(); copiarDeOntem(refId); }
       if (op === 'fotos') folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
       if (op === 'scan') { fecharFolha(); sec.querySelector('[data-scan]').click(); }

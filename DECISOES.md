@@ -43,3 +43,8 @@
 - 2026-10-08 · Dia sem itens é apagado do banco ao gravar; "dias seguidos" conta até hoje ou até ontem se hoje ainda está vazio.
 - 2026-10-08 · Crédito ao Open Food Facts (licença ODbL) em Ajustes › Sobre.
 - 2026-10-08 · Refeição sugerida pelo horário ao abrir "Adicionar" sem refeição escolhida.
+- 2026-10-08 · (pedido do Artur) Exceção à regra 7: estimativa por foto via API do Gemini com a chave dele, só na cota gratuita (sem faturamento = sem cobrança). Chave só no localStorage, fora do backup.
+- 2026-10-08 · Gemini: tenta gemini-3-flash → 3-flash-preview → 2.5-flash → 2.0-flash (404 pula; o que funcionar é lembrado). Cada alimento vira um item de Adição rápida, nome com "≈ g", fonte "Foto (IA)".
+- 2026-10-08 · Drive sem servidor: Google Identity Services (token ~1 h, sem renovação em segundo plano). Envio silencioso enquanto há token; vencido e com backup > 20 h com novidades → aviso de 1 toque no Diário. Escopo drive.file; um arquivo `app-calorias-backup.json` sobrescrito (o Drive guarda versões).
+- 2026-10-08 · "Novidade" para o backup = `localStorage.alteradoEm`, marcado em todo put/del do banco (db.js). Estado do Drive e token ficam no localStorage (por aparelho).
+- 2026-10-08 · Backup no Drive sem fotos por padrão (opção "Incluir fotos"); > 4,5 MB usa upload resumable.

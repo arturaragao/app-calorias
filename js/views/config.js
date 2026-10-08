@@ -4,7 +4,9 @@ import { estado, salvarConfig } from '../state.js';
 import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha } from '../ui.js';
 import { aplicarTema } from '../app.js';
 import { uid, chaveData, fmtNum, fmtKcal } from '../utils.js';
-import { exportar, importar, validarBackup, apagarTudo } from '../backup.js';
+import { exportar, apagarTudo } from '../backup.js';
+import { cartaoDrive, ligarCartaoDrive, confirmarEImportar } from './drive-ui.js';
+import { lerChave, salvarChave } from '../ia.js';
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
 
@@ -38,13 +40,21 @@ export async function render(tela) {
       <ul class="lista" id="refs"></ul>
       <p class="mudo">Renomear, reordenar ou remover. Itens já lançados em dias anteriores são mantidos.</p></div>
     <p class="secao">Dados</p>
-    <div class="card" id="backup"><h2 style="margin-bottom:6px">Backup</h2>
+    ${cartaoDrive()}
+    <div class="card" id="backup"><h2 style="margin-bottom:6px">Backup em arquivo</h2>
       <p class="mudo" id="bk-info" style="margin-top:0"></p>
       <label class="linha" style="margin-bottom:8px"><input type="checkbox" id="bk-fotos" style="flex:0;width:22px;height:22px"><span>Incluir fotos (arquivo maior)</span></label>
       <div class="grade2"><button class="btn prim" data-exportar>Exportar backup</button>
         <label class="btn">Importar backup<input type="file" accept=".json,application/json" id="bk-arq" hidden></label></div>
       <p class="mudo">Guarde o arquivo fora do celular (Drive, e-mail para você). Importar substitui os dados atuais.</p>
     </div>
+    <div class="card" id="ia"><h2 style="margin-bottom:6px">Estimativa por foto (IA)</h2>
+      <p class="mudo" style="margin-top:0">Usa a cota gratuita da API do Gemini com a sua chave. Crie em
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> e <b>não ative faturamento</b>
+        no projeto: assim, passou do limite, ela só recusa — nunca cobra. A chave fica só neste aparelho.</p>
+      <form id="f-ia" class="linha"><input type="password" name="chave" placeholder="${lerChave() ? 'Chave salva ✓ (cole outra para trocar)' : 'Cole a chave (AIza…)'}" autocomplete="off" style="flex:1">
+        <button class="btn prim">Salvar</button></form>
+      ${lerChave() ? '<button class="btn peq suave" data-ia-remover style="margin-top:8px">Remover chave</button>' : ''}</div>
     <div class="card"><h2 style="margin-bottom:6px">Armazenamento</h2><p class="mudo" id="arm" style="margin-top:0">…</p>
       <button class="btn perigo bloco" data-apagar-tudo>Apagar todos os dados</button></div>
     <div class="card"><h2 style="margin-bottom:6px">Sobre</h2>
@@ -54,7 +64,8 @@ export async function render(tela) {
       <p class="mudo">Produtos industrializados: <b>Open Food Facts</b> (openfoodfacts.org), base colaborativa sob licença
       Open Database License (ODbL). Confira sempre com o rótulo.</p>
       <p class="mudo">Porções caseiras são aproximadas e editáveis. TMB por Mifflin-St Jeor (Am J Clin Nutr 1990;51:241-7).
-      Os dados ficam só neste aparelho.</p></div>`;
+      Os dados ficam só neste aparelho (e no seu Google Drive, se conectar). Na estimativa por foto, a imagem vai ao Gemini (Google);
+      na cota gratuita o Google pode usá-la para melhorar seus produtos.</p></div>`;
   desenharRefs(tela);
   infoBackup(tela);
 
@@ -64,25 +75,20 @@ export async function render(tela) {
     if (!arq) return;
     let obj;
     try { obj = JSON.parse(await arq.text()); } catch { return aviso('Arquivo não é um JSON válido.'); }
-    const v = validarBackup(obj);
-    if (!v.ok) return aviso(v.erro, { ms: 8000 });
-    const c = v.contagem;
-    const resumo = `Backup de ${obj.exportadoEm ? new Date(obj.exportadoEm).toLocaleString('pt-BR') : '?'}:\n` +
-      `${c.diary || 0} dia(s) de diário, ${c.customFoods || 0} alimento(s), ${c.recipes || 0} receita(s), ${c.weights || 0} dia(s) de peso, ` +
-      `${c.skinfolds || 0} avaliação(ões) de dobras${obj.comFotos ? `, ${c.photos || 0} refeição(ões) com foto` : ' (sem fotos: as fotos atuais serão mantidas)'}.\n\n` +
-      'Isso SUBSTITUI os dados atuais deste aparelho. Continuar?';
-    if (!confirm(resumo)) return;
-    try {
-      await importar(obj);
-      sessionStorage.setItem('importado', '1');
-      location.hash = '#diario';
-      location.reload();
-    } catch (err) { console.error(err); aviso('Falha ao importar: ' + err.message, { ms: 8000 }); }
+    await confirmarEImportar(obj);
+  };
+  ligarCartaoDrive(tela, () => infoBackup(tela));
+  $('#f-ia', tela).onsubmit = (e) => {
+    e.preventDefault();
+    const c = e.target.chave.value.trim();
+    if (!/^[\w-]{30,}$/.test(c)) return aviso('Chave inválida: copie a chave inteira do AI Studio.');
+    salvarChave(c); aviso('Chave do Gemini salva'); render(tela);
   };
 
   tela.onclick = async (e) => {
     const b = e.target.closest('button');
-    if (!b) return;
+    if (!b || b.closest('#drive')) return;
+    if ('iaRemover' in b.dataset) { salvarChave(''); aviso('Chave removida'); return render(tela); }
     if ('exportar' in b.dataset) {
       b.disabled = true;
       try {

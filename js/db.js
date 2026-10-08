@@ -85,6 +85,14 @@ function memoriaBackend() {
 
 export let db = null;
 
+/** Grava em localStorage a hora da última alteração (o backup automático no Drive só envia se houver novidade). */
+function marcarAlteracoes(b) {
+  const marca = () => { try { localStorage.setItem('alteradoEm', String(Date.now())); } catch {} };
+  const { put, del } = b;
+  b.put = async (...a) => { const r = await put(...a); marca(); return r; };
+  b.del = async (...a) => { const r = await del(...a); marca(); return r; };
+}
+
 export async function iniciarDB() {
   try {
     db = idbBackend(await abrirIDB());
@@ -93,6 +101,7 @@ export async function iniciarDB() {
     try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); db = lsBackend(); }
     catch { db = memoriaBackend(); }
   }
+  marcarAlteracoes(db);
   // migração de esquema
   const meta = (await db.get('kv', 'meta')) || {};
   const v = meta.schemaVersion || 0;

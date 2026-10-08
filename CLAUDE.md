@@ -14,7 +14,7 @@ Objetivo: um app rápido, confiável e bonito para registrar alimentação, meta
 4. **Dados de alimentos nunca passam pelo chat.** A base é gerada por script a partir de `dados/`.
 5. **Atualize os arquivos da pasta do projeto sozinho**, sem pedir confirmação. Pode apagar versões obsoletas.
 6. **Só pergunte o que for realmente bloqueante.** As decisões abaixo estão fechadas. Se algo for ambíguo, escolha o padrão sensato, registre uma linha em `DECISOES.md` e siga.
-7. **Custo zero no uso diário.** O app NÃO chama IA nem API paga. Só APIs gratuitas e sem chave (Open Food Facts).
+7. **Custo zero no uso diário.** O app NÃO chama IA nem API paga. Só APIs gratuitas e sem chave (Open Food Facts). Exceções autorizadas pelo Artur: estimativa por foto via Gemini (só cota gratuita, chave dele) e backup no Google Drive dele.
 8. **Não invente dados nutricionais nem fórmulas.** Valor ausente na fonte = vazio e marcado. Fórmulas científicas: conferir com fonte publicada e citar a referência em comentário no código.
 9. Código em seções comentadas, arquivos pequenos, nomes claros. Interface em português do Brasil, vírgula decimal, datas dd/mm/aaaa, semana começando na segunda-feira.
 10. Sem dependências externas em tempo de execução, salvo necessidade real (e então de CDN confiável, com fallback offline).

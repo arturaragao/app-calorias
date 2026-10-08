@@ -11,6 +11,7 @@ import { buscarNome } from '../off.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaAlimento } from './alimento-form.js';
 import { abrirScanner } from './scanner.js';
+import { folhaFotoIA } from './foto-ia.js';
 
 const LOTE = 30;
 const ABAS = [['recentes', 'Recentes'], ['favoritos', 'Favoritos'], ['meus', 'Meus'], ['receitas', 'Receitas']];
@@ -37,7 +38,8 @@ export async function render(tela) {
       <div class="seg abas" role="tablist" style="margin:8px 0 0">${ABAS.map(([v, r]) =>
         `<button type="button" role="tab" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
     <div class="linha" style="margin:2px 0 8px"><button class="btn peq suave" data-novo-alim>+ Novo alimento</button>
-      <a class="btn peq suave" href="#receita">+ Nova receita</a></div>
+      <a class="btn peq suave" href="#receita">+ Nova receita</a>
+      <button class="btn peq suave" data-foto-ia>${ICONES.camera} Por foto</button></div>
     <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
     <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
   let cat = await catalogo();
@@ -119,6 +121,7 @@ export async function render(tela) {
   tela.onclick = (e) => {
     const ab = e.target.closest('[data-aba]');
     if (ab) { estado.abaAdicionar = ab.dataset.aba; q.value = ''; return pesquisar(); }
+    if (e.target.closest('[data-foto-ia]')) return folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
     if (e.target.closest('[data-novo-alim]')) return folhaAlimento(null, { aoSalvar: recarregar });
     const rp = e.target.closest('[data-rapido]');
     if (rp) {

@@ -4,6 +4,7 @@ import { estado, salvarPerfil, salvarMetas } from '../state.js';
 import { FATORES_ATIVIDADE, metaCalorica, metasIniciais, registrarHistorico } from '../goals.js';
 import { topo, esc, seg, $, $$, aviso, valorDe } from '../ui.js';
 import { chaveData, fmtKcal, fmtNum, idadeEm } from '../utils.js';
+import { blocoRestaurarInicio, ligarRestaurarInicio } from './drive-ui.js';
 
 export function idadePerfil(p) {
   return p.nascimento ? idadeEm(p.nascimento) : p.idade;
@@ -14,7 +15,7 @@ export async function render(tela) {
   const primeiro = !estado.perfil;
   topo(primeiro ? '<h1>Bem-vindo</h1>' : '<a class="ico" href="#config" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><h1>Perfil</h1><span style="width:44px"></span>');
   tela.innerHTML = `
-    ${primeiro ? '<p class="mudo">Preencha seu perfil para calcular a meta inicial. Tudo pode ser ajustado depois.</p>' : ''}
+    ${primeiro ? blocoRestaurarInicio() + '<p class="mudo">Preencha seu perfil para calcular a meta inicial. Tudo pode ser ajustado depois.</p>' : ''}
     <form class="card" id="f" novalidate>
       <span class="mudo">Sexo</span>${seg('sexo', [['M', 'Masculino'], ['F', 'Feminino']], p.sexo)}
       <div class="grade2">
@@ -35,6 +36,7 @@ export async function render(tela) {
       <button class="btn prim bloco" type="submit">${primeiro ? 'Começar' : 'Salvar perfil'}</button>
     </form>`;
 
+  ligarRestaurarInicio(tela);
   const f = $('#f', tela);
   const lerForm = () => ({
     sexo: $('[data-seg=sexo] [aria-pressed=true]', f).dataset.v,

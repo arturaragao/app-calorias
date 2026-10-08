@@ -355,6 +355,39 @@ t('Service worker lista todos os módulos JS', () => {
   if (faltando.length) throw new Error('faltam no sw.js: ' + faltando.join(', '));
 });
 
+// ---------- Estimativa por foto (IA) e backup no Drive ----------
+const { normalizarEstimativa, mensagemErro } = await import('../js/ia.js');
+t('IA: normaliza resposta, descarta inválidos e limita valores', () => {
+  const r = normalizarEstimativa({ itens: [
+    { nome: ' Arroz branco cozido ', gramas: 150, kcal: 192, prot: 3.8, carb: 42, gord: 0.3, fibra: 2.4 },
+    { nome: '', gramas: 10, kcal: 50, prot: 1, carb: 1, gord: 1 },
+    { nome: 'Feijão', gramas: -5, kcal: 'x', prot: 1, carb: 1, gord: 1 },
+    { nome: 'Bife', gramas: 9999, kcal: 400, prot: 'abc', carb: 0, gord: 20 },
+  ], observacao: 'ok' });
+  eq(r.itens.length, 2); eq(r.itens[0].nome, 'Arroz branco cozido'); eq(r.itens[0].g, 150); eq(r.itens[0].fibra, 2.4);
+  eq(r.itens[1].g, 5000); eq(r.itens[1].prot, 0); eq(r.itens[1].fibra, null); eq(r.obs, 'ok');
+  eq(normalizarEstimativa(null).itens.length, 0);
+});
+t('IA: mensagens de erro (cota, chave)', () => {
+  if (!/Cota gratuita/.test(mensagemErro(429))) throw new Error('429');
+  if (!/inválida/.test(mensagemErro(400, 'API key not valid'))) throw new Error('400');
+});
+const { backupDevido, montarMultipart } = await import('../js/drive.js');
+t('Drive: backup devido só se conectado, automático, alterado e após o intervalo', () => {
+  const H = 3600000, st = { conectado: true, auto: true, ultimo: 100 * H };
+  eq(backupDevido(st, 101 * H, 121 * H), true);
+  eq(backupDevido(st, 101 * H, 110 * H), false, 'intervalo');
+  eq(backupDevido(st, 99 * H, 130 * H), false, 'sem alteração');
+  eq(backupDevido({ ...st, auto: false }, 101 * H, 130 * H), false, 'desligado');
+  eq(backupDevido({ ...st, conectado: false }, 101 * H, 130 * H), false, 'desconectado');
+  eq(backupDevido({ conectado: true, auto: true, ultimo: 0 }, 5, 6, 0), true, 'nunca enviado');
+});
+t('Drive: corpo multipart com metadados e conteúdo', () => {
+  const { partes, tipo } = montarMultipart({ name: 'a.json' }, '{"x":1}', 'B');
+  eq(tipo, 'multipart/related; boundary=B');
+  eq(partes.join(''), ['--B', 'Content-Type: application/json; charset=UTF-8', '', '{"name":"a.json"}', '--B', 'Content-Type: application/json', '', '{"x":1}', '--B--'].join('\r\n'));
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

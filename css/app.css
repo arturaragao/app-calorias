@@ -301,3 +301,13 @@ a.nota { display: block; text-decoration: none; }
   .folha .painel { border-radius: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* ---------- Estimativa por foto (IA) e Drive ---------- */
+.grade4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.grade4 .campo { margin: 0; }
+.grade4 input { padding-left: 8px; padding-right: 8px; }
+.ia-foto { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--raio-p); margin-bottom: 8px; }
+.ia-item { border: 1px solid var(--borda); border-radius: var(--raio-p); padding: 8px 10px; margin: 8px 0; }
+.ia-item .linha { gap: 8px; margin-bottom: 6px; }
+button.nota { display: block; width: 100%; text-align: left; border: 0; font: inherit; font-size: .84rem; cursor: pointer; }
+.ia-item input[name=nome] { min-width: 0; width: 100%; }

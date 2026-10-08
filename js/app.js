@@ -5,6 +5,7 @@ import { estado, carregarEstado } from './state.js';
 import { $, $$, aviso, fecharFolha } from './ui.js';
 import { chaveData } from './utils.js';
 import { carregarBase } from './foods.js';
+import { tentarAuto } from './drive.js';
 
 const ROTAS = {
   diario: () => import('./views/diario.js'),
@@ -105,6 +106,9 @@ async function iniciar() {
   window.addEventListener('offline', () => aviso('Sem internet: tudo funciona, exceto a consulta ao Open Food Facts.', { ms: 5000 }));
   await navegar();
   registrarSW();
+  // backup no Drive: envia em silêncio se houver token válido e novidades (ao abrir e ao sair do app)
+  setTimeout(() => tentarAuto().catch(() => {}), 3000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tentarAuto().catch(() => {}); });
 }
 
 iniciar();

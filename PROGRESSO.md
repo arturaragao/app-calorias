@@ -1,6 +1,11 @@
 # PROGRESSO
 
-**Etapa atual:** 6 concluída — projeto completo (todas as etapas). Próximos passos só sob pedido do Artur.
+**Etapa atual:** 6 concluída + melhorias avulsas. Próximos passos só sob pedido do Artur.
+
+**Melhorias (2026-10-08, v8)**
+- Backup no Google Drive (js/drive.js, views/drive-ui.js): GIS token client, escopo drive.file, arquivo único sobrescrito; envio automático com token válido (ao abrir/sair) e aviso "☁️ tocar para enviar" no Diário após 20 h com novidades; restaurar em Ajustes e na tela de boas-vindas. **Depende do Artur:** criar o ID do cliente OAuth (README) e mandar para fixar em `CLIENT_ID_PADRAO`.
+- Estimativa por foto (js/ia.js, views/foto-ia.js): Gemini (cota gratuita, chave do Artur no localStorage), JSON com esquema, revisão editável, lança cada alimento como Adição rápida (fonte "Foto (IA)"), guarda a foto na refeição, desfazer. Entradas: menu ⋯ da refeição e botão "Por foto" no Adicionar.
+- Testes: 90 aprovados. Fluxo da foto testado com resposta simulada; Drive real ainda não testado (falta o ID do cliente).
 
 **Etapa 6 (acabamento)**
 - Visual novo: tokens refinados (claro/escuro), cartões, barra inferior com botão central "+", pílula no item ativo, folhas com animação e alça, toasts, campos com foco destacado, títulos à esquerda.
