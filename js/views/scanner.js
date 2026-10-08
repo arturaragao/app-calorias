@@ -20,7 +20,7 @@ export async function abrirScanner({ aoAlimento }) {
       <p class="mudo" id="st">Aponte a câmera para o código de barras da embalagem.</p>`
     : '<p class="nota">Este navegador não lê códigos pela câmera. Digite os números abaixo.</p>'}
     <form id="fm" class="linha" style="margin-top:8px"><input type="text" inputmode="numeric" name="cod" placeholder="ou digite o código (8 a 14 dígitos)" autocomplete="off">
-      <button class="btn prim" style="flex:0 0 auto">OK</button></form>`, { fechar: encerrar });
+      <button class="btn prim" style="flex:0 0 auto">OK</button></form>`, { fechar: encerrar, foco: false });
 
   p.querySelector('#fm').onsubmit = (e) => {
     e.preventDefault();

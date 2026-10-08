@@ -288,6 +288,59 @@ t('Circunferências: diferença vs medição anterior da mesma medida', () => {
 });
 t('Média móvel', () => { const m = mediaMovel([1, 2, 3, 4], 2); eq(m.join(), '1,1.5,2.5,3.5'); });
 
+// ---------- Etapa 4: progresso e backup ----------
+const P = await import('../js/progress.js');
+const { validarBackup, migrarBackup } = await import('../js/backup.js');
+const dd = (data, kcal, meta = 2000) => ({ data, tot: { kcal, prot: 100, carb: 200, gord: 50, fibra: 20, sodio_mg: 1500 }, meta: { kcal: meta, prot: 150, carb: 250, gord: 60 } });
+t('Média móvel de 7 dias por calendário (não por posição)', () => {
+  const m = P.mediaMovelDias([{ data: '2026-10-01', y: 80 }, { data: '2026-10-07', y: 79 }, { data: '2026-10-08', y: 78 }]);
+  eq(m[0], 80); eq(m[1], 79.5); eq(m[2], 78.5);           // 08/10: janela 02–08 exclui 01/10
+});
+t('Semanas começam na segunda; média só dos dias registrados', () => {
+  eq(P.inicioSemana('2026-10-11'), '2026-10-05'); eq(P.inicioSemana('2026-10-12'), '2026-10-12');
+  const s = P.semanas([dd('2026-10-05', 1800), dd('2026-10-07', 2200), dd('2026-10-12', 2500, 2500)]);
+  eq(s.length, 2); eq(s[0].kcal, 2000); eq(s[0].n, 2); eq(s[1].meta, 2500);
+});
+t('Aderência ±10%', () => {
+  const a = P.aderencia([dd('1', 2000), dd('2', 2199), dd('3', 2300), dd('4', 1700)]);
+  eq(a.dentro, 2); eq(a.acima, 1); eq(a.abaixo, 1); eq(a.pct, 50);
+  eq(P.aderencia([]).pct, null);
+});
+t('Médias de macros e % das kcal', () => {
+  const m = P.mediasMacros([dd('1', 1800), dd('2', 2200)]);
+  eq(m.consumo.kcal, 2000); eq(m.meta.prot, 150);
+  aprox(m.pct.prot + m.pct.carb + m.pct.gord, 100); aprox(m.pct.gord, (50 * 900) / (400 + 800 + 450));
+});
+t('Período: últimos n dias inclusive', () => {
+  const l = P.noPeriodo([{ data: '2026-09-01' }, { data: '2026-10-02' }, { data: '2026-10-08' }], 7, '2026-10-08');
+  eq(l.length, 2); eq(P.noPeriodo([{ data: 'x' }], null, 'y').length, 1);
+});
+const bkOk = { app: 'app-calorias', schemaVersion: 1, stores: { kv: [['perfil', { peso: 80 }], ['metas', {}]], diary: [['2026-10-08', diaVazio('2026-10-08')]] } };
+t('Backup válido: contagem', () => { const v = validarBackup(bkOk); eq(v.ok, true); eq(v.contagem.diary, 1); });
+t('Backup inválido é recusado antes de gravar', () => {
+  eq(validarBackup(null).ok, false);
+  eq(validarBackup({ ...bkOk, app: 'outro' }).ok, false);
+  eq(validarBackup({ ...bkOk, schemaVersion: 99 }).erro.includes('mais nova'), true);
+  eq(validarBackup({ ...bkOk, stores: { ...bkOk.stores, lixo: [] } }).ok, false);
+  eq(validarBackup({ ...bkOk, stores: { kv: [['perfil', {}]], diary: [['a']] } }).ok, false);
+  eq(validarBackup({ ...bkOk, stores: { kv: [] } }).erro, 'Backup sem perfil.');
+});
+t('Backup: ida e volta JSON preserva dados', () => {
+  const volta = JSON.parse(JSON.stringify(bkOk));
+  eq(validarBackup(volta).ok, true); eq(volta.stores.kv[0][1].peso, 80);
+  eq(migrarBackup(volta).schemaVersion, 1);
+});
+{
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  const { VERSAO_APP } = await import('../js/versao.js');
+  t('Versão do app igual à do service worker', () => eq(sw.match(/VERSAO = '([^']+)'/)[1], VERSAO_APP));
+  t('Todo arquivo listado no service worker existe', () => {
+    const { existsSync } = process.getBuiltinModule('node:fs');
+    const lista = [...sw.matchAll(/'([^']+\.(?:js|css|json|html|png|webmanifest))'/g)].map((m) => m[1]);
+    const faltam = lista.filter((a) => !existsSync(new URL('../' + a, import.meta.url)));
+    if (faltam.length) throw new Error(faltam.join(', '));
+  });
+}
 t('Service worker lista todos os módulos JS', () => {
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   const { readdirSync } = process.getBuiltinModule('node:fs');

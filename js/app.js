@@ -8,7 +8,7 @@ const ROTAS = {
   diario: () => import('./views/diario.js'),
   adicionar: () => import('./views/adicionar.js'),
   registros: () => import('./views/registros.js'),
-  progresso: () => import('./views/embreve.js'),
+  progresso: () => import('./views/progresso.js'),
   config: () => import('./views/config.js'),
   metas: () => import('./views/metas.js'),
   perfil: () => import('./views/onboarding.js'),
@@ -68,7 +68,10 @@ function registrarSW() {
     const recarregar = () => ($('#folha').hidden ? location.reload() : setTimeout(recarregar, 1000));
     recarregar();
   });
-  try { if (sessionStorage.getItem('atualizado')) { sessionStorage.removeItem('atualizado'); aviso('App atualizado'); } } catch {}
+  try {
+    if (sessionStorage.getItem('atualizado')) { sessionStorage.removeItem('atualizado'); aviso('App atualizado'); }
+    if (sessionStorage.getItem('importado')) { sessionStorage.removeItem('importado'); aviso('Backup importado com sucesso'); }
+  } catch {}
 }
 
 // ---------- Início ----------
@@ -85,6 +88,7 @@ async function iniciar() {
   aplicarTema(estado.config.tema);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => aplicarTema(estado.config.tema));
   window.addEventListener('hashchange', navegar);
+  window.addEventListener('offline', () => aviso('Sem internet: tudo funciona, exceto a consulta ao Open Food Facts.', { ms: 5000 }));
   await navegar();
   registrarSW();
 }

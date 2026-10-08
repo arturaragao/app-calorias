@@ -3,6 +3,34 @@
 import { fmtData, fmtNum, dataDeChave, escapeHtml } from './utils.js';
 
 /**
+ * Barras com marca de meta por barra. barras: [{ rotulo, y, meta?, dica }].
+ * Barra acima da meta em mais de 10% fica em âmbar.
+ */
+export function graficoBarras(el, barras, { unidade = '' } = {}) {
+  if (!barras.length) { el.innerHTML = '<p class="mudo">Sem registros no período.</p>'; return; }
+  const W = 340, H = 170, ml = 36, mr = 8, mt = 10, mb = 22;
+  const ymax = Math.max(...barras.map((b) => Math.max(b.y, b.meta || 0))) * 1.1 || 1;
+  const bw = (W - ml - mr) / barras.length;
+  const py = (v) => mt + (1 - v / ymax) * (H - mt - mb);
+  const passo = Math.ceil(barras.length / 6);
+  el.innerHTML = `<svg class="grafico" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de barras">
+    ${[0, ymax / 2, ymax / 1.1].map((v) => `<line x1="${ml}" x2="${W - mr}" y1="${py(v)}" y2="${py(v)}" class="grade"/>
+      <text x="${ml - 4}" y="${py(v) + 3}" text-anchor="end">${fmtNum(Math.round(v))}</text>`).join('')}
+    ${barras.map((b, i) => {
+      const w = Math.min(bw * 0.7, 36), x = ml + i * bw + (bw - w) / 2;
+      return `<rect x="${x}" y="${py(b.y)}" width="${w}" height="${py(0) - py(b.y)}" rx="2" class="${b.meta && b.y > b.meta * 1.1 ? 'barra-acima' : 'barra'}" data-i="${i}"/>
+        ${b.meta ? `<line x1="${x - 2}" x2="${x + w + 2}" y1="${py(b.meta)}" y2="${py(b.meta)}" class="meta"/>` : ''}
+        ${i % passo === 0 ? `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${escapeHtml(b.rotulo)}</text>` : ''}`;
+    }).join('')}
+  </svg><p class="mudo legenda" id="dica-b">Toque numa barra para ver o valor · traço = meta</p>`;
+  el.querySelector('svg').addEventListener('pointerdown', (e) => {
+    const b = el.querySelector('svg').getBoundingClientRect();
+    const i = Math.max(0, Math.min(barras.length - 1, Math.floor((((e.clientX - b.left) / b.width) * W - ml) / bw)));
+    el.querySelector('#dica-b').textContent = barras[i].dica || `${barras[i].rotulo}: ${fmtNum(Math.round(barras[i].y))} ${unidade}`;
+  });
+}
+
+/**
  * pontos: [{ data: 'AAAA-MM-DD', y }] em ordem cronológica.
  * opcoes: { unidade, casas = 1, linha2: [y…] (ex.: média móvel, mesmo comprimento), rotulo2 }
  */

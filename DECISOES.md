@@ -31,4 +31,9 @@
 - 2026-10-08 · Recalcular meta com o peso: soma a diferença (meta nova − antiga pelo perfil) a todos os conjuntos, preservando diferenças entre dias; vale a partir de hoje.
 - 2026-10-08 · Água: padrão copo 250 ml e meta 2000 ml (editáveis).
 - 2026-10-08 · Lembrete de dobras: só aparece se já houver ao menos uma avaliação e passaram > 30 dias; ligado por padrão, desligável.
+- 2026-10-08 · Progresso: médias e aderência só consideram dias com algum item lançado; meta de cada dia = meta vigente naquele dia (histórico), com o peso vigente na data para g/kg.
+- 2026-10-08 · Média móvel do peso: média dos registros nos 7 dias de calendário anteriores (inclusive).
+- 2026-10-08 · Backup: JSON único com todas as stores; fotos em base64 só se marcado. Importar substitui tudo (fotos atuais mantidas se o backup não tiver fotos). Recusa backup de versão mais nova.
+- 2026-10-08 · Lembrete de backup: aparece no Diário (hoje) após 30 dias do último backup ou do 1º uso.
+- 2026-10-08 · Folhas com `foco: false` não focam campo (leitor de código), para o teclado não abrir sozinho.
 - 2026-10-08 · Refeição sugerida pelo horário ao abrir "Adicionar" sem refeição escolhida.

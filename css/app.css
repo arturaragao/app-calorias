@@ -157,6 +157,9 @@ input[type=text], input[type=search], input[type=number], input[type=date], sele
 .grafico .pt { fill: var(--sup); stroke: var(--acento); stroke-width: 1.5; }
 .grafico .dica rect { fill: var(--txt); }
 .grafico .dica text { fill: var(--bg); font-size: 11px; }
+.grafico .barra { fill: var(--acento); }
+.grafico .barra-acima { fill: var(--alerta); }
+.grafico .meta { stroke: var(--txt); stroke-width: 2; }
 .legenda { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; }
 .legenda .sw1, .legenda .sw2 { width: 16px; height: 0; border-top: 2px solid var(--acento); display: inline-block; }
 .legenda .sw2 { border-top: 2px dashed var(--carb); }

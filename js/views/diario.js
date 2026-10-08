@@ -7,6 +7,7 @@ import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
 import { abrirScanner } from './scanner.js';
 import { diasDesdeUltima } from './reg-dobras.js';
+import { diasSemBackup } from '../backup.js';
 import { contagemDoDia } from '../photos.js';
 import { topo, esc, ICONES, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
 import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, diaSemana } from '../utils.js';
@@ -65,7 +66,9 @@ async function desenhar() {
   };
   const refs = refeicoesDoDia(dia, estado.config.refeicoes);
   const dias = estado.config.dobras?.lembrete !== false ? await diasDesdeUltima().catch(() => null) : null;
+  const bk = await diasSemBackup().catch(() => ({ dias: 0 }));
   tela.innerHTML = `
+    ${bk.dias > 30 && estado.dataAtual === chaveData() ? `<a class="nota" href="#config" style="display:block;text-decoration:none">💾 ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar (Configurações › Backup).</a>` : ''}
     ${dias > 30 && estado.dataAtual === chaveData() ? `<a class="nota" href="#registros?aba=dobras" style="display:block;text-decoration:none">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
     <section class="card resumo" data-detalhe tabindex="0" role="button" aria-label="Ver detalhes do dia">
       <div class="anel ${restante < 0 ? 'excesso' : ''}">

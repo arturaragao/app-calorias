@@ -24,7 +24,7 @@ export function topo(html) { $('#topo').innerHTML = html; }
 // Fechar por código faz history.back(); se outra folha abrir antes desse "voltar" chegar,
 // o pushState espera por ele (senão o popstate fecharia a folha nova).
 let aoFechar = null, voltaPendente = false, empilharDepois = false;
-export function abrirFolha(titulo, corpoHtml, { fechar } = {}) {
+export function abrirFolha(titulo, corpoHtml, { fechar, foco = true } = {}) {
   const f = $('#folha');
   if (f.hidden) {
     if (voltaPendente) empilharDepois = true; else history.pushState({ folha: true }, '');
@@ -34,7 +34,9 @@ export function abrirFolha(titulo, corpoHtml, { fechar } = {}) {
   f.hidden = false;
   aoFechar = fechar || null;
   f.onclick = (e) => { if (e.target === f || e.target.closest('[data-fechar]')) fecharFolha(); };
-  setTimeout(() => f.querySelector('input:not([type=hidden]),select,button.prim')?.focus({ preventScroll: true }), 50);
+  // foco: false evita abrir o teclado sozinho (ex.: leitor de código de barras)
+  if (foco) setTimeout(() => f.querySelector('input:not([type=hidden]),select,button.prim')?.focus({ preventScroll: true }), 50);
+  else document.activeElement?.blur?.();
   return f.querySelector('.painel');
 }
 export function fecharFolha(daHistoria = false) {

@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** 3 concluída (+ scanner/Open Food Facts adiantado da Etapa 5) — aguardando OK do Artur para a Etapa 4.
+**Etapa atual:** 4 concluída — aguardando OK do Artur para a Etapa 5 (scanner já feito) / Etapa 6.
 **Publicado:** https://arturaragao.github.io/app-calorias/ (push automático; o celular se atualiza sozinho).
 
 ## Pronto
@@ -25,13 +25,20 @@
 - Dobras: Parrillo 9, Pollock 7, Pollock 3, Durnin-Womersley 4, Personalizado (só soma); último protocolo como padrão; %G, MG, MM, densidade; gráfico só do protocolo escolhido; nota do Parrillo; lembrete mensal desligável (no Diário e em Registros).
 - Valores incoerentes pedem confirmação. Testes: 75 aprovados (fórmulas conferidas com referências calculadas à mão).
 
+**Etapa 4**
+- Progresso (7/30/90 dias/tudo): peso com média móvel de 7 dias (por calendário), calorias médias por semana × meta (barras), aderência ±10%, médias de macros/fibra/sódio × meta, %G por protocolo e circunferências.
+- Backup: exportar JSON (fotos opcionais, compartilhar ou baixar), importar com validação de estrutura/versão e confirmação; lembrete no Diário após 30 dias sem backup; apagar tudo com confirmação dupla; uso de armazenamento e versão em Configurações.
+- PWA: atalhos no ícone (Adicionar, Ler código, Registrar peso), aviso ao ficar offline, teste garante que sw.js lista todos os arquivos e que a versão bate.
+- Leitor de código não abre mais o teclado sozinho.
+- Testes: 86 aprovados.
+
 ## Pendências / próximas etapas
-- Etapa 4: Progresso e gráficos, backup exportar/importar + lembrete de 30 dias, PWA offline polido.
-- Etapa 5: o que restar (scanner já feito).
+- Etapa 5: já entregue antes (scanner + Open Food Facts). Falta só validar a câmera no S23+.
+- Etapa 6: acabamento (visual, acessibilidade, desempenho, revisão de bugs, README).
 
 ## Bugs conhecidos
 - Nenhum aberto.
 
 ## Manutenção
-- Mudou arquivo publicado → incrementar `VERSAO` em `sw.js`; arquivo JS novo → incluir em `ARQUIVOS` (há teste que confere).
+- Mudou arquivo publicado → incrementar `VERSAO` em `sw.js` **e** em `js/versao.js`; arquivo JS novo → incluir em `ARQUIVOS` (testes conferem os dois).
 - Publicar: `git add -A; git commit; git push` com `$env:GCM_INTERACTIVE='always'`.

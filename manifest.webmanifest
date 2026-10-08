@@ -9,6 +9,11 @@
   "orientation": "portrait",
   "background_color": "#0d1510",
   "theme_color": "#0d1510",
+  "shortcuts": [
+    { "name": "Adicionar alimento", "url": "./#adicionar", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Ler código de barras", "url": "./#adicionar?scan=1", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Registrar peso", "url": "./#registros?aba=peso", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
