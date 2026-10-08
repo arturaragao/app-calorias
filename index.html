@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Calorias</title>
+  <meta name="description" content="Registro pessoal de calorias e macros">
+  <meta name="theme-color" content="#0f1712">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // aplica o tema antes de pintar (evita piscar)
+    try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'escuro') document.documentElement.dataset.tema = t; } catch {}
+  </script>
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main id="tela" class="tela" tabindex="-1"></main>
+
+  <nav class="nav" aria-label="Navegação principal">
+    <a href="#diario" data-rota="diario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z M8 9h8 M8 13h8 M8 17h5"/></svg><span>Diário</span></a>
+    <a href="#adicionar" data-rota="adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8 M8 12h8"/></svg><span>Adicionar</span></a>
+    <a href="#registros" data-rota="registros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16 M7 16V10 M12 16V6 M17 16v-4"/></svg><span>Registros</span></a>
+    <a href="#progresso" data-rota="progresso"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l5-6 4 3 7-9"/></svg><span>Progresso</span></a>
+    <a href="#config" data-rota="config"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3 M12 18v3 M3 12h3 M18 12h3 M5.6 5.6l2.1 2.1 M16.3 16.3l2.1 2.1 M5.6 18.4l2.1-2.1 M16.3 7.7l2.1-2.1"/></svg><span>Config.</span></a>
+  </nav>
+
+  <div id="folha" class="folha" hidden role="dialog" aria-modal="true"></div>
+  <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
+
+  <noscript>Este app precisa de JavaScript.</noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
