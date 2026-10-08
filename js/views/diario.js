@@ -6,6 +6,7 @@ import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade
   criarItemRapido, adicionarItem, copiarPara, criarItem } from '../diary.js';
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
 import { abrirScanner } from './scanner.js';
+import { diasDesdeUltima } from './reg-dobras.js';
 import { contagemDoDia } from '../photos.js';
 import { topo, esc, ICONES, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
 import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, diaSemana } from '../utils.js';
@@ -63,7 +64,9 @@ async function desenhar() {
       <span class="num"><b>${f(v)}</b> / ${f(m)} ${un}</span></div><div class="trilho"><div class="enche" style="width:${pct}%"></div></div></div>`;
   };
   const refs = refeicoesDoDia(dia, estado.config.refeicoes);
+  const dias = estado.config.dobras?.lembrete !== false ? await diasDesdeUltima().catch(() => null) : null;
   tela.innerHTML = `
+    ${dias > 30 && estado.dataAtual === chaveData() ? `<a class="nota" href="#registros?aba=dobras" style="display:block;text-decoration:none">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
     <section class="card resumo" data-detalhe tabindex="0" role="button" aria-label="Ver detalhes do dia">
       <div class="anel ${restante < 0 ? 'excesso' : ''}">
         <svg viewBox="0 0 150 150" aria-hidden="true"><circle class="fundo" cx="75" cy="75" r="64"/>

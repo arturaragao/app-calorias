@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** 2 concluída — aguardando OK do Artur para a Etapa 3.
+**Etapa atual:** 3 concluída (+ scanner/Open Food Facts adiantado da Etapa 5) — aguardando OK do Artur para a Etapa 4.
 **Publicado:** https://arturaragao.github.io/app-calorias/ (push automático; o celular se atualiza sozinho).
 
 ## Pronto
@@ -16,9 +16,18 @@
 - Atualização automática do app no celular.
 - Testes: 58 aprovados.
 
+**Scanner (adiantado da Etapa 5)** — ícone de código de barras na busca e ao lado de "+ Adicionar alimento"; câmera traseira (BarcodeDetector), lanterna, campo manual; resolve local → Open Food Facts → revisar/salvar; busca por nome no OFF.
+
+**Etapa 3**
+- Peso: vários por dia (vale o último), gráfico com média, histórico com diferença, apagar/desfazer; atualiza o peso do perfil e, se ligado, recalcula a meta.
+- Água: copo/500 ml/valor livre, desfazer, meta e tamanho do copo editáveis, navegação por dia.
+- Circunferências: lista editável (adicionar/renomear/remover/reordenar), registro por data, diferença vs anterior, gráfico por medida.
+- Dobras: Parrillo 9, Pollock 7, Pollock 3, Durnin-Womersley 4, Personalizado (só soma); último protocolo como padrão; %G, MG, MM, densidade; gráfico só do protocolo escolhido; nota do Parrillo; lembrete mensal desligável (no Diário e em Registros).
+- Valores incoerentes pedem confirmação. Testes: 75 aprovados (fórmulas conferidas com referências calculadas à mão).
+
 ## Pendências / próximas etapas
-- Etapa 3: peso, água, circunferências, dobras/%G. Registros/Progresso ainda são placeholders.
-- "Recalcular meta quando o peso mudar" passa a agir na Etapa 3.
+- Etapa 4: Progresso e gráficos, backup exportar/importar + lembrete de 30 dias, PWA offline polido.
+- Etapa 5: o que restar (scanner já feito).
 
 ## Bugs conhecidos
 - Nenhum aberto.

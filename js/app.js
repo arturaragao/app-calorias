@@ -7,7 +7,7 @@ import { $, $$, aviso, fecharFolha } from './ui.js';
 const ROTAS = {
   diario: () => import('./views/diario.js'),
   adicionar: () => import('./views/adicionar.js'),
-  registros: () => import('./views/embreve.js'),
+  registros: () => import('./views/registros.js'),
   progresso: () => import('./views/embreve.js'),
   config: () => import('./views/config.js'),
   metas: () => import('./views/metas.js'),

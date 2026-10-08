@@ -26,4 +26,9 @@
 - 2026-10-08 · Código lido: 1º Meus alimentos (offline, aceita UPC-A ≡ EAN-13 com 0), depois OFF → revisar → salvar em Meus alimentos. Não encontrado/offline → cadastro manual com o código preenchido.
 - 2026-10-08 · OFF: sódio_100g (g) × 1000; sem sódio, usa sal ÷ 2,5 (Reg. UE 1169/2011); sem kcal, kJ ÷ 4,184. Busca por nome só ao tocar no botão (limite de 10 buscas/min da API).
 - 2026-10-08 · Alimento com porção própria (rótulo/receita) abre já em "Porção caseira".
+- 2026-10-08 · Fórmulas: Jackson & Pollock 1978 (homens 7/3), Jackson, Pollock & Ward 1980 (mulheres 7/3), Durnin & Womersley 1974 tab. 4 (abaixo da 1ª faixa etária usa a 1ª), Siri 1961; Parrillo = soma×27÷lb conforme CLAUDE.md. Referências citadas em js/body.js.
+- 2026-10-08 · Sítios fixos nos protocolos com fórmula (mudar os sítios invalida a equação); o "Personalizado" tem sítios livres (inclusive novos) e mostra só a soma.
+- 2026-10-08 · Recalcular meta com o peso: soma a diferença (meta nova − antiga pelo perfil) a todos os conjuntos, preservando diferenças entre dias; vale a partir de hoje.
+- 2026-10-08 · Água: padrão copo 250 ml e meta 2000 ml (editáveis).
+- 2026-10-08 · Lembrete de dobras: só aparece se já houver ao menos uma avaliação e passaram > 30 dias; ligado por padrão, desligável.
 - 2026-10-08 · Refeição sugerida pelo horário ao abrir "Adicionar" sem refeição escolhida.

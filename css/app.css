@@ -148,6 +148,19 @@ input[type=text], input[type=search], input[type=number], input[type=date], sele
 .dias button { flex: 1; min-width: 44px; min-height: 40px; border-radius: 8px; border: 1px solid var(--borda); background: var(--sup); cursor: pointer; }
 .dias button[aria-pressed=true] { background: var(--acento); color: var(--acento-txt); }
 
+/* ---------- Gráficos ---------- */
+.grafico { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.grafico text { font-size: 10px; fill: var(--txt2); }
+.grafico .grade { stroke: var(--borda); stroke-width: 1; }
+.grafico .l1 { fill: none; stroke: var(--acento); stroke-width: 2; }
+.grafico .l2 { fill: none; stroke: var(--carb); stroke-width: 2; stroke-dasharray: 4 3; }
+.grafico .pt { fill: var(--sup); stroke: var(--acento); stroke-width: 1.5; }
+.grafico .dica rect { fill: var(--txt); }
+.grafico .dica text { fill: var(--bg); font-size: 11px; }
+.legenda { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; }
+.legenda .sw1, .legenda .sw2 { width: 16px; height: 0; border-top: 2px solid var(--acento); display: inline-block; }
+.legenda .sw2 { border-top: 2px dashed var(--carb); }
+
 /* ---------- Folha (bottom sheet) ---------- */
 .folha { position: fixed; inset: 0; z-index: 20; background: rgb(0 0 0 / .45); display: flex; align-items: flex-end; }
 .folha .painel {

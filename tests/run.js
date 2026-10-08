@@ -243,6 +243,51 @@ t('Código de barras: limpeza e variantes UPC/EAN', () => {
   eq(limparCodigo('789 1000-100103'), '7891000100103'); eq(limparCodigo('123'), '');
   eq(variantesCodigo('012345678905').includes('0012345678905'), true);
 });
+// ---------- Etapa 3: composição corporal (referências calculadas à mão em DECISOES/PROGRESSO) ----------
+const { calcularDobras, siri, coefDW, PROTOCOLOS, diferencas, pesoDoDia, foraDaFaixa, mediaMovel } = await import('../js/body.js');
+const pessoa = (sexo, idade, peso = 80) => ({ sexo, idade, peso });
+const valoresIguais = (prot, sexo, soma) => {
+  const s = PROTOCOLOS[prot].sitios(sexo);
+  return Object.fromEntries(s.map((k) => [k, soma / s.length]));
+};
+t('Siri: DC 1,0653532 → 14,63%', () => aprox(siri(1.0653532), 14.6346, 1e-3));
+t('Parrillo 9: soma 90 mm, 80 kg → 13,78%', () => {
+  const r = calcularDobras('parrillo', valoresIguais('parrillo', 'M', 90), pessoa('M', 30, 80));
+  aprox(r.pct, 13.7779, 1e-3); aprox(r.mGorda, 80 * 0.137779, 1e-3); aprox(r.mMagra + r.mGorda, 80);
+});
+t('Pollock 7 homem: soma 100, 30 anos → DC 1,06535; 14,63%', () => {
+  const r = calcularDobras('pollock7', valoresIguais('pollock7', 'M', 100), pessoa('M', 30));
+  aprox(r.dc, 1.0653532, 1e-7); aprox(r.pct, 14.6346, 1e-3);
+});
+t('Pollock 7 mulher: soma 100, 30 anos → 20,63%', () => aprox(calcularDobras('pollock7', valoresIguais('pollock7', 'F', 100), pessoa('F', 30)).pct, 20.6305, 1e-3));
+t('Pollock 3 homem (peitoral/abdominal/coxa): soma 60 → 17,95%', () => {
+  eq(PROTOCOLOS.pollock3.sitios('M').join(), 'peitoral,abdominal,coxa');
+  aprox(calcularDobras('pollock3', valoresIguais('pollock3', 'M', 60), pessoa('M', 30)).pct, 17.9453, 1e-3);
+});
+t('Pollock 3 mulher (tríceps/suprailíaca/coxa): soma 60 → 24,13%', () => {
+  eq(PROTOCOLOS.pollock3.sitios('F').join(), 'triceps,suprailiaca,coxa');
+  aprox(calcularDobras('pollock3', valoresIguais('pollock3', 'F', 60), pessoa('F', 30)).pct, 24.1279, 1e-3);
+});
+t('Durnin-Womersley: homem 25a soma 40 → 16,17%; mulher 35a → 25,48%', () => {
+  aprox(calcularDobras('durnin', valoresIguais('durnin', 'M', 40), pessoa('M', 25)).pct, 16.1676, 1e-3);
+  aprox(calcularDobras('durnin', valoresIguais('durnin', 'F', 40), pessoa('F', 35)).pct, 25.4816, 1e-3);
+});
+t('Durnin-Womersley: faixas etárias', () => {
+  eq(coefDW('M', 19).c, 1.1620); eq(coefDW('M', 45).m, 0.0700); eq(coefDW('F', 60).c, 1.1339); eq(coefDW('M', 15).c, 1.1620);
+});
+t('Personalizado: só soma, sem %G', () => {
+  const r = calcularDobras('personalizado', { triceps: 10, coxa: 15 }, pessoa('M', 30), ['triceps', 'coxa']);
+  eq(r.soma, 25); eq(r.pct, null); eq(r.mGorda, null);
+});
+t('Dobra faltando gera erro', () => { let e = ''; try { calcularDobras('pollock3', { peitoral: 10 }, pessoa('M', 30)); } catch (x) { e = x.message; } eq(e.startsWith('Faltam'), true); });
+t('Faixas de confirmação', () => { eq(foraDaFaixa('dobra', 81), true); eq(foraDaFaixa('peso', 29), true); eq(foraDaFaixa('circ', 90), false); });
+t('Peso do dia = último registro', () => eq(pesoDoDia([{ ts: 2, kg: 80 }, { ts: 1, kg: 81 }, { ts: 3, kg: 79.5 }]), 79.5));
+t('Circunferências: diferença vs medição anterior da mesma medida', () => {
+  const r = diferencas([{ data: '1', valores: { cintura: 90, braco: 35 } }, { data: '2', valores: { cintura: 88 } }, { data: '3', valores: { braco: 36, cintura: 87.5 } }]);
+  eq(r[1].dif.cintura, -2); eq(r[2].dif.braco, 1); eq(r[2].dif.cintura, -0.5); eq(r[0].dif.cintura, undefined);
+});
+t('Média móvel', () => { const m = mediaMovel([1, 2, 3, 4], 2); eq(m.join(), '1,1.5,2.5,3.5'); });
+
 t('Service worker lista todos os módulos JS', () => {
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   const { readdirSync } = process.getBuiltinModule('node:fs');

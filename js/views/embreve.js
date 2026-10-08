@@ -1,4 +1,4 @@
-// views/embreve.js — telas das próximas etapas (Registros: Etapa 3; Progresso: Etapa 4).
+// views/embreve.js — telas das próximas etapas (Progresso: Etapa 4).
 
 import { topo } from '../ui.js';
 
