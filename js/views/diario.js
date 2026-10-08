@@ -1,6 +1,9 @@
 // views/diario.js — tela inicial: navegação por dia, anel de calorias, macros e refeições.
 
-import { estado, lerDia, gravarDia, pesoAtual } from '../state.js';
+import { estado, lerDia, gravarDia, pesoAtual, datasComRegistro } from '../state.js';
+import { db } from '../db.js';
+import { sequencia } from '../progress.js';
+import { totalAgua, AGUA_PADRAO } from './reg-agua.js';
 import { metaDoDia } from '../goals.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem, camposFaltando,
   criarItemRapido, adicionarItem, copiarPara, criarItem } from '../diary.js';
@@ -9,12 +12,12 @@ import { abrirScanner } from './scanner.js';
 import { diasDesdeUltima } from './reg-dobras.js';
 import { diasSemBackup } from '../backup.js';
 import { contagemDoDia } from '../photos.js';
-import { topo, esc, ICONES, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
-import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, diaSemana } from '../utils.js';
+import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
+import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
 
-let tela, dia, meta, fotosCont = {};
+let tela, dia, meta, fotosCont = {}, ignorarClique = false;
 
 export async function render(t) {
   tela = t;
@@ -29,12 +32,16 @@ function rotuloData(chave) {
   return `${DIAS_SEMANA[diaSemana(chave)].slice(0, 3)}, ${fmtData(chave)}`;
 }
 
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
 function desenharTopo() {
   const c = estado.dataAtual, hoje = chaveData();
-  topo(`<button class="ico" data-dia="-1" aria-label="Dia anterior">${ICONES.voltar}</button>
-    <button class="data-btn" aria-label="Escolher data">${esc(rotuloData(c))}<input type="date" value="${c}" aria-label="Calendário"></button>
-    ${c !== hoje ? '<button class="btn peq" data-hoje>Hoje</button>' : ''}
-    <button class="ico" data-dia="1" aria-label="Próximo dia">${ICONES.avancar}</button>`);
+  const [y, m, d] = c.split('-').map(Number);
+  topo(`<button class="ico" data-dia="-7" aria-label="Semana anterior">${ICONES.voltar}</button>
+    <button class="data-btn" aria-label="Escolher data no calendário">${esc(rotuloData(c))}<small>${d} de ${MESES[m - 1]}${y !== new Date().getFullYear() ? ' de ' + y : ''}</small>
+      <input type="date" value="${c}" aria-label="Calendário" tabindex="-1"></button>
+    ${c !== hoje ? '<button class="btn peq suave" data-hoje>Hoje</button>' : ''}
+    <button class="ico" data-dia="7" aria-label="Próxima semana">${ICONES.avancar}</button>`);
   const tp = $('#topo');
   tp.onclick = (e) => {
     const b = e.target.closest('button');
@@ -43,6 +50,17 @@ function desenharTopo() {
     else if (b?.classList.contains('data-btn')) { try { b.querySelector('input').showPicker(); } catch {} }
   };
   tp.querySelector('input[type=date]').onchange = (e) => e.target.value && mudarDia(e.target.value);
+}
+
+/** Faixa da semana (seg–dom) do dia aberto; o ponto indica dia com registro. */
+function faixaSemana(ativos) {
+  const ini = somarDias(estado.dataAtual, -diaSemana(estado.dataAtual)), hoje = chaveData();
+  return `<nav class="semana" aria-label="Dias da semana">${Array.from({ length: 7 }, (_, i) => {
+    const c = somarDias(ini, i);
+    return `<button data-ir="${c}" aria-pressed="${c === estado.dataAtual}" class="${ativos.has(c) ? 'tem' : ''} ${c === hoje ? 'hoje' : ''}"
+      aria-label="${DIAS_SEMANA[i]}, ${fmtData(c)}${ativos.has(c) ? ', com registro' : ''}">
+      <span class="d">${DIAS_CURTOS[i]}</span><span class="n">${Number(c.slice(8))}</span><span class="ponto"></span></button>`;
+  }).join('')}</nav>`;
 }
 
 async function mudarDia(chave) {
@@ -65,30 +83,88 @@ async function desenhar() {
       <span class="num"><b>${f(v)}</b> / ${f(m)} ${un}</span></div><div class="trilho"><div class="enche" style="width:${pct}%"></div></div></div>`;
   };
   const refs = refeicoesDoDia(dia, estado.config.refeicoes);
-  const dias = estado.config.dobras?.lembrete !== false ? await diasDesdeUltima().catch(() => null) : null;
-  const bk = await diasSemBackup().catch(() => ({ dias: 0 }));
+  const ehHoje = estado.dataAtual === chaveData();
+  const [dias, bk, ativos, agua] = await Promise.all([
+    estado.config.dobras?.lembrete !== false ? diasDesdeUltima().catch(() => null) : null,
+    diasSemBackup().catch(() => ({ dias: 0 })),
+    datasComRegistro(),
+    db.get('water', estado.dataAtual),
+  ]);
+  const seq = sequencia(ativos, chaveData());
+  const ag = { ...AGUA_PADRAO, ...(estado.config.agua || {}) }, mlAgua = totalAgua(agua);
   tela.innerHTML = `
-    ${bk.dias > 30 && estado.dataAtual === chaveData() ? `<a class="nota" href="#config" style="display:block;text-decoration:none">💾 ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar (Configurações › Backup).</a>` : ''}
-    ${dias > 30 && estado.dataAtual === chaveData() ? `<a class="nota" href="#registros?aba=dobras" style="display:block;text-decoration:none">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
-    <section class="card resumo" data-detalhe tabindex="0" role="button" aria-label="Ver detalhes do dia">
-      <div class="anel ${restante < 0 ? 'excesso' : ''}">
-        <svg viewBox="0 0 150 150" aria-hidden="true"><circle class="fundo" cx="75" cy="75" r="64"/>
-          <circle class="valor" cx="75" cy="75" r="64" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/></svg>
-        <div class="centro"><span class="grande num">${fmtKcal(Math.abs(restante))}</span>
-          <span class="mudo">${restante < 0 ? 'kcal acima' : 'kcal restantes'}</span></div>
+    ${faixaSemana(ativos)}
+    ${bk.dias > 30 && ehHoje ? `<a class="nota" href="#config">💾 ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar.</a>` : ''}
+    ${dias > 30 && ehHoje ? `<a class="nota" href="#registros?aba=dobras">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
+    <section class="card" data-detalhe tabindex="0" role="button" aria-label="Resumo do dia. Toque para ver fibra, sódio e totais.">
+      <div class="resumo">
+        <div class="anel ${restante < 0 ? 'excesso' : ''}">
+          <svg viewBox="0 0 150 150" aria-hidden="true"><defs><linearGradient id="grad-anel" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="var(--acento)"/><stop offset="1" stop-color="var(--prot)"/></linearGradient></defs>
+            <circle class="fundo" cx="75" cy="75" r="64"/>
+            <circle class="valor" cx="75" cy="75" r="64" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/></svg>
+          <div class="centro"><span class="grande num">${fmtKcal(Math.abs(restante))}</span>
+            <span class="mudo">${restante < 0 ? 'kcal acima' : 'restantes'}</span></div>
+        </div>
+        <div>
+          ${barra('prot', 'Proteína', tot.prot, meta.prot)}
+          ${barra('carb', 'Carboidrato', tot.carb, meta.carb)}
+          ${barra('gord', 'Gordura', tot.gord, meta.gord)}
+        </div>
       </div>
-      <div>
-        <p class="mudo num" style="margin:0 0 6px">Meta ${fmtKcal(meta.kcal)} · Consumido ${fmtKcal(tot.kcal)}</p>
-        ${barra('prot', 'Proteína', tot.prot, meta.prot)}
-        ${barra('carb', 'Carboidrato', tot.carb, meta.carb)}
-        ${barra('gord', 'Gordura', tot.gord, meta.gord)}
-      </div>
+      <div class="equacao num"><div><b>${fmtKcal(meta.kcal)}</b><span>Meta</span></div>
+        <div><b>${fmtKcal(tot.kcal)}</b><span>Consumido</span></div>
+        <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)}</b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>
+    </section>
+    <section class="card agua-card" aria-label="Água">
+      <div class="gota">${ICONES.gota}</div>
+      <div class="info"><div class="linha" style="justify-content:space-between"><b class="num">${fmtNum(mlAgua)} <span class="mudo">/ ${fmtNum(ag.metaMl)} ml</span></b>
+        ${seq >= 2 ? `<span class="chip" title="Dias seguidos com registro">🔥 ${seq} dias seguidos</span>` : ''}</div>
+        <div class="trilho"><div class="enche" style="width:${Math.min(100, (mlAgua / ag.metaMl) * 100)}%"></div></div></div>
+      <button class="btn peq suave" data-agua aria-label="Adicionar 1 copo de ${ag.copoMl} ml">+ ${fmtNum(ag.copoMl)} ml</button>
     </section>
     ${refs.map((r) => cartaoRefeicao(r)).join('')}
-    <button class="btn bloco" data-copiar-dia>Copiar o dia anterior inteiro</button>
-    <p class="mudo" style="text-align:center">Toque no resumo para ver fibra, sódio e totais.</p>`;
+    <button class="btn bloco suave" data-copiar-dia>${ICONES.copiar} Copiar o dia anterior</button>
+    <p class="mudo" style="text-align:center;margin-top:14px">Deslize um item para a esquerda para apagar.</p>`;
   tela.onclick = clique;
   tela.onkeydown = (e) => { if (e.key === 'Enter' && e.target.matches('[data-detalhe]')) detalheDia(); };
+  ligarDeslizar();
+}
+
+/** Deslizar item para a esquerda apaga (com desfazer). */
+function ligarDeslizar() {
+  let alvo = null, x0 = 0, y0 = 0, dx = 0, horizontal = null;
+  tela.onpointerdown = (e) => {
+    const li = e.target.closest('.item');
+    if (!li || e.pointerType === 'mouse') return;
+    alvo = li; x0 = e.clientX; y0 = e.clientY; dx = 0; horizontal = null;
+  };
+  tela.onpointermove = (e) => {
+    if (!alvo) return;
+    const mx = e.clientX - x0, my = e.clientY - y0;
+    if (horizontal == null && Math.abs(mx) + Math.abs(my) > 8) horizontal = Math.abs(mx) > Math.abs(my) * 1.3;
+    if (!horizontal) return;
+    dx = Math.min(0, mx);
+    alvo.classList.add('arrastando');
+    alvo.style.transform = `translateX(${dx}px)`;
+  };
+  const soltar = () => {
+    if (!alvo) return;
+    const li = alvo; alvo = null;
+    li.classList.remove('arrastando');
+    if (horizontal && dx < -8) {                        // o "click" que segue o arraste não abre a edição
+      ignorarClique = true;
+      setTimeout(() => { ignorarClique = false; }, 400);
+    }
+    if (dx < -110) {
+      li.style.transform = 'translateX(-100%)';
+      navigator.vibrate?.(15);
+      const refId = li.closest('[data-ref]').dataset.ref;
+      setTimeout(() => apagar(refId, li.dataset.item), 160);
+    } else li.style.transform = '';
+  };
+  tela.onpointerup = soltar;
+  tela.onpointercancel = soltar;
 }
 
 function cartaoRefeicao(r) {
@@ -96,23 +172,37 @@ function cartaoRefeicao(r) {
   const t = totalRefeicao(dia, r.id);
   const nf = fotosCont[r.id] || 0;
   return `<section class="card" data-ref="${r.id}">
-    <div class="ref-tit"><h2>${esc(r.nome)}</h2><span class="linha" style="flex:0;gap:2px">
-      ${nf ? `<button class="btn peq" data-fotos aria-label="${nf} foto(s)">📷 ${nf}</button>` : ''}
-      <span class="num" style="white-space:nowrap"><b>${fmtKcal(t.kcal)}</b> kcal</span>
-      <button class="ico" data-menu aria-label="Mais opções de ${esc(r.nome)}">⋯</button></span></div>
-    ${itens.length ? `<div class="ref-tot num">P ${fmtMacro(t.prot)} · C ${fmtMacro(t.carb)} · G ${fmtMacro(t.gord)}</div>` : ''}
-    <ul class="itens">${itens.map((it) => `<li class="item" data-item="${it.id}">
+    <div class="ref-tit"><h2><span class="ref-ico" aria-hidden="true">${iconeRef(r.id)}</span><span>${esc(r.nome)}</span></h2>
+      <span class="linha" style="flex:0;gap:0">
+      ${nf ? `<button class="btn peq suave" data-fotos aria-label="${nf} foto(s) da refeição">${ICONES.camera}${nf}</button>` : ''}
+      <span class="num" style="white-space:nowrap;margin:0 2px 0 8px"><b>${fmtKcal(t.kcal)}</b> <span class="mudo">kcal</span></span>
+      <button class="ico" data-menu aria-label="Mais opções de ${esc(r.nome)}">${ICONES.pontos}</button></span></div>
+    ${itens.length ? `<div class="ref-tot num">P ${fmtMacro(t.prot)} g · C ${fmtMacro(t.carb)} g · G ${fmtMacro(t.gord)} g</div>` : ''}
+    ${itens.length ? `<ul class="itens">${itens.map((it) => `<li class="item-wrap"><div class="fundo-apagar" aria-hidden="true">Apagar</div>
+      <div class="item" data-item="${it.id}">
       <div class="info" data-editar><div class="nome">${esc(it.nome)}</div>
         <div class="mudo num">${it.rapido ? `Adição rápida · P ${fmtMacro(it.n.prot)} C ${fmtMacro(it.n.carb)} G ${fmtMacro(it.n.gord)}`
           : `${it.porcao ? `${fmtNum(it.porcao.qtd)} × ${esc(it.porcao.nome)} · ` : ''}${fmtNum(Math.round(it.g * 10) / 10)} g${it.falta?.length ? ' · dados parciais' : ''}`}</div></div>
       <span class="kcal num">${fmtKcal(it.n.kcal)}</span>
-      <button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button></li>`).join('')}</ul>
+      <button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button></div></li>`).join('')}</ul>` : ''}
     <div class="add-linha"><button class="add-alim" data-add>+ Adicionar alimento</button>
       <button class="ico" data-scan aria-label="Ler código de barras para ${esc(r.nome)}">${ICONES.codigo}</button></div>
   </section>`;
 }
 
 async function clique(e) {
+  if (ignorarClique) { ignorarClique = false; return; }
+  const ir = e.target.closest('[data-ir]');
+  if (ir) return mudarDia(ir.dataset.ir);
+  if (e.target.closest('[data-agua]')) {
+    const ag = { ...AGUA_PADRAO, ...(estado.config.agua || {}) };
+    const r = (await db.get('water', estado.dataAtual)) || { itens: [] };
+    r.itens.push({ ts: Date.now(), ml: ag.copoMl });
+    await db.put('water', estado.dataAtual, r);
+    navigator.vibrate?.(10);
+    await desenhar();
+    return aviso(`+${fmtNum(ag.copoMl)} ml de água`, { acao: async () => { r.itens.pop(); await db.put('water', estado.dataAtual, r); desenhar(); } });
+  }
   if (e.target.closest('[data-detalhe]')) return detalheDia();
   if (e.target.closest('[data-copiar-dia]')) return copiarDeOntem(null);
   const sec = e.target.closest('[data-ref]');
@@ -121,6 +211,7 @@ async function clique(e) {
   const nomeRef = refeicoesDoDia(dia, estado.config.refeicoes).find((r) => r.id === refId)?.nome;
   if (e.target.closest('[data-add]')) {
     estado.refeicaoAlvo = refId;
+    estado.refeicaoDoDiario = true;
     location.hash = '#adicionar';
     return;
   }
@@ -141,15 +232,17 @@ async function clique(e) {
     });
   }
   if (e.target.closest('[data-menu]')) {
-    const p = abrirFolha(nomeRef, `<div class="lista">
-      <button class="btn bloco" data-op="rapida" style="margin-bottom:8px">⚡ Adição rápida (kcal e macros)</button>
-      <button class="btn bloco" data-op="copiar" style="margin-bottom:8px">↻ Copiar ${esc(nomeRef)} de ontem</button>
-      <button class="btn bloco" data-op="fotos">📷 Foto da refeição ${fotosCont[refId] ? `(${fotosCont[refId]})` : ''}</button></div>`);
+    const p = abrirFolha(nomeRef, `<div class="menu-lista">
+      <button class="btn" data-op="rapida">${ICONES.raio} Adição rápida (kcal e macros)</button>
+      <button class="btn" data-op="copiar">${ICONES.copiar} Copiar ${esc(nomeRef)} de ontem</button>
+      <button class="btn" data-op="fotos">${ICONES.camera} Foto da refeição ${fotosCont[refId] ? `(${fotosCont[refId]})` : ''}</button>
+      <button class="btn" data-op="scan">${ICONES.codigo} Ler código de barras</button></div>`);
     p.onclick = (ev) => {
       const op = ev.target.closest('[data-op]')?.dataset.op;
       if (op === 'rapida') folhaRapida(null, refId);
       if (op === 'copiar') { fecharFolha(); copiarDeOntem(refId); }
       if (op === 'fotos') folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
+      if (op === 'scan') { fecharFolha(); sec.querySelector('[data-scan]').click(); }
     };
     return;
   }

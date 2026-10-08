@@ -5,7 +5,7 @@ import { estado } from '../state.js';
 import { totalDia } from '../diary.js';
 import { metaDoDia } from '../goals.js';
 import { PROTOCOLOS, CIRC_PADRAO } from '../body.js';
-import { mediaMovelDias, semanas, aderencia, mediasMacros, noPeriodo } from '../progress.js';
+import { mediaMovelDias, semanas, aderencia, mediasMacros, noPeriodo, sequencia } from '../progress.js';
 import { graficoLinha, graficoBarras } from '../chart.js';
 import { lerPesos } from './reg-peso.js';
 import { lerDobras } from './reg-dobras.js';
@@ -15,7 +15,7 @@ import { chaveData, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum } from '../utils.j
 const PERIODOS = [['7', '7 dias'], ['30', '30 dias'], ['90', '90 dias'], ['0', 'Tudo']];
 
 export async function render(tela) {
-  topo('<h1>Progresso</h1>');
+  topo('<h1 class="esq">Progresso</h1>');
   estado.periodoProg ||= '30';
   const hoje = chaveData();
   const pesos = await lerPesos();
@@ -30,6 +30,7 @@ export async function render(tela) {
     .map(({ data, d }) => ({ data, tot: totalDia(d), meta: metaDoDia(estado.metas, data, pesoEm(data)) }))
     .sort((a, b) => (a.data < b.data ? -1 : 1));
   const dobras = await lerDobras();
+  const seq = sequencia(new Set(dias.map((d) => d.data)), hoje);
   const circ = (await db.getAll('circumferences')).map(([data, v]) => ({ data, valores: v.valores })).sort((a, b) => (a.data < b.data ? -1 : 1));
   const defsCirc = estado.config.circDef || CIRC_PADRAO;
   let protSel = estado.config.dobras?.protocolo || 'parrillo';
@@ -43,6 +44,11 @@ export async function render(tela) {
     const pontosPeso = pP.map((p) => ({ data: p.data, y: p.kg }));
     const dPeso = pP.length > 1 ? pP.at(-1).kg - pP[0].kg : null;
     tela.innerHTML = `${seg('periodo', PERIODOS, estado.periodoProg)}
+      <div class="kpis num">
+        <div class="kpi"><b>${seq}</b><span>${seq === 1 ? 'dia seguido' : 'dias seguidos'}</span></div>
+        <div class="kpi"><b>${ad.total ? fmtNum(Math.round(ad.pct)) + '%' : '—'}</b><span>na meta (±10%)</span></div>
+        <div class="kpi"><b>${dPeso != null ? (dPeso > 0 ? '+' : dPeso < 0 ? '−' : '') + fmtNum(Math.abs(Math.round(dPeso * 10) / 10)) : '—'}</b><span>kg no período</span></div>
+      </div>
       <div class="card"><div class="card-tit"><h2>Peso</h2>${dPeso != null ? `<span class="num"><b>${dPeso > 0 ? '+' : dPeso < 0 ? '−' : ''}${fmtNum(Math.abs(Math.round(dPeso * 10) / 10))} kg</b> <span class="mudo">no período</span></span>` : ''}</div>
         <div id="g-peso"></div></div>
       <div class="card"><h2 style="margin-bottom:4px">Calorias — média por semana</h2>

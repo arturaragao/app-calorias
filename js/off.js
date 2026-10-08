@@ -3,7 +3,9 @@
 // ~100 req/min, busca ~10 req/min. O app só consulta por ação do usuário (1 requisição por leitura/busca).
 // O navegador não permite definir User-Agent; o app se identifica pelo parâmetro app_name.
 
-const BASE = 'https://world.openfoodfacts.org';
+// Servidores em ordem de tentativa. O world.* passou a responder 503 na busca por texto (search.pl)
+// e o novo search.openfoodfacts.org não libera CORS para outros sites; o br.* responde com CORS liberado.
+const SERVIDORES = ['https://br.openfoodfacts.org', 'https://world.openfoodfacts.org', 'https://world.openfoodfacts.net'];
 const APP = 'app_name=AppCaloriasPessoal&app_version=1';
 const CAMPOS = 'code,product_name,product_name_pt,generic_name_pt,brands,quantity,serving_size,serving_quantity,nutriments';
 
@@ -65,17 +67,26 @@ async function obter(url, ms = 9000) {
   } finally { clearTimeout(t); }
 }
 
+/** Tenta cada servidor até um responder (404 = "não existe", não tenta os outros). */
+async function comFallback(caminho, ms) {
+  let ultimoErro;
+  for (const s of SERVIDORES) {
+    try { return await obter(s + caminho, ms); } catch (e) { ultimoErro = e; }
+  }
+  throw ultimoErro;
+}
+
 /** Busca por código. Retorna alimento, null (não encontrado) ou lança erro (offline/bloqueado). */
 export async function buscarCodigo(codigo) {
-  const j = await obter(`${BASE}/api/v2/product/${codigo}.json?fields=${CAMPOS}&${APP}`);
+  const j = await comFallback(`/api/v2/product/${codigo}.json?fields=${CAMPOS}&${APP}`, 9000);
   if (!j || j.status === 0 || !j.product) return null;
   return produtoParaAlimento(j.product, codigo);
 }
 
-/** Busca por nome (até 20 resultados, prioriza produtos vendidos no Brasil). */
+/** Busca por nome (até 30 resultados; o servidor br.* prioriza produtos vendidos no Brasil). */
 export async function buscarNome(termo) {
   const q = encodeURIComponent(termo.trim());
-  const j = await obter(`${BASE}/cgi/search.pl?search_terms=${q}&search_simple=1&action=process&json=1&page_size=20&lc=pt&cc=br&fields=${CAMPOS}&${APP}`, 12000);
+  const j = await comFallback(`/cgi/search.pl?search_terms=${q}&search_simple=1&action=process&json=1&page_size=30&fields=${CAMPOS}&${APP}`, 12000);
   return (j?.products || []).filter((p) => p.nutriments && (p.product_name || p.product_name_pt))
     .map((p) => produtoParaAlimento(p, p.code));
 }

@@ -3,28 +3,41 @@
 import { estado, salvarConfig } from '../state.js';
 import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha } from '../ui.js';
 import { aplicarTema } from '../app.js';
-import { uid, chaveData, fmtNum } from '../utils.js';
+import { uid, chaveData, fmtNum, fmtKcal } from '../utils.js';
 import { exportar, importar, validarBackup, apagarTudo } from '../backup.js';
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
 
 export async function render(tela) {
-  topo('<h1>Configurações</h1>');
+  topo('<h1 class="esq">Ajustes</h1>');
+  const p = estado.perfil;
+  const item = (href, ico, tit, sub) => `<a href="${href}"><span class="ref-ico" aria-hidden="true">${ico}</span><span>${tit}<small>${sub}</small></span></a>`;
+  const I = {
+    perfil: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/></svg>',
+    metas: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>',
+    meus: '<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z M9 10h6 M9 14h6 M9 18h3"/></svg>',
+    rec: '<svg viewBox="0 0 24 24"><path d="M4 11h16v2a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z M8 8c0-2 2-2 2-4 M13 8c0-2 2-2 2-4"/></svg>',
+    csv: '<svg viewBox="0 0 24 24"><path d="M12 4v11 M7.5 10.5L12 15l4.5-4.5 M5 19h14"/></svg>',
+  };
   tela.innerHTML = `
-    <div class="card">
-      <a class="btn bloco" href="#perfil" style="margin-bottom:8px">Perfil (sexo, idade, altura, peso, atividade)</a>
-      <a class="btn bloco" href="#metas">Metas (calorias, macros, fibra, sódio)</a>
+    <div class="card config-lista" style="padding:4px 16px">
+      ${item('#perfil', I.perfil, 'Perfil', `${p.sexo === 'F' ? 'Mulher' : 'Homem'} · ${fmtNum(p.peso)} kg · ${fmtNum(p.altura)} cm`)}
+      ${item('#metas', I.metas, 'Metas', `${fmtKcal(estado.metas.base.kcal)} kcal · ${estado.metas.modo === 'semana' ? 'por dia da semana' : 'todos os dias iguais'}`)}
     </div>
-    <div class="card">
-      <a class="btn bloco" href="#adicionar?aba=meus" style="margin-bottom:8px">Meus alimentos</a>
-      <a class="btn bloco" href="#adicionar?aba=receitas" style="margin-bottom:8px">Receitas</a>
-      <a class="btn bloco" href="#importar">Importar alimentos (CSV)</a>
+    <p class="secao">Alimentos</p>
+    <div class="card config-lista" style="padding:4px 16px">
+      ${item('#adicionar?aba=meus', I.meus, 'Meus alimentos', 'Rótulos, suplementos e produtos lidos')}
+      ${item('#adicionar?aba=receitas', I.rec, 'Receitas', 'Preparos por porção ou por grama')}
+      ${item('#importar', I.csv, 'Importar CSV', 'Vários alimentos de uma vez')}
     </div>
-    <div class="card"><h2 style="margin-bottom:8px">Tema</h2>
-      ${seg('tema', [['sistema', 'Sistema'], ['escuro', 'Escuro'], ['claro', 'Claro']], estado.config.tema)}</div>
-    <div class="card"><div class="card-tit"><h2>Refeições</h2><button class="btn peq" data-nova>+ Nova</button></div>
+    <p class="secao">Aparência</p>
+    <div class="card">${seg('tema', [['sistema', 'Sistema'], ['escuro', 'Escuro'], ['claro', 'Claro']], estado.config.tema)}
+      <p class="mudo" style="margin:0">Escuro: verde e preto · Claro: verde e branco.</p></div>
+    <p class="secao">Diário</p>
+    <div class="card"><div class="card-tit"><h2>Refeições</h2><button class="btn peq suave" data-nova>+ Nova</button></div>
       <ul class="lista" id="refs"></ul>
       <p class="mudo">Renomear, reordenar ou remover. Itens já lançados em dias anteriores são mantidos.</p></div>
+    <p class="secao">Dados</p>
     <div class="card" id="backup"><h2 style="margin-bottom:6px">Backup</h2>
       <p class="mudo" id="bk-info" style="margin-top:0"></p>
       <label class="linha" style="margin-bottom:8px"><input type="checkbox" id="bk-fotos" style="flex:0;width:22px;height:22px"><span>Incluir fotos (arquivo maior)</span></label>
@@ -38,6 +51,8 @@ export async function render(tela) {
       <p class="mudo">Base de alimentos: <b>Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada</b>,
       NEPA/UNICAMP, Campinas, 2011. Valores por 100 g de parte comestível. “Tr” (traço) conta como 0; valores ausentes na tabela
       ficam em branco e marcados como “dados parciais”.</p>
+      <p class="mudo">Produtos industrializados: <b>Open Food Facts</b> (openfoodfacts.org), base colaborativa sob licença
+      Open Database License (ODbL). Confira sempre com o rótulo.</p>
       <p class="mudo">Porções caseiras são aproximadas e editáveis. TMB por Mifflin-St Jeor (Am J Clin Nutr 1990;51:241-7).
       Os dados ficam só neste aparelho.</p></div>`;
   desenharRefs(tela);

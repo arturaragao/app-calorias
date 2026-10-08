@@ -315,6 +315,11 @@ t('Período: últimos n dias inclusive', () => {
   const l = P.noPeriodo([{ data: '2026-09-01' }, { data: '2026-10-02' }, { data: '2026-10-08' }], 7, '2026-10-08');
   eq(l.length, 2); eq(P.noPeriodo([{ data: 'x' }], null, 'y').length, 1);
 });
+t('Dias seguidos: conta até hoje, ou até ontem se hoje está vazio', () => {
+  const s = new Set(['2026-10-05', '2026-10-06', '2026-10-07']);
+  eq(P.sequencia(s, '2026-10-07'), 3); eq(P.sequencia(s, '2026-10-08'), 3); eq(P.sequencia(s, '2026-10-09'), 0);
+  s.add('2026-10-08'); eq(P.sequencia(s, '2026-10-08'), 4);
+});
 const bkOk = { app: 'app-calorias', schemaVersion: 1, stores: { kv: [['perfil', { peso: 80 }], ['metas', {}]], diary: [['2026-10-08', diaVazio('2026-10-08')]] } };
 t('Backup válido: contagem', () => { const v = validarBackup(bkOk); eq(v.ok, true); eq(v.contagem.diary, 1); });
 t('Backup inválido é recusado antes de gravar', () => {

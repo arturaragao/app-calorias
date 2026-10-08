@@ -3,6 +3,8 @@
 import { iniciarDB } from './db.js';
 import { estado, carregarEstado } from './state.js';
 import { $, $$, aviso, fecharFolha } from './ui.js';
+import { chaveData } from './utils.js';
+import { carregarBase } from './foods.js';
 
 const ROTAS = {
   diario: () => import('./views/diario.js'),
@@ -23,7 +25,7 @@ export function aplicarTema(tema) {
   if (tema === 'claro' || tema === 'escuro') r.dataset.tema = tema; else delete r.dataset.tema;
   try { localStorage.setItem('tema', tema); } catch {}
   const escuro = tema === 'escuro' || (tema !== 'claro' && matchMedia('(prefers-color-scheme: dark)').matches);
-  $('meta[name=theme-color]').content = escuro ? '#0d1510' : '#f4f8f4';
+  $('meta[name=theme-color]').content = escuro ? '#0a110d' : '#f2f6f3';
 }
 
 // ---------- Roteamento ----------
@@ -88,6 +90,18 @@ async function iniciar() {
   aplicarTema(estado.config.tema);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => aplicarTema(estado.config.tema));
   window.addEventListener('hashchange', navegar);
+  // app aberto em segundo plano de um dia para o outro: o diário passa para o novo "hoje"
+  let hojeAntes = chaveData();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const hoje = chaveData();
+    if (hoje === hojeAntes) return;
+    if (estado.dataAtual === hojeAntes) estado.dataAtual = hoje;
+    hojeAntes = hoje;
+    if ((location.hash.slice(1) || 'diario').startsWith('diario')) navegar();
+  });
+  // pré-carrega a base de alimentos quando o celular estiver ocioso (busca instantânea depois)
+  (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(() => carregarBase().catch(() => {}));
   window.addEventListener('offline', () => aviso('Sem internet: tudo funciona, exceto a consulta ao Open Food Facts.', { ms: 5000 }));
   await navegar();
   registrarSW();

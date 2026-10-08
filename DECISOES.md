@@ -36,4 +36,10 @@
 - 2026-10-08 · Backup: JSON único com todas as stores; fotos em base64 só se marcado. Importar substitui tudo (fotos atuais mantidas se o backup não tiver fotos). Recusa backup de versão mais nova.
 - 2026-10-08 · Lembrete de backup: aparece no Diário (hoje) após 30 dias do último backup ou do 1º uso.
 - 2026-10-08 · Folhas com `foco: false` não focam campo (leitor de código), para o teclado não abrir sozinho.
+- 2026-10-08 · OFF: busca por nome usa br.openfoodfacts.org/cgi/search.pl (CORS liberado); world.* respondeu 503 e search.openfoodfacts.org não envia Access-Control-Allow-Origin. Ordem de fallback em js/off.js.
+- 2026-10-08 · Busca do Adicionar não persiste entre visitas (pedido do Artur).
+- 2026-10-08 · Setas do topo do diário pulam semana; dia escolhido pela faixa da semana.
+- 2026-10-08 · "+" na lista lança a última quantidade usada (sem abrir a folha); só aparece para alimentos já lançados antes.
+- 2026-10-08 · Dia sem itens é apagado do banco ao gravar; "dias seguidos" conta até hoje ou até ontem se hoje ainda está vazio.
+- 2026-10-08 · Crédito ao Open Food Facts (licença ODbL) em Ajustes › Sobre.
 - 2026-10-08 · Refeição sugerida pelo horário ao abrir "Adicionar" sem refeição escolhida.

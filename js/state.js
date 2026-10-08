@@ -35,7 +35,20 @@ export const salvarConfig = () => kvSet('config', estado.config);
 export async function lerDia(chave) {
   return (await db.get('diary', chave)) || diaVazio(chave);
 }
-export const gravarDia = (dia) => db.put('diary', dia.data, dia);
+
+const temItens = (d) => Object.values(d?.refeicoes || {}).some((l) => l.length);
+let diasAtivos = null;   // Set de datas com algum item (cache em memória, atualizado a cada gravação)
+
+/** Dia sem itens é apagado do banco (mantém o banco enxuto e a contagem de dias correta). */
+export async function gravarDia(dia) {
+  if (temItens(dia)) { await db.put('diary', dia.data, dia); diasAtivos?.add(dia.data); }
+  else { await db.del('diary', dia.data); diasAtivos?.delete(dia.data); }
+}
+
+export async function datasComRegistro() {
+  if (!diasAtivos) diasAtivos = new Set((await db.getAll('diary')).filter(([, d]) => temItens(d)).map(([k]) => k));
+  return diasAtivos;
+}
 
 /** Peso atual: último registro de peso (Etapa 3) ou o do perfil. */
 export async function pesoAtual() {

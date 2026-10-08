@@ -13,7 +13,7 @@ export async function render(tela) {
   const aba = new URLSearchParams(location.hash.split('?')[1] || '').get('aba');
   if (MODULOS[aba]) estado.abaRegistros = aba;
   estado.abaRegistros ||= 'peso';
-  topo('<h1>Registros</h1>');
+  topo('<h1 class="esq">Registros</h1>');
   tela.innerHTML = `<div class="seg" role="tablist">${ABAS.map(([v, r]) =>
     `<button type="button" role="tab" data-aba="${v}" aria-pressed="${v === estado.abaRegistros}">${r}</button>`).join('')}</div>
     <div id="sub"></div>`;

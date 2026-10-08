@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Calorias</title>
   <meta name="description" content="Registro pessoal de calorias e macros">
-  <meta name="theme-color" content="#0f1712">
+  <meta name="theme-color" content="#0a110d">
+  <meta name="color-scheme" content="light dark">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -20,11 +22,11 @@
   <main id="tela" class="tela" tabindex="-1"></main>
 
   <nav class="nav" aria-label="Navegação principal">
-    <a href="#diario" data-rota="diario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z M8 9h8 M8 13h8 M8 17h5"/></svg><span>Diário</span></a>
-    <a href="#adicionar" data-rota="adicionar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8 M8 12h8"/></svg><span>Adicionar</span></a>
-    <a href="#registros" data-rota="registros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16 M7 16V10 M12 16V6 M17 16v-4"/></svg><span>Registros</span></a>
-    <a href="#progresso" data-rota="progresso"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l5-6 4 3 7-9"/></svg><span>Progresso</span></a>
-    <a href="#config" data-rota="config"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3 M12 18v3 M3 12h3 M18 12h3 M5.6 5.6l2.1 2.1 M16.3 16.3l2.1 2.1 M5.6 18.4l2.1-2.1 M16.3 7.7l2.1-2.1"/></svg><span>Config.</span></a>
+    <a href="#diario" data-rota="diario"><span class="pilula"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="17" rx="3"/><path d="M8 2.5v3 M16 2.5v3 M4 9.5h16 M8 13.5h3 M8 17h6"/></svg></span><span>Diário</span></a>
+    <a href="#registros" data-rota="registros"><span class="pilula"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 11a4 4 0 0 1 7 0 M12 11l1.6-2"/></svg></span><span>Registros</span></a>
+    <a href="#adicionar" data-rota="adicionar" class="fab" aria-label="Adicionar alimento"><span class="pilula"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12 M6 12h12"/></svg></span><span>Adicionar</span></a>
+    <a href="#progresso" data-rota="progresso"><span class="pilula"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16 M5 15l4.5-5 3.5 3 6-7"/></svg></span><span>Progresso</span></a>
+    <a href="#config" data-rota="config"><span class="pilula"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span>Ajustes</span></a>
   </nav>
 
   <div id="folha" class="folha" hidden role="dialog" aria-modal="true"></div>

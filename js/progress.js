@@ -65,4 +65,15 @@ export function noPeriodo(itens, n, hoje) {
   return itens.filter((x) => x.data >= ini && x.data <= hoje);
 }
 
+/**
+ * Sequência de dias seguidos com registro, terminando hoje (ou ontem, se hoje ainda está vazio,
+ * para não "quebrar" a sequência de manhã). datas: Set de 'AAAA-MM-DD'.
+ */
+export function sequencia(datas, hoje) {
+  let d = datas.has(hoje) ? hoje : somarDias(hoje, -1);
+  let n = 0;
+  while (datas.has(d)) { n++; d = somarDias(d, -1); }
+  return n;
+}
+
 export const diasEntre = (a, b) => Math.round((dataDeChave(b) - dataDeChave(a)) / 86400000);

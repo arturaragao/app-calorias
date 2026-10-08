@@ -1,6 +1,16 @@
 # PROGRESSO
 
-**Etapa atual:** 4 concluída — aguardando OK do Artur para a Etapa 5 (scanner já feito) / Etapa 6.
+**Etapa atual:** 6 concluída — projeto completo (todas as etapas). Próximos passos só sob pedido do Artur.
+
+**Etapa 6 (acabamento)**
+- Visual novo: tokens refinados (claro/escuro), cartões, barra inferior com botão central "+", pílula no item ativo, folhas com animação e alça, toasts, campos com foco destacado, títulos à esquerda.
+- Diário: faixa da semana com ponto nos dias registrados, anel em gradiente, linha Meta − Consumido = Restante, cartão de água com "+ copo", 🔥 dias seguidos, ícones por refeição, deslizar item para apagar (com desfazer).
+- Adicionar: escolha da refeição no topo, lupa, "+" para lançar com um toque a última quantidade, busca limpa ao voltar.
+- Ajustes em lista com ícones; Progresso com indicadores (dias seguidos, % na meta, variação de peso).
+- Open Food Facts: busca por nome corrigida (servidor br.*; world.* dava 503 e o novo search não libera CORS); fallback entre servidores.
+- Atalhos do ícone com ícones próprios; ícones com antialiasing.
+- Robustez: dia muda sozinho se o app ficar aberto após meia-noite; base pré-carregada; dia vazio é removido do banco; refeição sugerida pelo horário ao abrir pela barra.
+- README.md. Testes: 86 aprovados.
 **Publicado:** https://arturaragao.github.io/app-calorias/ (push automático; o celular se atualiza sozinho).
 
 ## Pronto
@@ -30,11 +40,11 @@
 - Backup: exportar JSON (fotos opcionais, compartilhar ou baixar), importar com validação de estrutura/versão e confirmação; lembrete no Diário após 30 dias sem backup; apagar tudo com confirmação dupla; uso de armazenamento e versão em Configurações.
 - PWA: atalhos no ícone (Adicionar, Ler código, Registrar peso), aviso ao ficar offline, teste garante que sw.js lista todos os arquivos e que a versão bate.
 - Leitor de código não abre mais o teclado sozinho.
-- Testes: 86 aprovados.
+- Testes: 85 aprovados.
 
 ## Pendências / próximas etapas
-- Etapa 5: já entregue antes (scanner + Open Food Facts). Falta só validar a câmera no S23+.
-- Etapa 6: acabamento (visual, acessibilidade, desempenho, revisão de bugs, README).
+- Etapa 5: entregue (scanner validado pelo Artur no S23+).
+- Atalhos do ícone: o Android só atualiza ícones/atalhos do app instalado quando renova o WebAPK (pode levar até 1 dia); reinstalar resolve na hora.
 
 ## Bugs conhecidos
 - Nenhum aberto.
