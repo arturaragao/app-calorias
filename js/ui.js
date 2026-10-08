@@ -19,10 +19,15 @@ export const ICONES = {
 export function topo(html) { $('#topo').innerHTML = html; }
 
 // ---------- Folha ----------
-let aoFechar = null;
+// Histórico: abrir folha empilha um estado (o "voltar" do Android fecha a folha).
+// Fechar por código faz history.back(); se outra folha abrir antes desse "voltar" chegar,
+// o pushState espera por ele (senão o popstate fecharia a folha nova).
+let aoFechar = null, voltaPendente = false, empilharDepois = false;
 export function abrirFolha(titulo, corpoHtml, { fechar } = {}) {
   const f = $('#folha');
-  if (f.hidden) history.pushState({ folha: true }, '');
+  if (f.hidden) {
+    if (voltaPendente) empilharDepois = true; else history.pushState({ folha: true }, '');
+  }
   f.innerHTML = `<div class="painel"><button class="ico fechar" data-fechar aria-label="Fechar">${ICONES.fechar}</button>
     <h2>${esc(titulo)}</h2>${corpoHtml}</div>`;
   f.hidden = false;
@@ -36,9 +41,16 @@ export function fecharFolha(daHistoria = false) {
   if (f.hidden) return;
   f.hidden = true; f.innerHTML = '';
   aoFechar?.(); aoFechar = null;
-  if (!daHistoria && history.state?.folha) history.back();
+  if (!daHistoria && history.state?.folha) { voltaPendente = true; history.back(); }
 }
-window.addEventListener('popstate', () => fecharFolha(true));   // botão voltar do Android fecha a folha
+window.addEventListener('popstate', () => {
+  if (voltaPendente) {
+    voltaPendente = false;
+    if (empilharDepois) { empilharDepois = false; history.pushState({ folha: true }, ''); }
+    return;
+  }
+  fecharFolha(true);                                            // botão voltar do Android fecha a folha
+});
 
 // ---------- Aviso ----------
 let timer = null;

@@ -18,6 +18,8 @@ export const CONFIG_PADRAO = {
   ultimaQtd: {},
   porcoesUsuario: {},
   recalcularComPeso: false,
+  favoritos: [],
+  recentes: [],
 };
 
 export async function carregarEstado() {

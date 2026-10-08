@@ -157,6 +157,86 @@ t('Migração 0 → atual define schemaVersion', () => {
 });
 t('Migração ausente gera erro', () => { let erro = false; try { migrar({ kv: {} }, 0, 99); } catch { erro = true; } eq(erro, true); });
 
+// ---------- Etapa 2: personalizados, receitas, rápida, cópia, CSV, fotos ----------
+const { paraPor100, avisoKcalMacros, alimentoDaReceita, atualizarRecentes } = await import('../js/custom.js');
+const { criarItemRapido, copiarPara } = await import('../js/diary.js');
+const { analisarCSV, lerPorcoes } = await import('../js/csv.js');
+const { dimensoes } = await import('../js/photos.js');
+
+t('Alimento personalizado: valores por porção → por 100 g', () => {
+  const r = paraPor100({ kcal: 120, prot: 24, carb: 3, gord: 1.5, fibra: null, sodio_mg: 90 }, 30);
+  aprox(r.kcal, 400); aprox(r.prot, 80); eq(r.fibra, null); aprox(r.sodio_mg, 300);
+});
+t('Aviso kcal × macros (só aviso)', () => {
+  eq(avisoKcalMacros({ kcal: 400, prot: 80, carb: 10, gord: 5 }), '');
+  eq(avisoKcalMacros({ kcal: 100, prot: 80, carb: 10, gord: 5 }) !== '', true);
+});
+const rec = { id: 'r-1', nome: 'Arroz com frango', porcoes: 4, ingredientes: [
+  { foodId: 'taco-3', nome: 'Arroz', g: 400, por100: arroz },
+  { foodId: 'x', nome: 'Frango', g: 200, por100: frango }] };
+t('Receita: total e por 100 g pela soma dos ingredientes', () => {
+  const f = alimentoDaReceita(rec);
+  aprox(f.total.kcal, 512 + 318); aprox(f.peso, 600); aprox(f.kcal, (830 * 100) / 600);
+  aprox(f.porcoes[0].g, 150);
+});
+t('Receita: peso final cozido redistribui (escala correta)', () => {
+  const f = alimentoDaReceita({ ...rec, pesoFinal: 500 });
+  aprox(f.kcal, 166); aprox(f.porcoes[0].g, 125);
+  // lançar 1 porção = 1/4 da receita, qualquer que seja o peso final
+  aprox((f.kcal * f.porcoes[0].g) / 100, 830 / 4);
+});
+t('Receita usa o alimento atual quando existe (resolver)', () => {
+  const f = alimentoDaReceita(rec, (id) => (id === 'x' ? { ...frango, kcal: 200 } : null));
+  aprox(f.total.kcal, 512 + 400);
+});
+t('Recentes: sobe para o topo, sem repetir, com limite', () => {
+  eq(atualizarRecentes(['a', 'b', 'c'], 'b').join(), 'b,a,c');
+  eq(atualizarRecentes(['a', 'b'], 'z', 2).join(), 'z,a');
+});
+t('Adição rápida: soma no total do dia', () => {
+  let d = adicionarItem(diaVazio('2026-10-08'), 'almoco', 'Almoço', criarItemRapido({ kcal: 650, prot: 40, carb: 70, gord: 20 }));
+  d = adicionarItem(d, 'almoco', 'Almoço', criarItem(arroz, 100));
+  aprox(totalDia(d).kcal, 778); eq(d.refeicoes.almoco[0].rapido, true);
+});
+t('Copiar refeição e dia anterior (ids novos, acrescenta)', () => {
+  let ontem = adicionarItem(diaVazio('2026-10-07'), 'cafe', 'Café', criarItem(arroz, 100));
+  ontem = adicionarItem(ontem, 'jantar', 'Jantar', criarItem(frango, 100));
+  const hoje = adicionarItem(diaVazio('2026-10-08'), 'cafe', 'Café', criarItem(arroz, 50));
+  const r1 = copiarPara(hoje, ontem, 'cafe');
+  eq(r1.n, 1); eq(r1.dia.refeicoes.cafe.length, 2);
+  if (r1.dia.refeicoes.cafe[1].id === ontem.refeicoes.cafe[0].id) throw new Error('id repetido');
+  const r2 = copiarPara(hoje, ontem);
+  eq(r2.n, 2); aprox(totalDia(r2.dia).kcal, 64 + 128 + 159);
+});
+t('CSV com ; e vírgula decimal, cabeçalho e porções', () => {
+  const r = analisarCSV('nome;kcal;proteina;carboidrato;gordura;fibra;sodio;porcoes\nPão X;250;10;45;3,5;6;450;fatia=30|unidade=50\n');
+  eq(r.linhas.length, 1); eq(r.linhas[0].erros.length, 0);
+  aprox(r.linhas[0].food.gord, 3.5); eq(r.linhas[0].food.porcoes[1].g, 50);
+});
+t('CSV com , sem cabeçalho e erros/duplicatas', () => {
+  const r = analisarCSV('Whey,400,80,8,6,0,300\n,100,1,1,1\nOvo X,-5,1,1,1\nwhey,400,80,8,6\n', new Set(['ovo y']));
+  eq(r.linhas[0].erros.length, 0); eq(r.linhas[1].erros[0], 'sem nome');
+  eq(r.linhas[2].erros.includes('kcal negativo'), true); eq(r.linhas[3].duplicata, true);
+  eq(r.linhas[3].food.falta.join(), 'fibra,sodio_mg');
+});
+t('CSV marca nome já existente', () => {
+  const r = analisarCSV('nome;kcal\nArroz, tipo 1, cozido;128', new Set([normalizar('Arroz, tipo 1, cozido')]));
+  eq(r.linhas[0].duplicata, true);
+});
+t('Porções do CSV', () => eq(lerPorcoes('scoop=30|x=abc').length, 1));
+t('Foto: redimensiona para 1280 px no maior lado', () => {
+  const d = dimensoes(4000, 3000); eq(d.w, 1280); eq(d.h, 960);
+  eq(dimensoes(800, 600).w, 800);
+});
+t('Service worker lista todos os módulos JS', () => {
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  const { readdirSync } = process.getBuiltinModule('node:fs');
+  const arqs = [...readdirSync(new URL('../js/', import.meta.url)).filter((f) => f.endsWith('.js')).map((f) => 'js/' + f),
+    ...readdirSync(new URL('../js/views/', import.meta.url)).map((f) => 'js/views/' + f)];
+  const faltando = arqs.filter((a) => !sw.includes(`'${a}'`));
+  if (faltando.length) throw new Error('faltam no sw.js: ' + faltando.join(', '));
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

@@ -12,7 +12,10 @@ const ROTAS = {
   config: () => import('./views/config.js'),
   metas: () => import('./views/metas.js'),
   perfil: () => import('./views/onboarding.js'),
+  receita: () => import('./views/receita.js'),
+  importar: () => import('./views/importar.js'),
 };
+const ABA_DA_ROTA = { metas: 'config', perfil: 'config', importar: 'config', receita: 'adicionar' };
 
 // ---------- Tema ----------
 export function aplicarTema(tema) {
@@ -29,7 +32,7 @@ export async function navegar() {
   let rota = location.hash.slice(1).split('?')[0] || 'diario';
   if (!estado.perfil && rota !== 'perfil') rota = 'perfil';
   if (!ROTAS[rota]) rota = 'diario';
-  const ativa = rota === 'metas' || rota === 'perfil' ? 'config' : rota;
+  const ativa = ABA_DA_ROTA[rota] || rota;
   $$('.nav a').forEach((a) => {
     if (a.dataset.rota === ativa) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });

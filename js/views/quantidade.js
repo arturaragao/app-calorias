@@ -5,6 +5,8 @@ import { estado, salvarConfig } from '../state.js';
 import { carregarBase, porcoesDe, rotuloFonte } from '../foods.js';
 import { nutrientesPorGramas } from '../diary.js';
 import { abrirFolha, fecharFolha, esc, aviso } from '../ui.js';
+import { ehFavorito, alternarFavorito, catalogo } from '../custom.js';
+import { folhaAlimento } from './alimento-form.js';
 import { fmtKcal, fmtMacro, fmtNum, lerNumero } from '../utils.js';
 
 /**
@@ -24,6 +26,11 @@ export async function folhaQuantidade(food, opcoes) {
 
   const painel = abrirFolha(opcoes.titulo || food.nome, `
     <p class="mudo" style="margin-top:-6px">${opcoes.titulo ? esc(food.nome) + '<br>' : ''}${esc(rotuloFonte(food))} · por 100 g: ${fmtKcal(food.kcal)} kcal</p>
+    ${opcoes.semAcoes ? '' : `<div class="linha" style="flex-wrap:wrap;margin-bottom:10px">
+      <button type="button" class="btn peq" data-fav aria-pressed="${ehFavorito(food.id)}">${ehFavorito(food.id) ? '★ Favorito' : '☆ Favoritar'}</button>
+      ${String(food.id).startsWith('c-') ? '<button type="button" class="btn peq" data-editar-alim>Editar alimento</button>'
+        : String(food.id).startsWith('r-') ? '<button type="button" class="btn peq" data-editar-rec>Editar receita</button>'
+        : '<button type="button" class="btn peq" data-duplicar>Duplicar e editar</button>'}</div>`}
     ${falta.length ? '<p class="nota alerta">Alguns nutrientes não constam na fonte (contam como 0).</p>' : ''}
     <div class="seg" role="group"><button type="button" data-modo="g" aria-pressed="${modo === 'g'}">Gramas</button>
       <button type="button" data-modo="porcao" aria-pressed="${modo === 'porcao'}" ${porcoes.length ? '' : 'disabled'}>Porção caseira</button></div>
@@ -75,6 +82,22 @@ export async function folhaQuantidade(food, opcoes) {
       const inp = painel.querySelector(t.dataset.d ? '[name=g]' : '[name=qtd]');
       const v = lerNumero(inp.value);
       inp.value = fmtNum(Math.max(0, (isNaN(v) ? 0 : v) + Number(t.dataset.d || t.dataset.q)));
+    } else if ('fav' in t.dataset) {
+      const fav = alternarFavorito(food.id);
+      t.textContent = fav ? '★ Favorito' : '☆ Favoritar';
+      t.setAttribute('aria-pressed', fav);
+      return;
+    } else if ('editarAlim' in t.dataset || 'duplicar' in t.dataset) {
+      const c = await catalogo();
+      const atual = c.porId.get(food.id) || food;
+      const reabrir = (novo) => folhaQuantidade(novo, { ...opcoes, g: undefined, porcao: null });
+      return 'duplicar' in t.dataset
+        ? folhaAlimento(null, { duplicarDe: atual, aoSalvar: reabrir })
+        : folhaAlimento(atual, { aoSalvar: reabrir, aoApagar: opcoes.aoMudarCatalogo });
+    } else if ('editarRec' in t.dataset) {
+      fecharFolha();
+      location.hash = '#receita?id=' + encodeURIComponent(food.id);
+      return;
     } else if ('editarPorcoes' in t.dataset) {
       return editarPorcoes(food, porcoes, () => folhaQuantidade(food, opcoes));
     } else if ('apagar' in t.dataset) {

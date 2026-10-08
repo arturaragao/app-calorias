@@ -12,5 +12,13 @@
 - 2026-10-08 · Porções do usuário são por alimento (`config.porcoesUsuario[id]`) e substituem as sugeridas; "Restaurar sugeridas" volta ao padrão.
 - 2026-10-08 · Diário: dia = `{data, nomes, refeicoes:{refId:[itens]}}`; refeição removida das configurações continua aparecendo nos dias em que tem itens.
 - 2026-10-08 · Campos numéricos sem separador de milhar; leitura aceita "2.759" (milhar) e "2,5" (decimal).
-- 2026-10-08 · Service worker sem skipWaiting automático: o usuário toca em "Atualizar".
+- 2026-10-08 · (revisto a pedido do Artur) Atualização automática: SW faz skipWaiting, app recarrega sozinho (espera fechar folha aberta) e mostra "App atualizado"; procura versão nova ao voltar ao primeiro plano.
+- 2026-10-08 · Commits e push automáticos ao fim de cada mudança (autorizado). Repo arturaragao/app-calorias; `.nojekyll` para o Pages servir tudo como está.
+- 2026-10-08 · Meus alimentos (ids `c-…`) e receitas (`r-…`) entram no mesmo catálogo/índice da base; recentes (máx. 40) e favoritos ficam em `config`.
+- 2026-10-08 · Receita guarda snapshot por 100 g de cada ingrediente, mas usa o alimento atual se ele existir; sem receita dentro de receita.
+- 2026-10-08 · Receita sem peso final: nutrientes por 100 g calculados sobre a soma dos pesos dos ingredientes.
+- 2026-10-08 · Adição rápida: item sem alimento (`rapido: true`), fibra/sódio vazios = 0 e marcados.
+- 2026-10-08 · Copiar refeição/dia acrescenta itens (não substitui), com desfazer.
+- 2026-10-08 · Fotos: chave `data|refeição` na store `photos`, várias fotos por refeição, cada uma com observação.
+- 2026-10-08 · CSV: duplicatas (nome igual a um existente ou repetido no arquivo) ficam de fora, a menos que se marque "importar também".
 - 2026-10-08 · Refeição sugerida pelo horário ao abrir "Adicionar" sem refeição escolhida.

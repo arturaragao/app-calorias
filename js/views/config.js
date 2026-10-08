@@ -1,7 +1,7 @@
 // views/config.js — configurações: perfil, metas, tema, refeições e sobre.
 
 import { estado, salvarConfig } from '../state.js';
-import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha } from '../ui.js';
+import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha } from '../ui.js';
 import { aplicarTema } from '../app.js';
 import { uid } from '../utils.js';
 
@@ -11,6 +11,11 @@ export async function render(tela) {
     <div class="card">
       <a class="btn bloco" href="#perfil" style="margin-bottom:8px">Perfil (sexo, idade, altura, peso, atividade)</a>
       <a class="btn bloco" href="#metas">Metas (calorias, macros, fibra, sódio)</a>
+    </div>
+    <div class="card">
+      <a class="btn bloco" href="#adicionar?aba=meus" style="margin-bottom:8px">Meus alimentos</a>
+      <a class="btn bloco" href="#adicionar?aba=receitas" style="margin-bottom:8px">Receitas</a>
+      <a class="btn bloco" href="#importar">Importar alimentos (CSV)</a>
     </div>
     <div class="card"><h2 style="margin-bottom:8px">Tema</h2>
       ${seg('tema', [['sistema', 'Sistema'], ['escuro', 'Escuro'], ['claro', 'Claro']], estado.config.tema)}</div>
@@ -57,7 +62,7 @@ export async function render(tela) {
       const nome = e.target.nome.value.trim();
       if (!nome) { $('#erro', p).textContent = 'Informe um nome.'; return; }
       aplicar(nome); await salvarConfig(); desenharRefs(tela);
-      history.back();
+      fecharFolha();
     };
   }
 }

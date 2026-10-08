@@ -60,7 +60,9 @@ a { color: var(--acento); }
 .btn {
   min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--borda);
   background: var(--sup); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  color: var(--txt); text-decoration: none;
 }
+.btn:disabled { opacity: .45; cursor: default; }
 .btn.prim { background: var(--acento); color: var(--acento-txt); border-color: var(--acento); font-weight: 600; }
 .btn.perigo { color: var(--perigo); }
 .btn.bloco { width: 100%; }

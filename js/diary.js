@@ -47,6 +47,34 @@ export function alterarQuantidade(item, gramas, porcao = null) {
   return { ...item, g: gramas, porcao, n, falta };
 }
 
+/** Adição rápida: kcal e macros digitados direto (sem alimento). Ausente = 0, marcado. */
+export function criarItemRapido({ nome, ...valores }) {
+  const n = {}, falta = [];
+  for (const k of NUTRIENTES) {
+    const v = valores[k];
+    if (v == null || Number.isNaN(v)) { n[k] = 0; if (k === 'fibra' || k === 'sodio_mg') falta.push(k); } else n[k] = v;
+  }
+  return { id: uid(), foodId: null, rapido: true, nome: nome || 'Adição rápida', fonte: '', g: 0, porcao: null, n, falta };
+}
+
+/** Cópia de itens com ids novos (copiar refeição/dia). */
+export const copiarItens = (itens) => itens.map((it) => ({ ...structuredClone(it), id: uid() }));
+
+/** Acrescenta os itens de `origem` (dia inteiro ou uma refeição) em `destino`. */
+export function copiarPara(destino, origem, refId = null) {
+  const d = structuredClone(destino);
+  const refs = refId ? [refId] : Object.keys(origem.refeicoes);
+  let n = 0;
+  for (const r of refs) {
+    const itens = origem.refeicoes[r] || [];
+    if (!itens.length) continue;
+    (d.refeicoes[r] ||= []).push(...copiarItens(itens));
+    d.nomes[r] = d.nomes[r] || origem.nomes[r];
+    n += itens.length;
+  }
+  return { dia: d, n };
+}
+
 export function adicionarItem(dia, refId, refNome, item) {
   const d = structuredClone(dia);
   (d.refeicoes[refId] ||= []).push(item);
