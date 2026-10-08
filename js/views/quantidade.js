@@ -17,7 +17,9 @@ export async function folhaQuantidade(food, opcoes) {
   const { porcoes: tabela } = await carregarBase();
   const porcoes = porcoesDe(food, tabela, estado.config.porcoesUsuario);
   const ultima = estado.config.ultimaQtd[food.id];
-  let modo = opcoes.porcao ? 'porcao' : (ultima?.porcao && !opcoes.g ? 'porcao' : 'g');
+  // porção própria do produto (rótulo/receita) vira o padrão quando não há última quantidade
+  const porcaoPropria = !ultima && !opcoes.g && food.porcoes?.length && !porcoes[0]?.aprox;
+  let modo = opcoes.porcao || porcaoPropria ? 'porcao' : (ultima?.porcao && !opcoes.g ? 'porcao' : 'g');
   const porcaoIni = opcoes.porcao || ultima?.porcao || null;
   const gIni = opcoes.g ?? ultima?.g ?? 100;
   const refs = estado.config.refeicoes;

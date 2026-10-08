@@ -3,8 +3,9 @@
 import { estado, lerDia, gravarDia, pesoAtual } from '../state.js';
 import { metaDoDia } from '../goals.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem, camposFaltando,
-  criarItemRapido, adicionarItem, copiarPara } from '../diary.js';
-import { avisoKcalMacros } from '../custom.js';
+  criarItemRapido, adicionarItem, copiarPara, criarItem } from '../diary.js';
+import { avisoKcalMacros, registrarRecente } from '../custom.js';
+import { abrirScanner } from './scanner.js';
 import { contagemDoDia } from '../photos.js';
 import { topo, esc, ICONES, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
 import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, diaSemana } from '../utils.js';
@@ -100,7 +101,8 @@ function cartaoRefeicao(r) {
           : `${it.porcao ? `${fmtNum(it.porcao.qtd)} × ${esc(it.porcao.nome)} · ` : ''}${fmtNum(Math.round(it.g * 10) / 10)} g${it.falta?.length ? ' · dados parciais' : ''}`}</div></div>
       <span class="kcal num">${fmtKcal(it.n.kcal)}</span>
       <button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button></li>`).join('')}</ul>
-    <button class="add-alim" data-add>+ Adicionar alimento</button>
+    <div class="add-linha"><button class="add-alim" data-add>+ Adicionar alimento</button>
+      <button class="ico" data-scan aria-label="Ler código de barras para ${esc(r.nome)}">${ICONES.codigo}</button></div>
   </section>`;
 }
 
@@ -117,6 +119,21 @@ async function clique(e) {
     return;
   }
   if (e.target.closest('[data-fotos]')) return folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
+  if (e.target.closest('[data-scan]')) {
+    return abrirScanner({
+      aoAlimento: (food) => folhaQuantidade(food, {
+        refId,
+        aoConfirmar: async ({ g, porcao, refId: r }) => {
+          const ref = estado.config.refeicoes.find((x) => x.id === r);
+          const antes = dia;
+          await gravarDia(adicionarItem(dia, r, ref.nome, criarItem(food, g, porcao)));
+          registrarRecente(food.id);
+          await desenhar();
+          aviso(`${food.nome} → ${ref.nome}`, { acao: async () => { await gravarDia(antes); desenhar(); } });
+        },
+      }),
+    });
+  }
   if (e.target.closest('[data-menu]')) {
     const p = abrirFolha(nomeRef, `<div class="lista">
       <button class="btn bloco" data-op="rapida" style="margin-bottom:8px">⚡ Adição rápida (kcal e macros)</button>

@@ -3,6 +3,7 @@
 import { salvarAlimento, apagarAlimento, paraPor100, avisoKcalMacros, nomesExistentes } from '../custom.js';
 import { abrirFolha, fecharFolha, esc, aviso } from '../ui.js';
 import { fmtNum, lerNumero, normalizar } from '../utils.js';
+import { limparCodigo } from '../off.js';
 
 const CAMPOS = [
   ['kcal', 'Calorias (kcal)'], ['prot', 'Proteína (g)'], ['carb', 'Carboidrato (g)'],
@@ -15,15 +16,17 @@ const CAMPOS = [
  * são guardados por 100 g.
  */
 export function folhaAlimento(food, opcoes = {}) {
-  const origem = food || opcoes.duplicarDe || {};
+  const origem = food || opcoes.prefill || opcoes.duplicarDe || {};
   const editando = !!food;
   const porcao = origem.porcoes?.[0];
   const base = 100;
-  const painel = abrirFolha(editando ? 'Editar alimento' : opcoes.duplicarDe ? 'Duplicar e editar' : 'Novo alimento', `
+  const fonteIni = editando || opcoes.prefill ? origem.fonte || '' : opcoes.duplicarDe ? (origem.fonte || '') + ' (editado)' : 'rótulo';
+  const painel = abrirFolha(opcoes.titulo || (editando ? 'Editar alimento' : opcoes.duplicarDe ? 'Duplicar e editar' : 'Novo alimento'), `
     <form id="fa" novalidate>
+      ${opcoes.nota ? `<p class="nota">${opcoes.nota}</p>` : ''}
       <label class="campo"><span>Nome</span><input type="text" name="nome" maxlength="80" value="${esc(opcoes.duplicarDe && !editando ? origem.nome + ' (meu)' : origem.nome || '')}"></label>
       <label class="campo"><span>Fonte (ex.: rótulo, TBCA, nutricionista)</span><input type="text" name="fonte" maxlength="40"
-        value="${esc(editando ? origem.fonte || '' : opcoes.duplicarDe ? (origem.fonte || '') + ' (editado)' : 'rótulo')}"></label>
+        value="${esc(fonteIni)}"></label>
       <label class="campo"><span>Valores abaixo referentes a quantos gramas?</span>
         <input type="text" inputmode="decimal" name="baseG" value="${base}"></label>
       <div class="grade2">${CAMPOS.map(([k, r]) => `<label class="campo"><span>${r}</span>
@@ -74,6 +77,7 @@ export function folhaAlimento(food, opcoes = {}) {
     const avisos = [avisoKcalMacros(d.v)];
     if (por100.kcal > 900) avisos.push('Mais de 900 kcal por 100 g é fisicamente improvável.');
     if (!editando && (await nomesExistentes()).has(normalizar(d.nome))) avisos.push('Já existe um alimento com esse nome.');
+    if (d.codigo && !limparCodigo(d.codigo)) avisos.push('O código de barras não tem 8, 12, 13 ou 14 dígitos.');
     const txt = avisos.filter(Boolean).join(' ');
     if (txt && !confirmado) {
       const av = painel.querySelector('#av');
@@ -85,7 +89,7 @@ export function folhaAlimento(food, opcoes = {}) {
     else if (d.baseG !== 100) porcoes.push({ nome: 'porção', g: d.baseG });
     const falta = Object.keys(por100).filter((k) => por100[k] == null);
     const novo = await salvarAlimento({
-      ...(editando ? food : {}), nome: d.nome, fonte: d.fonte, origem: food?.origem || 'manual',
+      ...(editando ? food : {}), nome: d.nome, fonte: d.fonte, origem: food?.origem || opcoes.prefill?.origem || 'manual',
       ...por100, porcoes, codigo: d.codigo || undefined, falta: falta.length ? falta : undefined,
     });
     fecharFolha();

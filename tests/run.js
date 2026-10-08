@@ -228,6 +228,21 @@ t('Foto: redimensiona para 1280 px no maior lado', () => {
   const d = dimensoes(4000, 3000); eq(d.w, 1280); eq(d.h, 960);
   eq(dimensoes(800, 600).w, 800);
 });
+const { produtoParaAlimento, limparCodigo, variantesCodigo } = await import('../js/off.js');
+t('Open Food Facts: produto → por 100 g (sódio g→mg, porção)', () => {
+  const f = produtoParaAlimento({ product_name: 'Leite Condensado', brands: 'Moça, Nestlé', serving_size: '20 g', serving_quantity: 20,
+    nutriments: { 'energy-kcal_100g': 325, proteins_100g: 7, carbohydrates_100g: 55, fat_100g: 8, sodium_100g: 0.11 } }, '7891000100103');
+  eq(f.kcal, 325); aprox(f.sodio_mg, 110); eq(f.fibra, null); eq(f.falta.join(), 'fibra');
+  eq(f.porcoes[0].g, 20); eq(f.nome, 'Leite Condensado — Moça'); eq(f.codigo, '7891000100103');
+});
+t('Open Food Facts: kJ → kcal e sal → sódio', () => {
+  const f = produtoParaAlimento({ product_name: 'X', nutriments: { energy_100g: 418.4, salt_100g: 1 } }, '12345678');
+  aprox(f.kcal, 100); aprox(f.sodio_mg, 400); eq(f.prot, null);
+});
+t('Código de barras: limpeza e variantes UPC/EAN', () => {
+  eq(limparCodigo('789 1000-100103'), '7891000100103'); eq(limparCodigo('123'), '');
+  eq(variantesCodigo('012345678905').includes('0012345678905'), true);
+});
 t('Service worker lista todos os módulos JS', () => {
   const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   const { readdirSync } = process.getBuiltinModule('node:fs');

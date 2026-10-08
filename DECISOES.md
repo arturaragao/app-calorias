@@ -21,4 +21,9 @@
 - 2026-10-08 · Copiar refeição/dia acrescenta itens (não substitui), com desfazer.
 - 2026-10-08 · Fotos: chave `data|refeição` na store `photos`, várias fotos por refeição, cada uma com observação.
 - 2026-10-08 · CSV: duplicatas (nome igual a um existente ou repetido no arquivo) ficam de fora, a menos que se marque "importar também".
+- 2026-10-08 · Scanner + Open Food Facts adiantados (pedido do Artur; eram Etapa 5). Ícone de código de barras na busca e ao lado de "+ Adicionar alimento" de cada refeição.
+- 2026-10-08 · Scanner: BarcodeDetector nativo (Chrome Android), sem biblioteca; exige 2 leituras iguais seguidas; campo manual sempre disponível.
+- 2026-10-08 · Código lido: 1º Meus alimentos (offline, aceita UPC-A ≡ EAN-13 com 0), depois OFF → revisar → salvar em Meus alimentos. Não encontrado/offline → cadastro manual com o código preenchido.
+- 2026-10-08 · OFF: sódio_100g (g) × 1000; sem sódio, usa sal ÷ 2,5 (Reg. UE 1169/2011); sem kcal, kJ ÷ 4,184. Busca por nome só ao tocar no botão (limite de 10 buscas/min da API).
+- 2026-10-08 · Alimento com porção própria (rótulo/receita) abre já em "Porção caseira".
 - 2026-10-08 · Refeição sugerida pelo horário ao abrir "Adicionar" sem refeição escolhida.

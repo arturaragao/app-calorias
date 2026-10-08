@@ -5,10 +5,12 @@ import { estado, lerDia, gravarDia } from '../state.js';
 import { buscar, rotuloFonte } from '../foods.js';
 import { catalogo, registrarRecente, ehFavorito } from '../custom.js';
 import { criarItem, adicionarItem } from '../diary.js';
-import { topo, esc, $, $$, aviso } from '../ui.js';
+import { topo, esc, $, $$, aviso, ICONES } from '../ui.js';
 import { fmtKcal, fmtData, chaveData } from '../utils.js';
+import { buscarNome } from '../off.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaAlimento } from './alimento-form.js';
+import { abrirScanner } from './scanner.js';
 
 const LOTE = 30;
 const ABAS = [['recentes', 'Recentes'], ['favoritos', 'Favoritos'], ['meus', 'Meus'], ['receitas', 'Receitas']];
@@ -24,12 +26,15 @@ export async function render(tela) {
   const quando = estado.dataAtual === chaveData() ? 'hoje' : fmtData(estado.dataAtual);
   topo(`<a class="ico" href="#diario" aria-label="Voltar ao diário"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
     <h1>Adicionar · ${esc(nomeRef())} <span class="mudo">(${esc(quando)})</span></h1><span style="width:44px"></span>`);
-  tela.innerHTML = `<div class="campo-busca"><input type="search" id="q" placeholder="Buscar alimento (ex.: arroz cozido)" autocomplete="off" enterkeyhint="search" value="${esc(ultimaBusca)}">
+  tela.innerHTML = `<div class="campo-busca"><div class="busca-box">
+      <input type="search" id="q" placeholder="Buscar alimento (ex.: arroz cozido)" autocomplete="off" enterkeyhint="search" value="${esc(ultimaBusca)}">
+      <button type="button" class="ico" data-scan aria-label="Ler código de barras com a câmera">${ICONES.codigo}</button></div>
       <div class="seg abas" role="tablist" style="margin:8px 0 0">${ABAS.map(([v, r]) =>
         `<button type="button" role="tab" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
     <div class="linha" style="margin:4px 0 8px"><button class="btn peq" data-novo-alim>+ Novo alimento</button>
       <a class="btn peq" href="#receita">+ Nova receita</a></div>
-    <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>`;
+    <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
+    <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
   let cat = await catalogo();
   const q = $('#q', tela), res = $('#res', tela), info = $('#info', tela);
   let lista = [], mostrados = 0;
@@ -67,7 +72,29 @@ export async function render(tela) {
     }
     res.innerHTML = ''; mostrados = 0;
     desenharLote();
+    // busca online opcional (só quando o usuário toca)
+    $('#off', tela).hidden = !buscando;
+    $('[data-off-buscar]', tela).textContent = `🌐 Buscar “${q.value.trim()}” no Open Food Facts (industrializados)`;
+    $('#resoff', tela).innerHTML = '';
+    offRes = [];
   };
+  let offRes = [];
+  async function buscarOFF() {
+    const termo = q.value.trim();
+    if (termo.length < 3) return aviso('Digite ao menos 3 letras.');
+    const ul = $('#resoff', tela);
+    ul.innerHTML = '<li class="mudo" style="padding:10px 0">Buscando no Open Food Facts…</li>';
+    try {
+      offRes = await buscarNome(termo);
+      ul.innerHTML = offRes.length ? offRes.map((f, i) => `<li><button data-off="${i}"><span><span class="nome">${esc(f.nome)}</span>
+        <span class="mudo">Open Food Facts${f.falta.length ? ' · dados parciais' : ''}</span></span>
+        <span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span></button></li>`).join('')
+        : '<li class="mudo" style="padding:10px 0">Nada encontrado no Open Food Facts.</li>';
+    } catch (e) {
+      console.warn(e);
+      ul.innerHTML = '<li class="mudo" style="padding:10px 0">Open Food Facts indisponível (sem internet ou bloqueado). A base local continua funcionando.</li>';
+    }
+  }
   q.addEventListener('input', pesquisar);
   pesquisar();
 
@@ -79,6 +106,16 @@ export async function render(tela) {
     const ab = e.target.closest('[data-aba]');
     if (ab) { estado.abaAdicionar = ab.dataset.aba; q.value = ''; return pesquisar(); }
     if (e.target.closest('[data-novo-alim]')) return folhaAlimento(null, { aoSalvar: recarregar });
+    if (e.target.closest('[data-scan]')) return abrirScanner({ aoAlimento: async (f) => { await recarregar(); abrir(f); } });
+    if (e.target.closest('[data-off-buscar]')) return buscarOFF();
+    const o = e.target.closest('[data-off]');
+    if (o) {
+      return folhaAlimento(null, {
+        prefill: offRes[Number(o.dataset.off)], titulo: 'Revisar e salvar',
+        nota: 'Dados do Open Food Facts (colaborativo): confira com o rótulo. Ao salvar, fica em Meus alimentos e funciona offline.',
+        aoSalvar: async (f) => { await recarregar(); abrir(f); },
+      });
+    }
     const b = e.target.closest('[data-id]');
     if (!b) return;
     abrir(cat.porId.get(b.dataset.id));

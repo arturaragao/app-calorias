@@ -96,12 +96,23 @@ a { color: var(--acento); }
 
 /* ---------- Refeições e itens ---------- */
 .ref-tit { display: flex; justify-content: space-between; align-items: baseline; }
+.ref-tit .btn.peq { min-height: 32px; padding: 0 8px; white-space: nowrap; }
 .ref-tot { font-size: .8rem; color: var(--txt2); margin: 2px 0 6px; }
 .itens { list-style: none; margin: 0; padding: 0; }
 .item { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--borda); min-height: 52px; }
 .item .info { flex: 1; min-width: 0; padding: 6px 0; cursor: pointer; }
 .item .nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item .kcal { font-weight: 600; min-width: 48px; text-align: right; }
+.add-linha { display: flex; align-items: center; border-top: 1px solid var(--borda); }
+.add-linha .add-alim { border-top: 0; flex: 1; }
+.add-linha .ico { color: var(--acento); }
+.busca-box { position: relative; }
+.busca-box input { padding-right: 52px; }
+.busca-box .ico { position: absolute; right: 2px; top: 2px; color: var(--acento); }
+.camera { position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
+.camera video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camera .mira { position: absolute; left: 10%; right: 10%; top: 35%; bottom: 35%; border: 2px solid var(--acento); border-radius: 8px; box-shadow: 0 0 0 999px rgb(0 0 0 / .35); }
+.camera .lanterna { position: absolute; right: 8px; bottom: 8px; }
 .add-alim { width: 100%; min-height: 44px; border: 0; border-top: 1px solid var(--borda); background: none; color: var(--acento); font-weight: 600; text-align: left; cursor: pointer; }
 
 /* ---------- Busca e listas ---------- */

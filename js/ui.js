@@ -13,6 +13,7 @@ export const ICONES = {
   lixo: '<svg viewBox="0 0 24 24"><path d="M5 7h14 M10 7V4h4v3 M7 7l1 13h8l1-13"/></svg>',
   cima: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
   baixo: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  codigo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7v10 M7 7v10 M10 7v10 M13 7v10 M15.5 7v10 M18 7v10 M20 7v10" stroke-width="1.5"/><path d="M2 4h3 M19 4h3 M2 20h3 M19 20h3 M2 4v3 M22 4v3 M2 17v3 M22 17v3"/></svg>',
 };
 
 // ---------- Topo ----------

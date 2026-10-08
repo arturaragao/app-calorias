@@ -1,10 +1,10 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v3';
+const VERSAO = 'v4';
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',
   'js/app.js', 'js/db.js', 'js/diary.js', 'js/foods.js', 'js/goals.js', 'js/state.js', 'js/ui.js', 'js/utils.js',
-  'js/custom.js', 'js/csv.js', 'js/photos.js',
+  'js/custom.js', 'js/csv.js', 'js/photos.js', 'js/off.js', 'js/views/scanner.js',
   'js/views/diario.js', 'js/views/adicionar.js', 'js/views/quantidade.js', 'js/views/metas.js',
   'js/views/onboarding.js', 'js/views/config.js', 'js/views/embreve.js',
   'js/views/alimento-form.js', 'js/views/receita.js', 'js/views/fotos.js', 'js/views/importar.js',
