@@ -1,5 +1,5 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v1';
+const VERSAO = 'v2';
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',
@@ -10,8 +10,9 @@ const ARQUIVOS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ARQUIVOS)));
-  // não chama skipWaiting: o app mostra "Atualização disponível" e o usuário decide
+  // cache: 'reload' ignora o cache HTTP do GitHub Pages (garante arquivos da versão nova)
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ARQUIVOS.map((u) => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));   // atualização automática (DECISOES.md)
 });
 
 self.addEventListener('activate', (e) => {

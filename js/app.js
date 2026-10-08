@@ -49,20 +49,23 @@ export async function navegar() {
 // ---------- Service worker com aviso de atualização ----------
 function registrarSW() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  // Atualização automática: o SW novo assume sozinho (skipWaiting) e o app recarrega.
+  // Procura versão nova ao abrir e sempre que o app volta ao primeiro plano.
+  const tinhaControle = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('./sw.js').then((reg) => {
-    const avisar = (w) => aviso('Atualização disponível', {
-      rotulo: 'Atualizar', ms: 60000, acao: () => w.postMessage('pular-espera'),
-    });
-    if (reg.waiting && navigator.serviceWorker.controller) avisar(reg.waiting);
-    reg.addEventListener('updatefound', () => {
-      const w = reg.installing;
-      w?.addEventListener('statechange', () => {
-        if (w.state === 'installed' && navigator.serviceWorker.controller) avisar(w);
-      });
-    });
+    if (reg.waiting) reg.waiting.postMessage('pular-espera');
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
   }).catch((e) => console.warn('SW não registrado', e));
   let recarregou = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!recarregou) { recarregou = true; location.reload(); } });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!tinhaControle || recarregou) return;          // 1ª instalação não precisa recarregar
+    recarregou = true;
+    try { sessionStorage.setItem('atualizado', '1'); } catch {}
+    // não interrompe uma folha aberta (ex.: lançando um alimento): espera fechar
+    const recarregar = () => ($('#folha').hidden ? location.reload() : setTimeout(recarregar, 1000));
+    recarregar();
+  });
+  try { if (sessionStorage.getItem('atualizado')) { sessionStorage.removeItem('atualizado'); aviso('App atualizado'); } } catch {}
 }
 
 // ---------- Início ----------
