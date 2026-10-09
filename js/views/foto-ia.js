@@ -74,9 +74,11 @@ export function folhaRotulo({ aoSalvar } = {}) {
         const { food, obs } = await lerRotulo(blob);
         if (!food) throw new Error(obs || 'Não encontrei uma tabela nutricional legível. Tente outra foto.');
         fecharFolha();
+        const porc = food.porcoes[0];
         setTimeout(() => folhaAlimento(null, {
-          prefill: food, titulo: 'Revisar e salvar',
-          nota: `Valores lidos do rótulo pela IA${food.porcoes[0] ? ` (porção de ${fmtNum(food.porcoes[0].g)} g)` : ''}, convertidos para 100 g. Confira com a embalagem.${obs ? ' ' + esc(obs) : ''}`,
+          prefill: food, titulo: 'Revisar e salvar', baseG: porc?.g,
+          nota: `Valores lidos do rótulo pela IA${porc ? `, mostrados pela <b>porção de ${fmtNum(porc.g)} g</b> (${esc(porc.nome)}) como na tabela` : ' (por 100 g)'}.
+            Confira com a embalagem; o app guarda por 100 g e lança pela porção.${obs ? ' ' + esc(obs) : ''}`,
           aoSalvar,
         }), 350);
       } catch (e) {

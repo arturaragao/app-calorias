@@ -1,12 +1,12 @@
-// views/registros.js — abas Peso · Água · Medidas · Dobras.
+// views/registros.js — abas Peso · Água · Medidas · Dobras · Fotos.
 
 import { estado } from '../state.js';
 import { topo, $, $$ } from '../ui.js';
 
-const ABAS = [['peso', 'Peso'], ['agua', 'Água'], ['medidas', 'Medidas'], ['dobras', 'Dobras']];
+const ABAS = [['peso', 'Peso'], ['agua', 'Água'], ['medidas', 'Medidas'], ['dobras', 'Dobras'], ['fotos', 'Fotos']];
 const MODULOS = {
   peso: () => import('./reg-peso.js'), agua: () => import('./reg-agua.js'),
-  medidas: () => import('./reg-medidas.js'), dobras: () => import('./reg-dobras.js'),
+  medidas: () => import('./reg-medidas.js'), dobras: () => import('./reg-dobras.js'), fotos: () => import('./reg-fotos.js'),
 };
 
 export async function render(tela) {

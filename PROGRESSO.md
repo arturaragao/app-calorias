@@ -6,8 +6,19 @@
 - [x] Pacote 1 — Progresso profissional (v10)
 - [x] Pacote 2 — Registrar mais rápido (v11): refeições salvas, sugestões pelo horário, dia de treino × descanso, notas/etiquetas do dia, proteína por refeição
 - [x] Pacote 3 — IA (v11): foto ligada à TACO (IA só identifica e pesa), foto do rótulo → Meus alimentos, lançar por texto livre
-- [ ] Pacote 4 — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
+- [x] Pacote 4 (v12) — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 4 + ajustes (v12)**
+- Relatório PDF (views/relatorio-pdf.js): página de impressão A4 com perfil, metas, médias × meta, aderência, peso/tendência/gráfico, gasto real, dobras, circunferências, top alimentos, micronutrientes e anotações; botão no Progresso; "Salvar como PDF" do Chrome.
+- CSV do diário (js/exportar.js): itens e totais por dia, em Ajustes.
+- Micronutrientes da TACO: importador lê colesterol, Ca, Mg (pág. a) e P, Fe, K, Zn, vit. A (RAE ou retinol), B1, B2, B6, niacina, vit. C (pág. b) → food.mic (585 alimentos); snapshot no item; tabela no detalhe do dia e média no Progresso, com DRI (js/micros.js).
+- Fotos de progresso corporal: aba Registros › Fotos (frente/lado/costas), antes × depois com controle deslizante.
+- Polimento: transição entre telas.
+- Leitor de código: 1920×1080, foco contínuo + toque para focar, zoom inicial 2× com controle, alterna quadro inteiro e faixa central ampliada, aceita EAN/UPC na 1ª leitura se o dígito verificador confere, formato ITF.
+- Rótulo: formulário mostra os valores pela porção da tabela (ex.: 28 g); prompt pede a coluna da porção.
+- Quantidade: botões −10/−1/+1/+10 g e "porção" de 1 grama sempre disponível (passo de 1).
+- Testes: 110 aprovados.
 
 **Pacotes 2 e 3 (v11)**
 - Refeições salvas (views/salvas.js, config.refeicoesSalvas); sugestões "Você costuma comer no …" no Adicionar (últimos 30 dias, frequência ≥ 2); dia de treino (etiqueta 'treino' + metas.treinoExtra em carboidratos, no histórico); nota e etiquetas do dia (calendário com ponto, relatório semanal); proteína por refeição (✓ no diário ≥ 0,4 g/kg; seção no Progresso).

@@ -504,6 +504,41 @@ t('IA: nome no estilo TACO é preservado', () => {
   eq(IA2.normalizarEstimativa({ itens: [{ nome: 'Arroz', nome_taco: 'Arroz, tipo 1, cozido', gramas: 100, kcal: 128, prot: 2.5, carb: 28, gord: 0.2 }] }).itens[0].nomeTaco, 'Arroz, tipo 1, cozido');
 });
 
+// ---------- Pacote 4 ----------
+const OFF4 = await import('../js/off.js');
+t('Código de barras: dígito verificador GTIN', () => {
+  eq(OFF4.digitoOk('7891000100103'), true); eq(OFF4.digitoOk('7891000100104'), false);
+  eq(OFF4.digitoOk('96385074'), true); eq(OFF4.digitoOk('036000291452'), true); eq(OFF4.digitoOk('123'), false);
+});
+const M4 = await import('../js/micros.js');
+t('Micronutrientes: soma por gramas, cobertura e referência por sexo', () => {
+  const ovo = { id: 'o', nome: 'Ovo', kcal: 146, prot: 13, carb: 0.6, gord: 9.5, fibra: 0, sodio_mg: 146, mic: { calcio_mg: 49, ferro_mg: 1.5 } };
+  const it = D2.criarItem(ovo, 100);
+  eq(it.por100.mic.calcio_mg, 49, 'snapshot guarda mic');
+  eq(D2.alterarQuantidade(it, 50).por100.mic.ferro_mg, 1.5, 'mic sobrevive à edição');
+  const rap = D2.criarItemRapido({ nome: 'x', kcal: 146 });
+  const r = M4.somarMicros([D2.criarItem(ovo, 50), rap]);
+  aprox(r.tot.calcio_mg, 24.5); aprox(r.cobertura, 73 / (73 + 146));
+  const fe = M4.MICROS.find((m) => m[0] === 'ferro_mg'), mg = M4.MICROS.find((m) => m[0] === 'magnesio_mg');
+  eq(M4.refMicro(fe, 'M'), 8); eq(M4.refMicro(fe, 'F'), 18); eq(M4.refMicro(mg, 'M', 35), 420);
+});
+const E4 = await import('../js/exportar.js');
+t('CSV do diário: separador ;, vírgula decimal, aspas e BOM', () => {
+  let d = D2.adicionarItem(D2.diaVazio('2026-10-08'), 'almoco', 'Almoço', D2.criarItem({ ...arroz, nome: 'Arroz; "tipo 1"' }, 150));
+  d = { ...d, tags: ['treino'], nota: 'perna' };
+  const c = E4.csvItens([d], { almoco: 'Almoço' }).split('\r\n');
+  eq(c[0].charCodeAt(0), 0xFEFF); eq(c.length, 2);
+  if (!c[1].startsWith('08/10/2026;Almoço;"Arroz; ""tipo 1""";150;;192;3,8')) throw new Error(c[1]);
+  const t2 = E4.csvTotais([d], () => ({ kcal: 2000, prot: 150, carb: 200, gord: 60 })).split('\r\n');
+  if (!t2[1].startsWith('08/10/2026;192;2000;3,8;150')) throw new Error(t2[1]);
+  if (!t2[1].endsWith(';treino;perna')) throw new Error(t2[1]);
+});
+t('Base TACO traz micronutrientes (ex.: ovo cozido, laranja)', () => {
+  const ovo = base.find((f) => f.id === 'taco-488'), lar = base.find((f) => f.id === 'taco-210');
+  eq(ovo.mic.colest_mg, 397); eq(ovo.mic.vita_ug, 32); eq(lar.mic.vitc_mg, 34.7);
+  if (base.filter((f) => f.mic).length < 500) throw new Error('poucos alimentos com micronutrientes');
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

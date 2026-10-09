@@ -44,6 +44,10 @@ No menu **⋯** de uma refeição → **Estimar por foto (IA)**, ou **Por foto**
 - **Calendário** de aderência, **relatório semanal** (compartilhável como imagem), **de onde vêm as calorias**, **composição corporal** (massa magra × gorda).
 - Arraste o dedo sobre os gráficos para ver os valores.
 
+## Relatórios e exportação
+- **Relatório em PDF** (Progresso › Relatório em PDF): escolha o período e, na tela de impressão, “Salvar como PDF”. Feito para levar à nutricionista.
+- **Diário em CSV** (Ajustes › Exportar diário): item por item ou totais por dia; abre no Excel/Planilhas.
+
 ## Base de alimentos
 - **TACO 4ª ed.** (NEPA/UNICAMP, 2011): 597 alimentos, valores por 100 g.
 - **Open Food Facts**: produtos industrializados, por código de barras ou por nome (precisa de internet). O que você salva vai para *Meus alimentos* e passa a funcionar offline.

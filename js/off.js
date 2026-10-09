@@ -17,6 +17,14 @@ export function limparCodigo(txt) {
   return [8, 12, 13, 14].includes(c.length) ? c : '';
 }
 
+/** Dígito verificador GTIN (EAN-8/UPC-A/EAN-13/GTIN-14, módulo 10, pesos 3 e 1 a partir da direita). */
+export function digitoOk(c) {
+  if (!/^\d{8}$|^\d{12,14}$/.test(c || '')) return false;
+  const d = [...c].map(Number), dv = d.pop();
+  const soma = d.reverse().reduce((s, x, i) => s + x * (i % 2 === 0 ? 3 : 1), 0);
+  return (10 - (soma % 10)) % 10 === dv;
+}
+
 /** Variantes equivalentes (UPC-A de 12 dígitos = EAN-13 com 0 à esquerda). */
 export function variantesCodigo(c) {
   const v = new Set([c]);

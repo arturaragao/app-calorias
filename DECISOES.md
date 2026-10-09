@@ -61,3 +61,8 @@
 - 2026-10-08 · Proteína por refeição: alvo 0,4 g/kg (Schoenfeld & Aragon, JISSN 2018;15:10).
 - 2026-10-08 · IA identifica e pesa; nutrientes vêm da TACO/Meus alimentos quando o nome TACO (ou o curto) encontra correspondência; senão, valores da IA como Adição rápida.
 - 2026-10-08 · Rótulo: base "porcao" é convertida para 100 g; sem kcal ou sem gramas da porção → não preenche.
+- 2026-10-08 · PDF sem biblioteca: página de impressão (#impressao, @media print) + window.print(); o nome sugerido vem do document.title.
+- 2026-10-08 · Micronutrientes em food.mic (por 100 g); "Tr" = 0, NA = ausente; vitamina A = RAE ou, se vazio (origem animal), retinol. Itens antigos usam o mic do alimento atual da base. Referências: DRI IOM/NASEM adultos 19–50 (K = AI 2019).
+- 2026-10-08 · Fotos corporais na store photos com chave "corpo|AAAA-MM-DD" (sem nova versão do IndexedDB); uma foto por posição e data.
+- 2026-10-08 · Leitor: EAN/UPC aceito na 1ª leitura se o dígito verificador GTIN confere; demais formatos exigem 2 leituras iguais.
+- 2026-10-08 · Quantidade: "1 grama" sempre listado como porção (não é salvo em porcoesUsuario).

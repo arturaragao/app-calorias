@@ -19,7 +19,9 @@ export function folhaAlimento(food, opcoes = {}) {
   const origem = food || opcoes.prefill || opcoes.duplicarDe || {};
   const editando = !!food;
   const porcao = origem.porcoes?.[0];
-  const base = 100;
+  // opcoes.baseG: mostra os valores referentes a essa quantidade (ex.: porção do rótulo); são guardados por 100 g
+  const base = opcoes.baseG > 0 ? opcoes.baseG : 100;
+  const mostrar = (v) => (v == null ? '' : fmtNum(Math.round(((v * base) / 100) * 10) / 10));
   const fonteIni = editando || opcoes.prefill ? origem.fonte || '' : opcoes.duplicarDe ? (origem.fonte || '') + ' (editado)' : 'rótulo';
   const painel = abrirFolha(opcoes.titulo || (editando ? 'Editar alimento' : opcoes.duplicarDe ? 'Duplicar e editar' : 'Novo alimento'), `
     <form id="fa" novalidate>
@@ -30,7 +32,7 @@ export function folhaAlimento(food, opcoes = {}) {
       <label class="campo"><span>Valores abaixo referentes a quantos gramas?</span>
         <input type="text" inputmode="decimal" name="baseG" value="${base}"></label>
       <div class="grade2">${CAMPOS.map(([k, r]) => `<label class="campo"><span>${r}</span>
-        <input type="text" inputmode="decimal" name="${k}" value="${fmtNum(origem[k])}"></label>`).join('')}</div>
+        <input type="text" inputmode="decimal" name="${k}" value="${base === 100 ? fmtNum(origem[k]) : mostrar(origem[k])}"></label>`).join('')}</div>
       <div class="grade2">
         <label class="campo"><span>Porção (nome, opcional)</span><input type="text" name="pNome" maxlength="30" value="${esc(porcao?.nome || '')}" placeholder="ex.: scoop"></label>
         <label class="campo"><span>Porção (g)</span><input type="text" inputmode="decimal" name="pG" value="${fmtNum(porcao?.g)}"></label>

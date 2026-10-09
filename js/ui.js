@@ -114,3 +114,15 @@ export function seg(nome, opcoes, atual) {
   return `<div class="seg" role="group" data-seg="${nome}">${opcoes.map(([v, r]) =>
     `<button type="button" data-v="${v}" aria-pressed="${v === atual}">${esc(r)}</button>`).join('')}</div>`;
 }
+
+// ---------- Arquivos ----------
+/** Compartilha (Android: WhatsApp, Drive, e-mail…) ou baixa o arquivo. */
+export async function entregarArquivo(blob, nome, titulo = nome) {
+  const arq = new File([blob], nome, { type: blob.type });
+  if (navigator.canShare?.({ files: [arq] })) {
+    try { await navigator.share({ files: [arq], title: titulo }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nome; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}

@@ -18,6 +18,8 @@ import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
 import { folhaFotoIA, folhaTextoIA } from './foto-ia.js';
 import { folhaSalvarRefeicao, folhaSalvas } from './salvas.js';
+import { carregarBase } from '../foods.js';
+import { tabelaMicros } from './micros-ui.js';
 import { pendenteToque } from '../drive.js';
 import { enviarAgora } from './drive-ui.js';
 
@@ -347,7 +349,8 @@ async function apagar(refId, itemId) {
   aviso(`${removido.nome} apagado`, { acao: async () => { await gravarDia(antes); desenhar(); } });
 }
 
-function detalheDia() {
+async function detalheDia() {
+  const base = await carregarBase().catch(() => null);
   const tot = totalDia(dia);
   const refs = refeicoesDoDia(dia, estado.config.refeicoes);
   const falta = camposFaltando(Object.values(dia.refeicoes).flat());
@@ -367,6 +370,7 @@ function detalheDia() {
     <table class="tabela num"><tr><th></th><th>kcal</th><th>P</th><th>C</th><th>G</th><th>Fibra</th><th>Na</th></tr>
       ${refs.map((r) => { const t = totalRefeicao(dia, r.id); return `<tr><td>${esc(r.nome)}</td><td>${fmtKcal(t.kcal)}</td><td>${fmtMacro(t.prot)}</td><td>${fmtMacro(t.carb)}</td><td>${fmtMacro(t.gord)}</td><td>${fmtMacro(t.fibra)}</td><td>${fmtMg(t.sodio_mg)}</td></tr>`; }).join('')}
     </table>
+    ${tabelaMicros(Object.values(dia.refeicoes).flat(), 1, base)}
     ${alvoProtRef ? `<p class="mudo">Proteína por refeição: alvo ≈ ${alvoProtRef} g (0,4 g/kg; Schoenfeld & Aragon, 2018), em 4 ou mais refeições.</p>` : ''}
     ${meta.treinoExtra ? `<p class="nota">🏋️ Dia de treino: meta +${fmtKcal(meta.treinoExtra)} kcal (em carboidratos).</p>` : ''}
     ${dia.nota ? `<p class="nota">📝 ${esc(dia.nota)}</p>` : ''}

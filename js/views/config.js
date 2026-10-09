@@ -1,7 +1,11 @@
 // views/config.js — configurações: perfil, metas, tema, refeições e sobre.
 
 import { estado, salvarConfig } from '../state.js';
-import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha } from '../ui.js';
+import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha, entregarArquivo } from '../ui.js';
+import { csvItens, csvTotais } from '../exportar.js';
+import { db } from '../db.js';
+import { metaDoDia } from '../goals.js';
+import { ehTreino } from '../diary.js';
 import { aplicarTema } from '../app.js';
 import { uid, chaveData, fmtNum, fmtKcal } from '../utils.js';
 import { exportar, apagarTudo } from '../backup.js';
@@ -55,6 +59,9 @@ export async function render(tela) {
       <form id="f-ia" class="linha"><input type="password" name="chave" placeholder="${lerChave() ? 'Chave salva ✓ (cole outra para trocar)' : 'Cole a chave (AIza…)'}" autocomplete="off" style="flex:1">
         <button class="btn prim">Salvar</button></form>
       ${lerChave() ? '<button class="btn peq suave" data-ia-remover style="margin-top:8px">Remover chave</button>' : ''}</div>
+    <div class="card"><h2 style="margin-bottom:6px">Exportar diário (planilha)</h2>
+      <p class="mudo" style="margin-top:0">Arquivo CSV que abre no Excel ou no Planilhas Google (separador “;”, vírgula decimal).</p>
+      <div class="grade2"><button class="btn" data-csv="itens">Item por item</button><button class="btn" data-csv="totais">Totais por dia</button></div></div>
     <div class="card"><h2 style="margin-bottom:6px">Armazenamento</h2><p class="mudo" id="arm" style="margin-top:0">…</p>
       <button class="btn perigo bloco" data-apagar-tudo>Apagar todos os dados</button></div>
     <div class="card"><h2 style="margin-bottom:6px">Sobre</h2>
@@ -88,6 +95,15 @@ export async function render(tela) {
   tela.onclick = async (e) => {
     const b = e.target.closest('button');
     if (!b || b.closest('#drive')) return;
+    if (b.dataset.csv) {
+      const diarios = (await db.getAll('diary')).map(([, d]) => d).filter((d) => Object.values(d.refeicoes).some((l) => l.length));
+      if (!diarios.length) return aviso('Ainda não há dias registrados.');
+      const nomes = Object.fromEntries(estado.config.refeicoes.map((r) => [r.id, r.nome]));
+      const txt = b.dataset.csv === 'itens' ? csvItens(diarios, nomes)
+        : csvTotais(diarios, (d) => metaDoDia(estado.metas, d.data, estado.perfil.peso, { treino: ehTreino(d) }));
+      await entregarArquivo(new Blob([txt], { type: 'text/csv' }), `diario-${b.dataset.csv}-${chaveData()}.csv`, 'Diário (CSV)');
+      return;
+    }
     if ('iaRemover' in b.dataset) { salvarChave(''); aviso('Chave removida'); return render(tela); }
     if ('exportar' in b.dataset) {
       b.disabled = true;

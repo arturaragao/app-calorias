@@ -45,7 +45,7 @@ export function criarItem(food, gramas, porcao = null) {
   return {
     id: uid(), foodId: food.id, nome: food.nome, fonte: food.fonte || '',
     g: gramas, porcao, n, falta,
-    por100: Object.fromEntries(NUTRIENTES.map((k) => [k, food[k] ?? null])),
+    por100: { ...Object.fromEntries(NUTRIENTES.map((k) => [k, food[k] ?? null])), ...(food.mic ? { mic: food.mic } : {}) },
   };
 }
 

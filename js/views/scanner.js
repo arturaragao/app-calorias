@@ -3,11 +3,11 @@
 
 import { abrirFolha, fecharFolha, aviso, esc } from '../ui.js';
 import { catalogo } from '../custom.js';
-import { limparCodigo, variantesCodigo, buscarCodigo } from '../off.js';
+import { limparCodigo, variantesCodigo, buscarCodigo, digitoOk } from '../off.js';
 import { folhaAlimento } from './alimento-form.js';
 import { fmtKcal, fmtMacro } from '../utils.js';
 
-const FORMATOS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'];
+const FORMATOS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf', 'code_128'];
 
 /** aoAlimento(food): chamado com o alimento pronto para lançar (já salvo em Meus alimentos). */
 export async function abrirScanner({ aoAlimento }) {
@@ -16,8 +16,9 @@ export async function abrirScanner({ aoAlimento }) {
   const temDetector = 'BarcodeDetector' in window;
   const p = abrirFolha('Ler código de barras', `
     ${temDetector ? `<div class="camera"><video id="vid" playsinline muted></video><div class="mira"></div>
-      <button class="btn peq lanterna" id="luz" hidden>🔦 Lanterna</button></div>
-      <p class="mudo" id="st">Aponte a câmera para o código de barras da embalagem.</p>`
+      <button class="btn peq lanterna" id="luz" hidden>🔦 Lanterna</button>
+      <div class="zoom" id="zoom" hidden><span>1×</span><input type="range" id="zr" aria-label="Zoom"><span id="zv"></span></div></div>
+      <p class="mudo" id="st">Aponte para o código, a uns 15–20 cm, com o código na faixa. Toque na imagem para focar.</p>`
     : '<p class="nota">Este navegador não lê códigos pela câmera. Digite os números abaixo.</p>'}
     <form id="fm" class="linha" style="margin-top:8px"><input type="text" inputmode="numeric" name="cod" placeholder="ou digite o código (8 a 14 dígitos)" autocomplete="off">
       <button class="btn prim" style="flex:0 0 auto">OK</button></form>`, { fechar: encerrar, foco: false });
@@ -33,31 +34,62 @@ export async function abrirScanner({ aoAlimento }) {
   try {
     const suportados = await BarcodeDetector.getSupportedFormats();
     const det = new BarcodeDetector({ formats: FORMATOS.filter((f) => suportados.includes(f)) });
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    // resolução maior = barras finas mais nítidas
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
     if (parar) return encerrar();
     const vid = p.querySelector('#vid');
     vid.srcObject = stream;
     await vid.play();
     const trilha = stream.getVideoTracks()[0];
-    if (trilha.getCapabilities?.().torch) {
+    const cap = trilha.getCapabilities?.() || {};
+    if (cap.torch) {
       const b = p.querySelector('#luz'); let ligada = false; b.hidden = false;
       b.onclick = () => { ligada = !ligada; trilha.applyConstraints({ advanced: [{ torch: ligada }] }).catch(() => {}); };
     }
-    // laço de detecção (~6 vezes por segundo); exige 2 leituras iguais seguidas para evitar erro
-    let anterior = '';
+    // foco contínuo; toque na imagem refaz o foco
+    if (cap.focusMode?.includes('continuous')) trilha.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+    vid.onclick = () => {
+      if (cap.focusMode?.includes('single-shot')) trilha.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] })
+        .then(() => setTimeout(() => cap.focusMode.includes('continuous') && trilha.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {}), 1200)).catch(() => {});
+    };
+    // zoom: começa em ~2× (dá para afastar o celular e a câmera consegue focar); ajustável
+    if (cap.zoom && cap.zoom.max > 1) {
+      const z = p.querySelector('#zoom'), zr = p.querySelector('#zr'), zv = p.querySelector('#zv');
+      const ini = Math.min(cap.zoom.max, Math.max(cap.zoom.min || 1, 2));
+      Object.assign(zr, { min: cap.zoom.min || 1, max: Math.min(cap.zoom.max, 6), step: cap.zoom.step || 0.1, value: ini });
+      const aplicar = () => { zv.textContent = `${Number(zr.value).toFixed(1).replace('.', ',')}×`; trilha.applyConstraints({ advanced: [{ zoom: Number(zr.value) }] }).catch(() => {}); };
+      zr.oninput = aplicar; z.hidden = false; aplicar();
+    }
+    // laço de detecção: alterna o quadro inteiro e o centro (faixa da mira) ampliado 2×, que ajuda em códigos pequenos.
+    // EAN/UPC com dígito verificador correto vale na 1ª leitura; os demais exigem 2 leituras iguais seguidas.
+    const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    let anterior = '', vez = 0;
+    const recorte = () => {
+      const w = vid.videoWidth, h = vid.videoHeight;
+      if (!w || !h) return vid;
+      const sw = w * 0.8, sh = h * 0.34;
+      cv.width = Math.round(sw * 2); cv.height = Math.round(sh * 2);
+      cx.drawImage(vid, (w - sw) / 2, (h - sh) / 2, sw, sh, 0, 0, cv.width, cv.height);
+      return cv;
+    };
     const laco = async () => {
       if (parar) return;
       try {
-        const cods = await det.detect(vid);
-        const c = limparCodigo(cods[0]?.rawValue);
-        if (c && c === anterior) {
-          navigator.vibrate?.(80);
-          encerrar(); fecharFolha();
-          return resolver(c, aoAlimento);
+        const fonte = vez++ % 2 ? recorte() : vid;
+        const cods = await det.detect(fonte);
+        for (const cod of cods) {
+          const c = limparCodigo(cod.rawValue);
+          if (!c) continue;
+          const confiavel = /ean|upc/.test(cod.format) && digitoOk(c);
+          if (confiavel || c === anterior) {
+            navigator.vibrate?.(80);
+            encerrar(); fecharFolha();
+            return resolver(c, aoAlimento);
+          }
+          anterior = c;
         }
-        anterior = c || anterior;
       } catch {}
-      setTimeout(laco, 160);
+      setTimeout(laco, 90);
     };
     laco();
   } catch (e) {

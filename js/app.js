@@ -46,6 +46,7 @@ export async function navegar() {
     tela.innerHTML = '';
     await mod.render(tela, rota);
     window.scrollTo(0, 0);
+    tela.classList.remove('entrando'); void tela.offsetWidth; tela.classList.add('entrando');   // transição suave
   } catch (e) {
     console.error(e);
     tela.innerHTML = `<div class="card"><p>Erro ao abrir a tela.</p><p class="mudo">${String(e.message || e)}</p></div>`;

@@ -62,9 +62,27 @@ def item(fid, nome, grupo, fonte, vals):
 NUM = r'(?:\d+(?:,\d+)?[a-z]?|NA|Tr|\*)'
 LINHA_A = re.compile(r'^(\d+)\s+(.+?)\s+((?:' + NUM + r'\s+){10}' + NUM + r')$')
 
+# Micronutrientes (por 100 g) guardados em "mic": página (a) = colesterol, Ca, Mg; página (b) = demais.
+# Página (b), 15 colunas: Mn, P, Fe, Na, K, Cu, Zn, Retinol, RE, RAE, Tiamina, Riboflavina, Piridoxina, Niacina, Vit. C
+MIC_A = {'colest_mg': 5, 'calcio_mg': 9, 'magnesio_mg': 10}
+MIC_B = {'fosforo_mg': 1, 'ferro_mg': 2, 'potassio_mg': 4, 'zinco_mg': 6, 'vita_ug': 9, 'tiamina_mg': 10,
+         'riboflavina_mg': 11, 'piridoxina_mg': 12, 'niacina_mg': 13, 'vitc_mg': 14}
+
+def micros(va, vb):
+    m = {}
+    for campo, j in MIC_A.items():
+        v, _ = valor(va[j] if va else None)
+        if v is not None: m[campo] = round(v, 3)
+    for campo, j in MIC_B.items():
+        v, _ = valor(vb[j] if vb else None)
+        if v is None and campo == 'vita_ug':          # origem animal: só retinol (RAE = retinol)
+            v, _ = valor(vb[7] if vb else None)
+        if v is not None: m[campo] = round(v, 3)
+    return m
+
 def importar_taco_pdf(caminho):
     import pdfplumber
-    centesimal, sodio, grupos = {}, {}, {}
+    centesimal, sodio, grupos, minerais = {}, {}, {}, {}
     grupo = ''
     pendente = ''
     with pdfplumber.open(caminho) as pdf:
@@ -109,6 +127,10 @@ def importar_taco_pdf(caminho):
                 if not cab: continue
                 xs = (cab[0]['x0'] + cab[0]['x1']) / 2
                 topo = cab[0]['bottom'] + 12
+                # linha de unidades "(mg) (µg)" logo abaixo do cabeçalho: centro x das 15 colunas
+                unid = sorted([w for w in palavras if re.fullmatch(r'\((mg|µg|mcg)\)', w['text'])
+                               and cab[0]['bottom'] - 2 < w['top'] < cab[0]['bottom'] + 14], key=lambda w: w['x0'])
+                cols = [(w['x0'] + w['x1']) / 2 for w in unid] if len(unid) == 15 else None
                 linhas = {}
                 for w in palavras:
                     if w['top'] > topo:
@@ -121,12 +143,23 @@ def importar_taco_pdf(caminho):
                     alvo = min(ws[1:], key=lambda w: abs((w['x0'] + w['x1']) / 2 - xs))
                     if abs((alvo['x0'] + alvo['x1']) / 2 - xs) < 14:
                         sodio[n] = alvo['text']
+                    if cols:
+                        v = [None] * 15
+                        for w in ws[1:]:
+                            c = (w['x0'] + w['x1']) / 2
+                            j = min(range(15), key=lambda k: abs(c - cols[k]))
+                            if abs(c - cols[j]) < 14: v[j] = w['text']
+                        minerais[n] = v
     itens = []
     for n in sorted(centesimal):
         nome, v = centesimal[n]
         vals = {'kcal': v[1], 'prot': v[3], 'gord': v[4], 'carb': v[6], 'fibra': v[7],
                 'sodio_mg': sodio.get(n)}
-        itens.append(item(f'taco-{n}', nome, grupos[n], 'TACO', vals))
+        it = item(f'taco-{n}', nome, grupos[n], 'TACO', vals)
+        mic = micros(v, minerais.get(n))
+        if mic: it['mic'] = mic
+        itens.append(it)
+    print(f'  micronutrientes: {sum(1 for i in itens if "mic" in i)} alimentos com ao menos um valor')
     return itens
 
 # ---------- planilhas (CSV/XLSX) de TACO ou TBCA ----------

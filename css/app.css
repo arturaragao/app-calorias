@@ -375,3 +375,60 @@ button.nota { display: block; width: 100%; text-align: left; border: 0; font: in
 .ia-n { margin-top: 6px; font-size: .82rem; }
 .cal button.anot { position: relative; }
 .cal button.anot::after { content: ''; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* ---------- Pacote 4 ---------- */
+.passo5 { gap: 4px; }
+.passo5 .btn { min-width: 0; flex: 0 0 44px; font-size: .9rem; font-weight: 600; }
+.passo5 input { min-width: 0; flex: 1; }
+
+.camera .zoom { position: absolute; left: 10px; bottom: 10px; right: 120px; display: flex; align-items: center; gap: 6px;
+  background: rgb(0 0 0 / .45); color: #fff; font-size: .75rem; border-radius: 999px; padding: 4px 10px; }
+.camera .zoom input { flex: 1; min-width: 0; accent-color: var(--acento); }
+
+.micros { margin-top: 12px; }
+.micros summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.micros td.baixo { color: var(--alerta); font-weight: 600; }
+
+.fotos-corpo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fotos-corpo button { border: 0; padding: 0; background: none; position: relative; cursor: pointer; border-radius: 10px; overflow: hidden; aspect-ratio: 3 / 4; }
+.fotos-corpo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fotos-corpo span { position: absolute; left: 0; right: 0; bottom: 0; font-size: .72rem; color: #fff; background: rgb(0 0 0 / .45); padding: 3px 6px; text-align: left; }
+.antes-depois { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 3 / 4; background: #000; margin: 6px 0; }
+.antes-depois img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.antes-depois .divisa { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; box-shadow: 0 0 6px rgb(0 0 0 / .5); }
+.antes-depois .rot-a, .antes-depois .rot-b { position: absolute; top: 8px; font-size: .75rem; font-weight: 600; color: #fff; background: rgb(0 0 0 / .5); padding: 2px 8px; border-radius: 999px; }
+.antes-depois .rot-a { left: 8px; } .antes-depois .rot-b { right: 8px; }
+.pose-linha { gap: 6px; margin: 10px 0; flex-wrap: wrap; }
+
+/* transição entre telas */
+.tela.entrando { animation: entrar .22s ease-out; }
+@keyframes entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tela.entrando { animation: none; } }
+
+/* ---------- Relatório para impressão / PDF ---------- */
+#impressao { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  body > *:not(#impressao) { display: none !important; }
+  html, body { background: #fff !important; }
+  #impressao {
+    display: block; color: #111; font: 10.5pt/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --bg: #fff; --sup: #fff; --sup2: #eef3ef; --txt: #111; --txt2: #555; --borda: #ccd8cf;
+    --acento: #2b7a4d; --prot: #2b7c85; --carb: #8a7622; --gord: #a2583a; --alerta: #955700;
+  }
+  #impressao h1 { font-size: 16pt; margin: 0 0 2px; color: #1d5a37; }
+  #impressao h2 { font-size: 11.5pt; margin: 14px 0 4px; color: #1d5a37; border-bottom: 1px solid #ccd8cf; padding-bottom: 2px; }
+  #impressao header p, #impressao p { margin: 3px 0; }
+  #impressao table { width: 100%; border-collapse: collapse; margin: 4px 0; font-size: 9.5pt; }
+  #impressao th, #impressao td { border-bottom: 1px solid #dde6e0; padding: 3px 4px; text-align: right; }
+  #impressao th:first-child, #impressao td:first-child { text-align: left; }
+  #impressao th { color: #555; font-weight: 600; }
+  #impressao section { break-inside: avoid; }
+  #impressao .graf { max-width: 150mm; margin: 4px auto; }
+  #impressao .grafico text { font-size: 8px; fill: #555; }
+  #impressao .legenda, #impressao .mudo { color: #555; font-size: 9pt; }
+  #impressao .dica, #impressao .cursor { display: none; }
+  #impressao footer { margin-top: 16px; font-size: 8.5pt; color: #666; border-top: 1px solid #ccd8cf; padding-top: 6px; }
+}
+
+input[type=range] { accent-color: var(--acento); }

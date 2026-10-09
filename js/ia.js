@@ -34,8 +34,8 @@ pelas quantidades ditas ou, se não houver, por porções caseiras brasileiras u
 Se o texto não descrever comida, devolva itens vazio e explique em "observacao". Responda só o JSON.`;
 
 const PROMPT_ROTULO = `Leia a TABELA NUTRICIONAL do rótulo na foto (padrão brasileiro ANVISA). Devolva o nome do produto e a marca
-(se visíveis), a porção em gramas (ou ml) e sua descrição caseira (ex.: "1 scoop", "2 fatias"), e os valores POR 100 g se a tabela
-tiver a coluna "100 g"; senão, os valores da porção (indique em "base": "100g" ou "porcao"). Valor energético em kcal; sódio em mg.
+(se visíveis), a porção em gramas (ou ml) e sua descrição caseira (ex.: "1 scoop", "2 fatias"), e os valores da coluna da PORÇÃO
+(base: "porcao"). Só se a tabela não tiver coluna da porção, use a de 100 g (base: "100g"). Valor energético em kcal; sódio em mg.
 Se um valor não aparecer, omita o campo. Não invente valores. Se não houver tabela nutricional legível, explique em "observacao".`;
 
 const N = { type: 'NUMBER' }, S = { type: 'STRING' };

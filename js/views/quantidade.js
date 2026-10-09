@@ -16,6 +16,8 @@ import { fmtKcal, fmtMacro, fmtNum, lerNumero } from '../utils.js';
 export async function folhaQuantidade(food, opcoes) {
   const { porcoes: tabela } = await carregarBase();
   const porcoes = porcoesDe(food, tabela, estado.config.porcoesUsuario);
+  // "1 grama" sempre disponível como porção: quantidade conta gramas, de 1 em 1
+  const lista = [...porcoes, { nome: 'grama', g: 1, umG: true }];
   const ultima = estado.config.ultimaQtd[food.id];
   // porção própria do produto (rótulo/receita) vira o padrão quando não há última quantidade
   const porcaoPropria = !ultima && !opcoes.g && food.porcoes?.length && !porcoes[0]?.aprox;
@@ -35,15 +37,17 @@ export async function folhaQuantidade(food, opcoes) {
         : '<button type="button" class="btn peq" data-duplicar>Duplicar e editar</button>'}</div>`}
     ${falta.length ? '<p class="nota alerta">Alguns nutrientes não constam na fonte (contam como 0).</p>' : ''}
     <div class="seg" role="group"><button type="button" data-modo="g" aria-pressed="${modo === 'g'}">Gramas</button>
-      <button type="button" data-modo="porcao" aria-pressed="${modo === 'porcao'}" ${porcoes.length ? '' : 'disabled'}>Porção caseira</button></div>
-    <div id="m-g" class="passo">
-      <button type="button" class="btn" data-d="-10" aria-label="Menos 10 g">−</button>
+      <button type="button" data-modo="porcao" aria-pressed="${modo === 'porcao'}">Porção</button></div>
+    <div id="m-g" class="passo passo5">
+      <button type="button" class="btn" data-d="-10" aria-label="Menos 10 g">−10</button>
+      <button type="button" class="btn" data-d="-1" aria-label="Menos 1 g">−1</button>
       <input type="text" inputmode="decimal" name="g" value="${fmtNum(gIni)}" aria-label="Gramas">
-      <button type="button" class="btn" data-d="10" aria-label="Mais 10 g">+</button><span class="mudo">g</span>
+      <button type="button" class="btn" data-d="1" aria-label="Mais 1 g">+1</button>
+      <button type="button" class="btn" data-d="10" aria-label="Mais 10 g">+10</button><span class="mudo">g</span>
     </div>
     <div id="m-p">
-      <select name="porcao" aria-label="Porção">${porcoes.map((p, i) =>
-        `<option value="${i}" ${porcaoIni && p.nome === porcaoIni.nome ? 'selected' : ''}>${esc(p.nome)} (${fmtNum(p.g)} g)</option>`).join('')}</select>
+      <select name="porcao" aria-label="Porção">${lista.map((p, i) =>
+        `<option value="${i}" ${porcaoIni && p.nome === porcaoIni.nome ? 'selected' : ''}>${p.umG ? '1 grama (contar de 1 em 1 g)' : `${esc(p.nome)} (${fmtNum(p.g)} g)`}</option>`).join('')}</select>
       <div class="passo" style="margin-top:8px"><button type="button" class="btn" data-q="-0.5" aria-label="Menos meia porção">−</button>
         <input type="text" inputmode="decimal" name="qtd" value="${fmtNum(porcaoIni?.qtd ?? 1)}" aria-label="Quantidade">
         <button type="button" class="btn" data-q="0.5" aria-label="Mais meia porção">+</button><span class="mudo">porção(ões)</span></div>
@@ -59,7 +63,7 @@ export async function folhaQuantidade(food, opcoes) {
 
   const ler = () => {
     if (modo === 'g') return { g: lerNumero(painel.querySelector('[name=g]').value), porcao: null };
-    const p = porcoes[Number(painel.querySelector('[name=porcao]').value)];
+    const p = lista[Number(painel.querySelector('[name=porcao]').value)];
     const qtd = lerNumero(painel.querySelector('[name=qtd]').value);
     return { g: p.g * qtd, porcao: { nome: p.nome, g: p.g, qtd } };
   };
@@ -83,7 +87,10 @@ export async function folhaQuantidade(food, opcoes) {
     } else if (t.dataset.d || t.dataset.q) {
       const inp = painel.querySelector(t.dataset.d ? '[name=g]' : '[name=qtd]');
       const v = lerNumero(inp.value);
-      inp.value = fmtNum(Math.max(0, (isNaN(v) ? 0 : v) + Number(t.dataset.d || t.dataset.q)));
+      // na porção "1 grama" o passo é de 1 (em vez de meia porção)
+      const umG = t.dataset.q && lista[Number(painel.querySelector('[name=porcao]').value)]?.umG;
+      const passo = umG ? Math.sign(Number(t.dataset.q)) : Number(t.dataset.d || t.dataset.q);
+      inp.value = fmtNum(Math.max(0, Math.round(((isNaN(v) ? 0 : v) + passo) * 100) / 100));
     } else if ('fav' in t.dataset) {
       const fav = alternarFavorito(food.id);
       t.textContent = fav ? '★ Favorito' : '☆ Favoritar';

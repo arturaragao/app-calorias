@@ -12,6 +12,9 @@ import { lerPesos } from './reg-peso.js';
 import { lerDobras } from './reg-dobras.js';
 import { idadePerfil } from './onboarding.js';
 import { compartilharRelatorio } from './relatorio-img.js';
+import { tabelaMicros } from './micros-ui.js';
+import { gerarRelatorioPDF } from './relatorio-pdf.js';
+import { carregarBase } from '../foods.js';
 import { topo, esc, $, seg, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
 import { chaveData, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, somarDias, DIAS_CURTOS } from '../utils.js';
 
@@ -44,6 +47,7 @@ export async function render(tela) {
   const tend = P.tendenciaPeso(pesos);
   const tendEm = new Map(tend.map((p) => [p.data, p.y]));
   const dobras = await lerDobras();
+  const baseAlim = await carregarBase().catch(() => null);
   const circ = (await db.getAll('circumferences')).map(([data, v]) => ({ data, valores: v.valores })).sort((a, b) => (a.data < b.data ? -1 : 1));
   const defsCirc = estado.config.circDef || CIRC_PADRAO;
   const seq = P.sequencia(new Set(dias.map((d) => d.data)), hoje);
@@ -65,6 +69,7 @@ export async function render(tela) {
     const comp = (atual, ant, f, un = '') => (atual == null || ant == null ? '<small>&nbsp;</small>' : (f(Math.abs(atual - ant)) === f(0) ? '<small>igual ao anterior</small>' : `<small>${sinal(atual - ant, f)}${un} vs anterior</small>`));
 
     tela.innerHTML = `${seg('periodo', PERIODOS, estado.periodoProg)}
+      <button class="btn bloco suave" data-pdf style="margin:-4px 0 12px">📄 Relatório em PDF (para nutricionista)</button>
       <div class="kpis num">
         <div class="kpi"><b>${mm.n ? fk(mm.consumo.kcal) : '—'}</b><span>kcal/dia</span>${cmp ? comp(cmp.kcal[0], cmp.kcal[1], fk) : ''}</div>
         <div class="kpi"><b>${mm.n ? fmtNum(Math.round(mm.consumo.prot)) + ' g' : '—'}</b><span>proteína/dia</span>${cmp ? comp(cmp.prot[0], cmp.prot[1], (v) => fmtNum(Math.round(v)), ' g') : ''}</div>
@@ -231,7 +236,15 @@ export async function render(tela) {
       <div class="sub-num num"><span>Kcal vindas de:</span><span>P <b>${fmtNum(Math.round(mm.pct.prot))}%</b></span>
         <span>C <b>${fmtNum(Math.round(mm.pct.carb))}%</b></span><span>G <b>${fmtNum(Math.round(mm.pct.gord))}%</b></span>
         ${pesoRef ? `<span>Proteína <b>${f1(mm.consumo.prot / pesoRef)} g/kg</b></span>` : ''}</div>
-      <p class="mudo" style="margin-bottom:0">Base: ${mm.n} dia(s) com registro.</p></div>`;
+      <p class="mudo" style="margin-bottom:0">Base: ${mm.n} dia(s) com registro.</p>
+      ${microsPeriodo()}</div>`;
+  }
+
+  function microsPeriodo() {
+    const n = Number(estado.periodoProg) || null;
+    const ini = n ? somarDias(hoje, -(n - 1)) : '0000';
+    const ds = brutos.filter((d) => d.data >= ini && d.data <= hoje);
+    return ds.length ? tabelaMicros(ds.flatMap((d) => Object.values(d.refeicoes).flat()), ds.length, baseAlim) : '';
   }
 
   // ---------- Origem das calorias ----------
@@ -313,6 +326,7 @@ export async function render(tela) {
       if (dia) { estado.dataAtual = dia.dataset.dia; location.hash = '#diario'; return; }
       const sem = e.target.closest('[data-sem]');
       if (sem) { semRel = somarDias(semRel, Number(sem.dataset.sem)); return desenharRelatorio(); }
+      if (e.target.closest('[data-pdf]')) return gerarRelatorioPDF(Number(estado.periodoProg) || null).catch((err) => { console.error(err); aviso('Não foi possível gerar o relatório: ' + err.message); });
       if (e.target.closest('[data-alvo]')) return folhaAlvo();
       const ap = e.target.closest('[data-aplicar]');
       if (ap) return aplicarMeta(Number(ap.dataset.aplicar));
