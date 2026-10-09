@@ -63,7 +63,7 @@ const chaveCombo = (itens) => itens.map((i) => i.foodId || i.food?.id).sort().jo
  * (a mesma combinação no máximo N vezes por refeição na semana).
  * Devolve [{ data, refId, origem: 'salva'|'combo', nome, itens: [{ food, g } | snapshot] }].
  */
-export function montarSemana({ datas, refs, alvos, candidatos, salvas = [], ocupadas = new Set(), maxRepeticoes = 2, usarSalvas = true }) {
+export function montarSemana({ datas, refs, alvos, candidatos, salvas = [], ocupadas = new Set(), maxRepeticoes = 2, usarSalvas = true, combinar = sugerirCombinacoes }) {
   const usos = new Map();          // ref|combo → vezes
   const out = [];
   for (const data of datas) {
@@ -79,7 +79,7 @@ export function montarSemana({ datas, refs, alvos, candidatos, salvas = [], ocup
         }
         opcoes.sort((a, b) => a.erro - b.erro);
       }
-      for (const c of sugerirCombinacoes(alvo, candidatos(r.id) || [], { n: 5 })) {
+      for (const c of combinar(alvo, candidatos(r.id) || [], { n: 5 })) {
         opcoes.push({ origem: 'combo', nome: c.itens.map((i) => i.food.nome.split(',')[0]).join(' + '), itens: c.itens.map((i) => ({ food: i.food, g: i.g, foodId: i.food.id })) });
       }
       const escolha = opcoes.find((o) => (usos.get(`${r.id}|${chaveCombo(o.itens)}`) || 0) < maxRepeticoes);

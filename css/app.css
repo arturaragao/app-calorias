@@ -890,3 +890,7 @@ label.btn.desab { opacity: 1; color: color-mix(in srgb, var(--txt) 40%, transpar
 .rest-prato .chip { margin-bottom: 6px; }
 .rec-foto img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--r-s); display: block; margin-top: var(--e2); }
 .rec-foto:empty { display: none; }
+.sug-combo .chip { margin-bottom: 6px; }
+.sug-combo .chip .i { color: var(--acento); }
+.sug-combo.agrado { border-style: dashed; }
+.sug-combo.agrado .chip .i { color: var(--alerta); }

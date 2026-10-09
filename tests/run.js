@@ -1038,6 +1038,34 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   });
 }
 
+// ---------- O que comer agora: priorizar o que faz bem ----------
+{
+  const IN = await import('../js/inteligencia.js');
+  const fx = JSON.parse(readFileSync(new URL('../foods.json', import.meta.url), 'utf8'));
+  const nome = (n) => fx.find((f) => f.nome === n);
+  t('Saúde do alimento: verduras/leguminosas altas, embutido e frito baixos, doces = guloseima (batata-doce não)', () => {
+    const s = (n) => IN.saudeAlimento(nome(n));
+    if (!(s('Brócolis, cozido').nota > 0.8 && s('Feijão, carioca, cozido').nota > 0.8)) throw new Error('básicos');
+    if (!(s('Lingüiça, porco, frita').nota < 0.3)) throw new Error('embutido frito');
+    if (!s('Chocolate, ao leite').guloseima || !s('Refrigerante, tipo cola').guloseima) throw new Error('guloseima');
+    if (s('Batata, doce, cozida').guloseima) throw new Error('batata-doce não é doce');
+    for (const lista of Object.values(IN.BASICOS)) for (const n of lista) if (!nome(n)) throw new Error('básico inexistente na TACO: ' + n);
+  });
+  t('Sugestões: as primeiras sem guloseima e no máximo um agrado (só se o usuário come doce)', () => {
+    const c = (n, g, habitual = true) => ({ food: nome(n), gTipico: g, vezes: 5, habitual });
+    const cands = [c('Chocolate, ao leite', 30), c('Biscoito, doce, recheado com chocolate', 40), c('Arroz, tipo 1, cozido', 150),
+      c('Feijão, carioca, cozido', 140), c('Frango, peito, sem pele, grelhado', 120), c('Brócolis, cozido', 80, false), c('Banana, prata, crua', 90)];
+    const alvo = { kcal: 600, prot: 40, carb: 70, gord: 15 };
+    const r = IN.sugerirSaudaveis(alvo, cands, { n: 3 });
+    const gul = (x) => x.itens.some((i) => IN.saudeAlimento(i.food).guloseima);
+    if (r.filter(gul).length > 1) throw new Error('mais de um agrado');
+    if (gul(r[0]) || r[0].tipo !== 'saudavel') throw new Error('a 1ª tem de ser nutritiva');
+    if (r.some(gul) && r.find(gul).tipo !== 'agrado') throw new Error('agrado sem rótulo');
+    const semDoce = IN.sugerirSaudaveis(alvo, cands.map((x) => ({ ...x, habitual: IN.saudeAlimento(x.food).guloseima ? false : x.habitual })), { n: 3 });
+    if (semDoce.some(gul)) throw new Error('não oferece doce a quem não come doce');
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

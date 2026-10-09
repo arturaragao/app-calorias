@@ -124,3 +124,4 @@
 - 2026-10-09 · Receita por link: Gemini com `tools: [{url_context: {}}]` (sem esquema de resposta, JSON extraído do texto); 404/400 tenta o próximo modelo; falhou → pedir o texto colado. IA do Chrome não lê páginas.
 - 2026-10-09 · Restaurante: pratos inteiros (sem separar ingredientes), alvo = restante do dia × parcela da refeição; ranking local por erroCombinacao; lançamento como Adição rápida com fonte "Restaurante (estimativa IA)".
 - 2026-10-09 · Importar receita de texto: interpretador com `preferirCru` (preparos +0,35) e o hábito de um alimento pronto transferido para o cru do mesmo nome.
+- 2026-10-09 · (pedido do Artur) "O que comer agora" prioriza alimentos nutritivos: ranking = erro de macros + 0,6 × (1 − nota de saúde média ponderada pelas kcal); guloseimas fora das sugestões principais, no máximo 1 "agrado" (só se já houver guloseima entre os habituais). Pesos e grupos em inteligencia.js (BASE_GRUPO, GULOSEIMA, BASICOS).

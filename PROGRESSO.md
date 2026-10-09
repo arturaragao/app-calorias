@@ -11,6 +11,11 @@
 - [ ] Pacote 15 — Atalhos e extras do Android
 - [ ] Pacote 16 — Qualidade de produto profissional
 
+**Ajuste v25 (pedido do Artur): "O que comer agora" saudável**
+- Nota de saúde por alimento (inteligencia.saudeAlimento, heurística declarada): grupo da TACO + proteína e fibra por 100 kcal − sódio alto, gordura dominante, fritura e embutidos; doces, refrigerantes, salgadinhos e álcool = guloseima.
+- Candidatos = o que você come na refeição + básicos nutritivos da TACO por tipo de refeição (leve: frutas, iogurte, ovos, aveia, pão integral, queijo minas, castanhas; prato: arroz, feijão, lentilha, frango, patinho, salmão, sardinha, verduras e legumes).
+- Sugestões: as primeiras só com alimentos não guloseima, ranqueadas por ajuste aos macros + nota de saúde; no máximo 1 "um agrado" e só se você costuma comer doce. Cartão do Diário mostra a mais nutritiva; o planejador ("Montar a semana") usa a mesma regra, sem agrados.
+
 **Pacote 13 (v24, 2026-10-09)**
 - Planejar semana (#plano; Diário › "Planejar a semana" e "+" › Planejar/Lista de compras): grade seg→dom × refeições, totais planejado+comido × meta do dia (dia da semana e treino), "+" por refeição com refeições salvas, receitas ou busca (entra como planejado), toque abre o dia no Diário, limpar planejados com desfazer.
 - Montar a semana sem IA (js/planejamento.js › montarSemana): só refeições vazias, a partir de hoje/amanhã; refeição salva que cabe no alvo (±25%) primeiro, senão combinações dos alimentos habituais (otimizador do inteligencia.js) batendo kcal e proteína da parcela da refeição; variedade = no máximo N repetições por refeição.

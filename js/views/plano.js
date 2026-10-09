@@ -7,10 +7,10 @@ import { criarItem, copiarItens, adicionarItem, distribuicaoRefeicoes, ehTreino,
 import { metaDoDia } from '../goals.js';
 import { catalogo } from '../custom.js';
 import { buscar, porcoesDe } from '../foods.js';
-import { candidatosFrequentes } from '../inteligencia.js';
+import { sugerirSaudaveis } from '../inteligencia.js';
 import { montarSemana, listaCompras, textoCompras, paresCoccao } from '../planejamento.js';
 import { inicioSemana } from '../progress.js';
-import { diariosRecentes } from './sugestao.js';
+import { diariosRecentes, candidatosAgora } from './sugestao.js';
 import { topo, esc, ic, ICONES, iconeRef, $, $$, aviso, abrirFolha, fecharFolha, vibrar, seg, entregarArquivo } from '../ui.js';
 import { chaveData, somarDias, fmtKcal, fmtG, fmtData, DIAS_CURTOS, normalizar } from '../utils.js';
 
@@ -148,20 +148,17 @@ async function folhaMontar() {
     const [cat, recentes, peso] = await Promise.all([catalogo(), diariosRecentes(30), pesoAtual()]);
     const dias = new Map(await Promise.all(datas.map(async (d) => [d, await lerDia(d)])));
     const dist = distribuicaoRefeicoes(refs, estado.config.distRef);
-    const opc = { favoritos: estado.config.favoritos || [], ultimaQtd: estado.config.ultimaQtd || {} };
-    const todos = candidatosFrequentes(recentes, (id) => cat.porId.get(id), opc);
-    const cache = new Map();
-    const candidatos = (refId) => cache.get(refId) || cache.set(refId, (() => {
-      const c = candidatosFrequentes(recentes, (id) => cat.porId.get(id), { ...opc, refId });
-      return c.length >= 3 ? c : todos;
-    })()).get(refId);
+    // o que você come + básicos nutritivos da TACO, priorizando o que faz bem (sem guloseimas no plano)
+    const cache = new Map(await Promise.all(refs.map(async (r) => [r.id, await candidatosAgora(r.id, recentes)])));
+    const todos = [...cache.values()].flat().filter((c) => c.habitual);
+    const candidatos = (refId) => cache.get(refId);
     const alvos = (data, refId) => {
       const m = metaDoDia(estado.metas, data, peso, { treino: ehTreino(dias.get(data)) }), fr = dist[refId] || 0;   // fração 0–1
       return { kcal: m.kcal * fr, prot: m.prot * fr, carb: m.carb * fr, gord: m.gord * fr };
     };
     const ocupadas = new Set(datas.flatMap((d) => refs.filter((r) => (dias.get(d).refeicoes[r.id] || []).length).map((r) => `${d}|${r.id}`)));
     const plano = montarSemana({ datas, refs, alvos, candidatos, salvas: estado.config.refeicoesSalvas || [], ocupadas,
-      maxRepeticoes: Number(f.rep.value), usarSalvas: f.salvas.checked });
+      maxRepeticoes: Number(f.rep.value), usarSalvas: f.salvas.checked, combinar: (a, c, o) => sugerirSaudaveis(a, c, { n: o.n, agrado: false }) });
     if (!plano.length) { $('#erro', p).textContent = todos.length < 2 ? 'Lance refeições por alguns dias (ou favorite alimentos) para o app conhecer o que você come.' : 'Não há refeição vazia para preencher.'; return; }
     fecharFolha();
     await planejar(plano.map((x) => ({ data: x.data, refId: x.refId,

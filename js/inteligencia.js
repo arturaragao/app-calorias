@@ -201,3 +201,69 @@ export function pesosBusca(diarios, { refId = null, hoje } = {}) {
   }
   return out;
 }
+
+// ---------- Saúde do alimento (heurística do app) e sugestões nutritivas ----------
+// Nota 0–1 a partir de dados da própria tabela: grupo da TACO, proteína e fibra por 100 kcal, sódio por 100 kcal,
+// e sinais no nome (fritura, embutido, integral). Doces, refrigerantes, salgadinhos e álcool são "guloseimas".
+// Não é recomendação clínica; serve para ordenar sugestões.
+
+const BASE_GRUPO = {
+  'Verduras, hortaliças e derivados': 0.9, 'Frutas e derivados': 0.8, 'Leguminosas e derivados': 0.85, 'Pescados e frutos do mar': 0.8,
+  'Ovos e derivados': 0.75, 'Nozes e sementes': 0.7, 'Leite e derivados': 0.65, 'Carnes e derivados': 0.6, 'Cereais e derivados': 0.55,
+  'Gorduras e óleos': 0.35, 'Bebidas (alcoólicas e não alcoólicas)': 0.4, 'Miscelâneas': 0.4, 'Alimentos preparados': 0.4,
+  'Outros alimentos industrializados': 0.25, 'Produtos açucarados': 0.1,
+};
+const GULOSEIMA = /\b(chocolate|bombom|brigadeiro|recheado|wafer|bolo|sorvete|pudim|(?<!batata )doce|goiabada|marmelada|pe de moleque|pacoca|refrigerante|achocolatado|chantilly|condensado|chips|salgadinho|pizza|coxinha|pastel|quindim|mousse|torta|sonho|rosquinha|maria mole|cocada|bala|gelatina|cerveja|vinho|cachaca|aguardente|batida|caipirinha|mel|melado|acucar|geleia)\b/;
+const EMBUTIDO = /\b(linguica|salsicha|mortadela|presunto|salame|bacon|toucinho|apresuntado|hamburguer|nuggets)\b/;
+const sem = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+
+export function saudeAlimento(food) {
+  const nome = sem(food.nome), grupo = food.grupo || '';
+  const guloseima = grupo === 'Produtos açucarados' || GULOSEIMA.test(nome);
+  let s = BASE_GRUPO[grupo] ?? 0.5;
+  const kcal = food.kcal || 0;
+  if (kcal > 0) {
+    s += Math.min(0.15, ((food.prot || 0) / kcal) * 100 * 0.015);          // 10 g de proteína/100 kcal = +0,15
+    s += Math.min(0.1, ((food.fibra || 0) / kcal) * 100 * 0.025);          // 4 g de fibra/100 kcal = +0,1
+    if (((food.sodio_mg || 0) / kcal) * 100 > 300) s -= 0.15;
+    if (((food.gord || 0) * 9) / kcal > 0.6 && !/Nozes|Gorduras/.test(grupo)) s -= 0.1;
+  }
+  if (/\b(frito|frita|fritos|fritas|milanesa)\b/.test(nome)) s -= 0.15;
+  if (EMBUTIDO.test(nome)) s -= 0.25;
+  if (/\bintegral\b/.test(nome)) s += 0.05;
+  s = Math.max(0, Math.min(1, s));
+  return { nota: guloseima ? Math.min(s, 0.25) : s, guloseima };
+}
+
+/** Básicos nutritivos da TACO por tipo de refeição (nomes exatos da tabela), além do que o usuário já come. */
+export const BASICOS = {
+  leve: ['Banana, prata, crua', 'Mamão, Papaia, cru', 'Maçã, Fuji, com casca, crua', 'Laranja, pêra, crua', 'Morango, cru', 'Iogurte, natural',
+    'Ovo, de galinha, inteiro, cozido/10minutos', 'Aveia, flocos, crua', 'Pão, trigo, forma, integral', 'Queijo, minas, frescal', 'Castanha-do-Brasil, crua',
+    'Amendoim, grão, cru', 'Cuscuz, de milho, cozido com sal'],
+  prato: ['Arroz, integral, cozido', 'Arroz, tipo 1, cozido', 'Feijão, carioca, cozido', 'Feijão, preto, cozido', 'Lentilha, cozida',
+    'Frango, peito, sem pele, grelhado', 'Carne, bovina, patinho, sem gordura, grelhado', 'Salmão, sem pele, fresco, grelhado', 'Sardinha, assada',
+    'Ovo, de galinha, inteiro, cozido/10minutos', 'Brócolis, cozido', 'Cenoura, crua', 'Alface, crespa, crua', 'Tomate, com semente, cru',
+    'Batata, doce, cozida', 'Abóbora, cabotian, cozida', 'Mandioca, cozida', 'Couve, manteiga, refogada'],
+};
+export const tipoRefeicao = (refId) => (['almoco', 'jantar'].includes(refId) ? 'prato' : 'leve');
+
+const saudeCombo = (c) => {
+  const k = c.itens.reduce((s, i) => s + i.n.kcal, 0) || 1;
+  return c.itens.reduce((s, i) => s + saudeAlimento(i.food).nota * i.n.kcal, 0) / k;
+};
+
+/**
+ * Sugestões priorizando o que faz bem: as `n` melhores só com alimentos não guloseima, ranqueadas por
+ * erro + 0,6 × (1 − nota de saúde média pelas kcal); depois, no máximo UM "agrado" (combinação com guloseima)
+ * se o usuário costuma comer alguma (vem em `candidatos` com `habitual`). Cada combinação ganha { tipo, saude }.
+ */
+export function sugerirSaudaveis(alvo, candidatos, { n = 3, agrado = true } = {}) {
+  const bons = candidatos.filter((c) => !saudeAlimento(c.food).guloseima && saudeAlimento(c.food).nota >= 0.45);
+  const ranq = (l) => l.map((c) => ({ ...c, saude: saudeCombo(c) })).sort((a, b) => (a.erro + 0.6 * (1 - a.saude)) - (b.erro + 0.6 * (1 - b.saude)));
+  const saudaveis = ranq(sugerirCombinacoes(alvo, bons, { n: n + 3 })).slice(0, n).map((c) => ({ ...c, tipo: 'saudavel' }));
+  const doces = candidatos.filter((c) => c.habitual && saudeAlimento(c.food).guloseima);
+  if (!agrado || !doces.length || alvo.kcal < 150) return saudaveis;
+  const comDoce = sugerirCombinacoes(alvo, [...doces, ...bons], { n: 8 }).filter((c) => c.itens.some((i) => saudeAlimento(i.food).guloseima));
+  const ag = ranq(comDoce)[0];
+  return ag ? [...saudaveis.slice(0, Math.max(1, n - 1)), { ...ag, tipo: 'agrado' }] : saudaveis;
+}

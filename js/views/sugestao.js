@@ -5,8 +5,9 @@ import { estado, lerDia, gravarDia } from '../state.js';
 import { db } from '../db.js';
 import { criarItem, adicionarItem, distribuicaoRefeicoes } from '../diary.js';
 import { catalogo, registrarRecente } from '../custom.js';
-import { candidatosFrequentes, sugerirCombinacoes, fracaoProximaRefeicao } from '../inteligencia.js';
-import { abrirFolha, fecharFolha, aviso, esc, $, vibrar } from '../ui.js';
+import { candidatosFrequentes, sugerirSaudaveis, fracaoProximaRefeicao, BASICOS, tipoRefeicao } from '../inteligencia.js';
+import { porcoesDe } from '../foods.js';
+import { abrirFolha, fecharFolha, aviso, esc, $, vibrar, ic } from '../ui.js';
 import { chaveData, somarDias, fmtKcal, fmtG } from '../utils.js';
 
 // ---------- Histórico recente (cache curto em memória) ----------
@@ -35,6 +36,24 @@ export function refeicaoPeloHorario(refs = estado.config.refeicoes) {
   return (refs.find((r) => r.id === id) || refs[0])?.id;
 }
 
+// ---------- Candidatos: o que você come + básicos nutritivos da TACO ----------
+
+let porNome = null;
+/** Habituais da refeição (ou do dia) + básicos nutritivos do tipo de refeição (refId null = todos). */
+export async function candidatosAgora(refId, recentes) {
+  const cat = await catalogo();
+  porNome ||= new Map(cat.base.foods.map((f) => [f.nome, f]));
+  const opc = { favoritos: estado.config.favoritos || [], ultimaQtd: estado.config.ultimaQtd || {}, max: 20 };
+  let hab = refId ? candidatosFrequentes(recentes, (id) => cat.porId.get(id), { ...opc, refId }) : [];
+  if (hab.length < 2) hab = candidatosFrequentes(recentes, (id) => cat.porId.get(id), opc);
+  const ids = new Set(hab.map((c) => c.food.id));
+  const nomes = refId ? BASICOS[tipoRefeicao(refId)] : [...BASICOS.leve, ...BASICOS.prato];
+  const basicos = [...new Set(nomes)].map((n) => porNome.get(n)).filter((f) => f && !ids.has(f.id)).map((food) => ({
+    food, vezes: 0, gTipico: estado.config.ultimaQtd[food.id]?.g || porcoesDe(food, cat.porcoes, estado.config.porcoesUsuario)[0]?.g || 100,
+  }));
+  return [...hab.map((c) => ({ ...c, habitual: true })), ...basicos];
+}
+
 // ---------- Primeira sugestão (cartão do Diário) ----------
 
 /** Refeição alvo: a do horário; se já tem itens, a próxima vazia. */
@@ -51,12 +70,11 @@ export async function primeiraSugestao(dia, restante) {
   const opc = { favoritos: estado.config.favoritos || [], ultimaQtd: estado.config.ultimaQtd || {} };
   const refs = estado.config.refeicoes;
   const { vazias, refId } = refeicaoAlvo(dia, refs);
-  let cands = candidatosFrequentes(recentes, (id) => cat.porId.get(id), { ...opc, refId });
-  if (cands.length < 2) cands = candidatosFrequentes(recentes, (id) => cat.porId.get(id), opc);
+  const cands = await candidatosAgora(refId, recentes);
   const f = fracaoProximaRefeicao(refId, refs.map((r) => r.id), vazias, distribuicaoRefeicoes(refs, estado.config.distRef));
   const alvo = Object.fromEntries(['kcal', 'prot', 'carb', 'gord'].map((k) => [k, Math.max(0, restante[k] || 0) * f]));
   if (alvo.kcal < 50) return null;
-  const combo = sugerirCombinacoes(alvo, cands, { n: 1 })[0];
+  const combo = sugerirSaudaveis(alvo, cands, { n: 1, agrado: false })[0];
   return combo ? { refId, nomeRef: refs.find((r) => r.id === refId)?.nome || '', combo } : null;
 }
 
@@ -82,19 +100,20 @@ export async function folhaOQueComer({ dia, restante, aoLancar }) {
   const cat = await catalogo();
   const recentes = await diariosRecentes(30);
   const opc = { favoritos: estado.config.favoritos || [], ultimaQtd: estado.config.ultimaQtd || {} };
-  const candsDia = candidatosFrequentes(recentes, (id) => cat.porId.get(id), opc);
-  // modo refeição: alimentos que você costuma comer nela (+ favoritos); poucos → todos os frequentes
-  const candsDe = (ref) => { const c = candidatosFrequentes(recentes, (id) => cat.porId.get(id), { ...opc, refId: ref }); return c.length >= 2 ? c : candsDia; };
+  const candsDia = await candidatosAgora(null, recentes);
+  const cacheRef = new Map();
+  // modo refeição: o que você costuma comer nela (+ favoritos) e básicos nutritivos desse tipo de refeição
+  const candsDe = async (ref) => cacheRef.get(ref) || cacheRef.set(ref, await candidatosAgora(ref, recentes)).get(ref);
   const refs = estado.config.refeicoes;
   const dist = distribuicaoRefeicoes(refs, estado.config.distRef);
   const alvoInicial = refeicaoAlvo(dia, refs), vazias = alvoInicial.vazias;
   let refId = alvoInicial.refId, modo = 'ref', combos = [];
   const p = abrirFolha('O que comer agora', '<div id="oqc"></div>', { foco: false });
   const r0 = (o, k) => Math.max(0, o[k] || 0);
-  const desenhar = () => {
+  const desenhar = async () => {
     const f = modo === 'dia' ? 1 : fracaoProximaRefeicao(refId, refs.map((r) => r.id), vazias, dist);
     const alvo = Object.fromEntries(['kcal', 'prot', 'carb', 'gord'].map((k) => [k, r0(restante, k) * f]));
-    combos = sugerirCombinacoes(alvo, modo === 'dia' ? candsDia : candsDe(refId));
+    combos = sugerirSaudaveis(alvo, modo === 'dia' ? candsDia : await candsDe(refId));
     const nomeRef = refs.find((x) => x.id === refId)?.nome || '';
     $('#oqc', p).innerHTML = `
       <div class="seg" role="group"><button type="button" data-modo="ref" aria-pressed="${modo === 'ref'}">Próxima refeição</button>
@@ -103,8 +122,9 @@ export async function folhaOQueComer({ dia, restante, aoLancar }) {
         `<option value="${x.id}" ${x.id === refId ? 'selected' : ''}>${esc(x.nome)}</option>`).join('')}</select></label>
       <p class="mudo">Alvo${modo === 'ref' ? ` para ${esc(nomeRef)} (${Math.round(f * 100)}% do que falta hoje)` : ' (tudo o que falta hoje)'}:
         <b class="num">${fmtKcal(alvo.kcal)} kcal</b> · P ${fmtG(alvo.prot)} · C ${fmtG(alvo.carb)} · G ${fmtG(alvo.gord)} g.
-        Com os alimentos que você mais usa e seus favoritos (valores da tabela de cada alimento).</p>
-      ${combos.length ? combos.map((c, i) => `<div class="card sug-combo" style="margin:10px 0;padding:12px">
+        Prioriza o que faz bem (frutas, verduras, leguminosas, proteínas magras, integrais) entre o que você come e básicos da TACO; no máximo um agrado.</p>
+      ${combos.length ? combos.map((c, i) => `<div class="card sug-combo${c.tipo === 'agrado' ? ' agrado' : ''}" style="margin:10px 0;padding:12px">
+        <span class="chip">${c.tipo === 'agrado' ? ic('cake-slice', 'p') + ' um agrado' : ic('leaf', 'p') + ` nutritivo · ${Math.round(c.saude * 100)}`}</span>
         <ul class="lista-simples">${c.itens.map((it) => `<li><span>${esc(it.food.nome)}</span> <b class="num">${fmtG(it.g)} g</b></li>`).join('')}</ul>
         <p class="num mudo" style="margin:6px 0 8px">${fmtKcal(c.tot.kcal)} kcal · P ${fmtG(c.tot.prot)} · C ${fmtG(c.tot.carb)} · G ${fmtG(c.tot.gord)} g</p>
         <button class="btn prim bloco" data-lancar-combo="${i}">Lançar em ${esc(nomeRef)}</button></div>`).join('')
