@@ -1,7 +1,7 @@
 // gerar_icones.mjs — gera os ícones do app e dos atalhos (PNG, sem dependências, com antialiasing 4×4).
 // Uso: node scripts/gerar_icones.mjs
 //
-// icons/icon-192.png, icon-512.png, icon-maskable-512.png — anel em 3 segmentos (cores dos macros) + folha
+// icons/icon-192.png, icon-512.png, icon-maskable-512.png — anel clássico refinado (arco verde ~74% + ponto claro na ponta)
 // icons/atalho-adicionar.png, atalho-codigo.png, atalho-peso.png, atalho-foto.png (192 px)
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -11,9 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SS = 4;
-const FUNDO_A = [31, 92, 60], FUNDO_B = [8, 30, 19];          // gradiente diagonal verde
-const PROT = [126, 199, 152], CARB = [235, 211, 111], GORD = [240, 160, 102];
-const TRILHO = [255, 255, 255, 0.10], BRANCO = [246, 250, 247], VERDE = [126, 204, 152], ESCURO = [22, 66, 42];
+const FUNDO_A = [17, 35, 25], FUNDO_B = [11, 24, 17];          // verde quase preto, gradiente vertical bem sutil
+const TRILHO = [36, 64, 47], PONTA = [233, 246, 238], BRANCO = [240, 247, 242], VERDE = [126, 204, 152], ESCURO = [14, 29, 21];
 
 // ---------- PNG ----------
 const CRC = new Int32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c; });
@@ -54,10 +53,8 @@ function desenhar(tam, camadas, forma) {
   return out;
 }
 function fundo(x, y) {
-  const f = Math.min(1, Math.max(0, (x + y) / 2));                       // diagonal
-  const base = FUNDO_A.map((a, i) => a + (FUNDO_B[i] - a) * f);
-  const brilho = Math.max(0, 1 - Math.hypot(x - 0.25, y - 0.2) / 0.6) * 18; // luz suave no canto superior esquerdo
-  return base.map((v) => Math.min(255, v + brilho));
+  const f = Math.min(1, Math.max(0, y));
+  return FUNDO_A.map((a, i) => a + (FUNDO_B[i] - a) * f);
 }
 const cantoArredondado = (r) => (x, y) => { const cx = Math.min(Math.max(x, r), 1 - r), cy = Math.min(Math.max(y, r), 1 - r); return (x - cx) ** 2 + (y - cy) ** 2 <= r * r; };
 const circulo = (x, y) => Math.hypot(x - 0.5, y - 0.5) <= 0.5;
@@ -78,24 +75,14 @@ function arco(re, ri, a0, a1) {
   };
 }
 
-/** Folha (lente de dois círculos) inclinada 45°, com nervura central. */
-function folha(esc) {
-  const L = 0.15 * esc, W = 0.088 * esc;                                 // meio comprimento e meia largura
-  const d = (L * L - W * W) / (2 * W), R = d + W;                          // geometria da lente
-  const loc = (x, y) => { const X = x - 0.5, Y = 0.5 - y; return [(X + Y) / Math.SQRT2, (X - Y) / Math.SQRT2]; };
-  return {
-    corpo: (x, y) => { const [u, v] = loc(x, y); return Math.hypot(u, v - d) <= R && Math.hypot(u, v + d) <= R; },
-    nervura: (x, y) => { const [u, v] = loc(x, y); return Math.abs(v) <= 0.006 * esc && u <= L * 0.55 && u >= -L * 0.75; },
-  };
-}
-
+/** Anel clássico: trilho escuro, arco verde do topo até ~265° (sentido horário) e ponto claro na ponta. */
 function iconeApp(esc) {
-  const re = 0.37 * esc, ri = 0.295 * esc, f = folha(esc * 1.3);
-  const segs = [[PROT, 12, 108], [CARB, 132, 228], [GORD, 252, 348]];
+  const rm = 0.29 * esc, larg = 0.06 * esc, re = rm + larg, ri = rm - larg, fim = 265;
+  const a = (fim * Math.PI) / 180, px = 0.5 + rm * Math.sin(a), py = 0.5 - rm * Math.cos(a);
   return [
     [(x, y) => { const d = Math.hypot(x - 0.5, y - 0.5); return d >= ri && d <= re; }, TRILHO],
-    ...segs.map(([cor, a0, a1]) => [arco(re, ri, a0, a1), cor]),
-    [f.corpo, BRANCO], [f.nervura, ESCURO],
+    [arco(re, ri, 0, fim), VERDE],
+    [disco(px, py, 0.032 * esc), PONTA],
   ];
 }
 
@@ -136,6 +123,6 @@ mkdirSync(join(RAIZ, 'icons'), { recursive: true });
 const salvar = (nome, tam, camadas, forma) => writeFileSync(join(RAIZ, 'icons', nome), png(tam, desenhar(tam, camadas, forma)));
 salvar('icon-192.png', 192, iconeApp(1), cantoArredondado(0.22));
 salvar('icon-512.png', 512, iconeApp(1), cantoArredondado(0.22));
-salvar('icon-maskable-512.png', 512, iconeApp(0.78), cheio);                // zona segura do Android (círculo de 80%)
+salvar('icon-maskable-512.png', 512, iconeApp(1), cheio);                   // anel (raio 0,35) dentro da zona segura do Android (círculo de raio 0,40)
 for (const [nome, camadas] of Object.entries(ATALHOS)) salvar(nome, 192, camadas, circulo);
 console.log('ícones gerados');

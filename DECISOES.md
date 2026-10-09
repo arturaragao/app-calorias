@@ -91,3 +91,4 @@
 - 2026-10-09 · Troca de dia por gesto: só fora dos itens (item continua deslizando para apagar), limiar 70 px, horizontal > 1,3× vertical; #tela com touch-action pan-y só no Diário (limpo ao navegar).
 - 2026-10-09 · Vibração: avisos com "Desfazer" vibram 10 ms (ação concluída); preferência em localStorage `vibrar` (por aparelho), padrão ligado.
 - 2026-10-09 · Tour: aparece uma vez (config.tourVisto), também para quem já usava o app; fechar ou concluir marca como visto.
+- 2026-10-09 · Ícone do app: anel clássico refinado (opção A escolhida pelo Artur entre 4): trilho #24402f, arco #7ecc98 de 0° a 265°, ponto #e9f6ee na ponta, fundo #11231a→#0b1811; mesmo desenho no maskable (raio externo 0,35 < zona segura 0,40).

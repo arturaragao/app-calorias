@@ -14,6 +14,8 @@
 - [x] Pacote 9 (v17) — acabamento (contraste AA, deslizar dias, anel animado, estados vazios, vibração, tour); Drive aguarda o ID OAuth
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
 
+**Ícone (v18, 2026-10-09)** — a pedido do Artur, volta ao anel clássico (antigo) refinado (opção A entre 4): arco verde ~74% mais grosso, ponto claro na ponta, fundo verde quase preto; maskable com o anel em tamanho cheio dentro da zona segura; atalhos com o mesmo fundo. Gerado por scripts/gerar_icones.mjs.
+
 **Pacote 9 (v17, 2026-10-09)**
 - Contraste WCAG AA: auditoria automática no navegador (todo texto visível × fundo efetivo) em Diário, Adicionar, Registros, Progresso, Ajustes, Metas e nas folhas (Detalhes, painel, quantidade, O que comer agora, Organizar), temas claro/escuro e as 7 paletas. Corrigido: dias "abaixo" do calendário no claro (--agua-forte, 3,9 → ≥ 4,5) e "Apagar" ao deslizar no escuro (texto var(--bg), 2,4 → 8). Teste novo confere os pares de tokens dos dois temas.
 - Diário: deslizar fora dos itens troca o dia (← amanhã / → ontem, com animação); número e arco do anel animam do valor anterior (só no mesmo dia; sem animação se a página está oculta ou o sistema pede menos movimento); estado vazio ilustrado no dia sem itens.
@@ -50,7 +52,7 @@
 - Painel da refeição (toque no nome da refeição): rosca de macros, consumido × sugerido para a refeição (parcela do dia editável) e itens com barra de macros.
 - Quantidade: modo mL (1 mL ≈ 1 g; bebidas abrem em mL), número selecionado ao focar qualquer campo numérico (digitar substitui).
 - Diário: gramas e macros sem casas decimais na exibição; água sem "🔥 dias seguidos".
-- Ícone: anel em 3 segmentos (cores dos macros) + folha; gerador portado para Node (scripts/gerar_icones.mjs; o .py foi removido).
+- Ícone: anel em 3 segmentos (cores dos macros) + folha (substituído na v18 pelo anel clássico); gerador portado para Node (scripts/gerar_icones.mjs; o .py foi removido).
 - Testes: 113 aprovados. Conferido no navegador (375 px): Diário, Detalhes, origem da proteína, painel da refeição, organizar (arrastar e esconder), paleta azul; sem erros no console.
 
 **Pacote 4 + ajustes (v12)**
