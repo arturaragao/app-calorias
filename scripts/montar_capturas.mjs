@@ -1,3 +1,4 @@
+// scripts/montar_capturas.mjs — junta capturas lado a lado (só desenvolvimento): node scripts/montar_capturas.mjs <pasta> a.png b.png …
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
 const [dir, ...arqs] = process.argv.slice(2);
