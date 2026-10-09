@@ -9,7 +9,7 @@ import { estimarFoto, estimarTexto, estimarCardapio, lerRotulo, salvarChave, cha
 import { catalogo, registrarRecente, salvarReceita } from '../custom.js';
 import { correspondencias } from '../foods.js';
 import { folhaAlimento } from './alimento-form.js';
-import { abrirFolha, fecharFolha, aviso, esc, $, $$, ICONES } from '../ui.js';
+import { abrirFolha, fecharFolha, aviso, esc, $, $$, ICONES, vibrar } from '../ui.js';
 import { fmtKcal, fmtMacro, fmtNum, lerNumero, uid } from '../utils.js';
 import { suportaVoz, ditar } from '../voz.js';
 
@@ -64,7 +64,7 @@ export async function folhaTextoIA({ data = estado.dataAtual, refId = estado.ref
     if (parar) return parar();
     const campo = $('[name=txt]', p), antes = campo.value.trim();
     bDitar.classList.add('gravando'); bDitar.textContent = '■ Parar (ouvindo…)';
-    navigator.vibrate?.(10);
+    vibrar(10);
     parar = ditar((final, parcial) => { campo.value = [antes, final, parcial].filter(Boolean).join(' ').slice(0, 400); }, (erro) => {
       parar = null;
       bDitar.classList.remove('gravando'); bDitar.textContent = '🎤 Ditar';

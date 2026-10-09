@@ -4,7 +4,7 @@
 // Esconder não remove a funcionalidade: o bloco volta a qualquer momento em "Organizar".
 
 import { estado, salvarConfig } from './state.js';
-import { abrirFolha, esc, aviso } from './ui.js';
+import { abrirFolha, esc, aviso, vibrar } from './ui.js';
 import { BLOCOS, NOME_TELA, mesclarOrdem, ordenarPorOrdem } from './layout-ordem.js';
 
 export { BLOCOS, NOME_TELA };
@@ -85,7 +85,7 @@ function ligarArraste(ul, aoSoltar) {
     ativo = true;
     li.classList.add('movendo');
     alturas = li.getBoundingClientRect().height;
-    navigator.vibrate?.(12);
+    vibrar(12);
   };
   ul.addEventListener('pointerdown', (e) => {
     if (e.target.closest('button, label')) return;

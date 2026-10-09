@@ -8,6 +8,7 @@ import { graficoLinha } from '../chart.js';
 import { idadePerfil } from './onboarding.js';
 import { $, aviso, ICONES } from '../ui.js';
 import { chaveData, fmtData, fmtNum, fmtKcal, lerNumero } from '../utils.js';
+import { estadoVazio } from '../vazio.js';
 
 export async function lerPesos() {
   return (await db.getAll('weights')).map(([data, regs]) => ({ data, regs, kg: pesoDoDia(regs) }))
@@ -42,7 +43,7 @@ export async function render(el) {
       <div class="mudo">${p.regs.length > 1 ? `${p.regs.length} registros no dia (vale o último)` : ''}</div></div>
       <span class="num"><b>${fmtNum(p.kg)} kg</b> ${dif != null ? `<span class="mudo">${dif > 0 ? '+' : dif < 0 ? '−' : ''}${fmtNum(Math.abs(Math.round(dif * 10) / 10))}</span>` : ''}</span>
       <button class="ico" data-apagar aria-label="Apagar peso de ${fmtData(p.data)}">${ICONES.lixo}</button></li>`;
-  }).join('') || '<li class="mudo" style="padding:8px 0">Nenhum peso registrado.</li>';
+  }).join('') || `<li>${estadoVazio('balanca', 'Nenhum peso registrado', 'Registre acima; a tendência e o ritmo aparecem no Progresso.')}</li>`;
 
   $('#fp', el).onsubmit = async (e) => {
     e.preventDefault();

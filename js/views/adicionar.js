@@ -5,7 +5,7 @@ import { estado, lerDia, gravarDia } from '../state.js';
 import { buscar, rotuloFonte } from '../foods.js';
 import { catalogo, registrarRecente, ehFavorito } from '../custom.js';
 import { criarItem, adicionarItem, sugestoesRefeicao } from '../diary.js';
-import { topo, esc, $, $$, aviso, ICONES } from '../ui.js';
+import { topo, esc, $, $$, aviso, ICONES, vibrar } from '../ui.js';
 import { fmtKcal, fmtData, fmtNum, chaveData, somarDias } from '../utils.js';
 import { buscarNome } from '../off.js';
 import { folhaQuantidade } from './quantidade.js';
@@ -13,6 +13,7 @@ import { folhaAlimento } from './alimento-form.js';
 import { abrirScanner } from './scanner.js';
 import { folhaFotoIA, folhaTextoIA, folhaRotulo, folhaCardapioIA } from './foto-ia.js';
 import { motorIA } from '../ia.js';
+import { estadoVazio } from '../vazio.js';
 import { folhaSalvas } from './salvas.js';
 import { db } from '../db.js';
 import { aplicarLayout, ordemDe, visivel } from '../layout.js';
@@ -52,7 +53,7 @@ export async function render(tela) {
       <a class="btn peq suave" data-bloco="receita" href="#receita">+ Nova receita</a>
       <button class="btn peq" data-organizar="adicionar" aria-label="Organizar abas e atalhos">⇅</button></div>
     <div id="sug"></div>
-    <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
+    <div class="mudo" id="info"></div><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
     <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
   aplicarLayout(tela, 'adicionar');
   // sem IA do Chrome nem chave do Gemini, o atalho de cardápio some (8.3)
@@ -101,6 +102,8 @@ export async function render(tela) {
     meus: 'Crie alimentos (rótulos, suplementos) em "+ Novo alimento" ou importe um CSV em Configurações.',
     receitas: 'Monte uma receita em "+ Nova receita" para lançar por porção ou por grama.',
   };
+  const VAZIO_FIG = { recentes: 'relogio', favoritos: 'estrela', meus: 'caderno', receitas: 'caderno' };
+  const VAZIO_TIT = { recentes: 'Nada recente ainda', favoritos: 'Sem favoritos', meus: 'Nenhum alimento seu', receitas: 'Nenhuma receita' };
   const pesquisar = () => {
     ultimaBusca = q.value;
     const buscando = !!q.value.trim();
@@ -111,7 +114,7 @@ export async function render(tela) {
       info.textContent = lista.length ? `${lista.length} resultado(s)` : 'Nada encontrado. Tente outra palavra ou crie em "+ Novo alimento".';
     } else {
       lista = daAba();
-      info.textContent = lista.length ? '' : VAZIO[estado.abaAdicionar];
+      info.innerHTML = lista.length ? '' : estadoVazio(VAZIO_FIG[estado.abaAdicionar], VAZIO_TIT[estado.abaAdicionar], VAZIO[estado.abaAdicionar]);
     }
     res.innerHTML = ''; mostrados = 0;
     desenharSugestoes(buscando);
@@ -201,7 +204,7 @@ export async function render(tela) {
     estado.refeicaoAlvo = refId;
     $('#ref-alvo').value = refId;
     registrarRecente(food.id);
-    navigator.vibrate?.(12);
+    vibrar(12);
     aviso(`✓ ${food.nome} (${fmtKcal(item.n.kcal)} kcal) → ${ref.nome}`, { acao: async () => { await gravarDia(antes); aviso('Desfeito'); } });
     if (!q.value.trim() && estado.abaAdicionar === 'recentes') pesquisar();
   }

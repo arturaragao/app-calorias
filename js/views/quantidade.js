@@ -4,7 +4,7 @@
 import { estado, salvarConfig } from '../state.js';
 import { carregarBase, porcoesDe, rotuloFonte, ehLiquido, densidadeDe } from '../foods.js';
 import { nutrientesPorGramas } from '../diary.js';
-import { abrirFolha, fecharFolha, esc, aviso } from '../ui.js';
+import { abrirFolha, fecharFolha, esc, aviso, vibrar } from '../ui.js';
 import { ehFavorito, alternarFavorito, catalogo } from '../custom.js';
 import { folhaAlimento } from './alimento-form.js';
 import { avaliarSuspeito } from '../inteligencia.js';
@@ -144,7 +144,7 @@ export async function folhaQuantidade(food, opcoes) {
           const el = painel.querySelector('#suspeito');
           el.textContent = '⚠ ' + msg; el.hidden = false;
           t.textContent = 'Lançar mesmo assim';
-          navigator.vibrate?.([20, 40, 20]);
+          vibrar([20, 40, 20]);
           confirmado = true;
           return;
         }

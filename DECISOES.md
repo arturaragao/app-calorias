@@ -87,3 +87,7 @@
 - 2026-10-09 · "Esconder a função" (8.3) vale para as funções novas (coach, atalho de cardápio no Adicionar). Foto/texto/rótulo seguem visíveis e pedem a chave, que é como o Artur configura a IA.
 - 2026-10-09 · Coach: uma análise por semana (chave = segunda-feira), só para semanas terminadas; envia apenas números agregados e contagem de etiquetas (texto das notas nunca sai). Guarda as 12 últimas.
 - 2026-10-09 · Receita por foto: só ingredientes ligados a um alimento da base entram (valores da tabela); estimativas da IA ficam de fora e são contadas no aviso. Porções vêm de "rende N porções/pessoas/fatias/unidades" na observação, senão 1.
+- 2026-10-09 · Contraste: alvo WCAG 2.x AA (4,5:1 texto normal, 3:1 grande). Controles desabilitados (dias futuros do calendário) são isentos pela WCAG e ficam esmaecidos. Cor dos macros segue só em preenchimentos.
+- 2026-10-09 · Troca de dia por gesto: só fora dos itens (item continua deslizando para apagar), limiar 70 px, horizontal > 1,3× vertical; #tela com touch-action pan-y só no Diário (limpo ao navegar).
+- 2026-10-09 · Vibração: avisos com "Desfazer" vibram 10 ms (ação concluída); preferência em localStorage `vibrar` (por aparelho), padrão ligado.
+- 2026-10-09 · Tour: aparece uma vez (config.tourVisto), também para quem já usava o app; fechar ou concluir marca como visto.

@@ -7,6 +7,7 @@
   --txt: #11211a; --txt2: #55695d; --acento: #2b7a4d; --acento-forte: #215f3c; --acento-txt: #ffffff; --acento-suave: #d9eee0;
   --alerta: #955700; --perigo: #b3261e;
   --prot: #4f8a63; --carb: #e3c868; --gord: #e8955a; --agua: #2f7fa6; --anel-fundo: #e1ede4;
+  --agua-forte: color-mix(in srgb, var(--agua) 78%, #000);   /* fundo de texto claro (calendário) com contraste AA */
   --sombra: 0 1px 2px rgb(17 40 26 / .05), 0 6px 20px rgb(17 40 26 / .06);
   --sombra-alta: 0 8px 28px rgb(17 40 26 / .18);
   --raio: 18px; --raio-p: 12px; --nav-h: 68px;
@@ -18,7 +19,7 @@
     --bg: #0a110d; --sup: #121b15; --sup2: #18241d; --sup3: #0f1712; --borda: #213027;
     --txt: #e5eee8; --txt2: #9cb2a4; --acento: #7ccd97; --acento-forte: #5fb47d; --acento-txt: #08170e; --acento-suave: #1b3324;
     --alerta: #e6b46a; --perigo: #f08d83;
-    --prot: #8fbb9c; --carb: #ebd895; --gord: #efb48b; --agua: #71b8dc; --anel-fundo: #1f3027;
+    --prot: #8fbb9c; --carb: #ebd895; --gord: #efb48b; --agua: #71b8dc; --anel-fundo: #1f3027; --agua-forte: var(--agua);
     --sombra: 0 1px 0 rgb(255 255 255 / .02) inset; --sombra-alta: 0 10px 30px rgb(0 0 0 / .5);
     color-scheme: dark;
   }
@@ -27,7 +28,7 @@
   --bg: #0a110d; --sup: #121b15; --sup2: #18241d; --sup3: #0f1712; --borda: #213027;
   --txt: #e5eee8; --txt2: #9cb2a4; --acento: #7ccd97; --acento-forte: #5fb47d; --acento-txt: #08170e; --acento-suave: #1b3324;
   --alerta: #e6b46a; --perigo: #f08d83;
-  --prot: #8fbb9c; --carb: #ebd895; --gord: #efb48b; --agua: #71b8dc; --anel-fundo: #1f3027;
+  --prot: #8fbb9c; --carb: #ebd895; --gord: #efb48b; --agua: #71b8dc; --anel-fundo: #1f3027; --agua-forte: var(--agua);
   --sombra: 0 1px 0 rgb(255 255 255 / .02) inset; --sombra-alta: 0 10px 30px rgb(0 0 0 / .5);
   color-scheme: dark;
 }
@@ -164,7 +165,7 @@ code { font-size: .85em; background: var(--sup2); padding: 1px 4px; border-radiu
 .item .mudo { font-size: .8rem; }
 .item .kcal { font-weight: 600; min-width: 44px; text-align: right; }
 .item-wrap { position: relative; overflow: hidden; }
-.item-wrap .fundo-apagar { position: absolute; inset: 0; background: var(--perigo); color: #fff; display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; font-weight: 600; font-size: .9rem; }
+.item-wrap .fundo-apagar { position: absolute; inset: 0; background: var(--perigo); color: var(--bg); display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; font-weight: 600; font-size: .9rem; }
 .add-linha { display: flex; align-items: center; border-top: 1px solid var(--borda); margin: 0 -6px -8px; }
 .add-alim { flex: 1; min-height: 46px; border: 0; background: none; color: var(--acento); font-weight: 600; text-align: left; cursor: pointer; padding: 0 6px; }
 .add-linha .ico { color: var(--acento); }
@@ -335,7 +336,7 @@ button.nota { display: block; width: 100%; text-align: left; border: 0; font: in
 .cal button { aspect-ratio: 1; border: 0; border-radius: 8px; font: inherit; font-size: .8rem; background: var(--sup2); color: var(--txt2); padding: 0; cursor: pointer; min-height: 0; }
 .cal button.meta { background: var(--acento); color: var(--bg); font-weight: 600; }
 .cal button.acima { background: var(--alerta); color: var(--bg); font-weight: 600; }
-.cal button.abaixo { background: var(--agua); color: var(--bg); font-weight: 600; }
+.cal button.abaixo { background: var(--agua-forte); color: var(--bg); font-weight: 600; }
 .cal button.hoje { outline: 2px solid var(--txt); outline-offset: 1px; }
 .cal button:disabled { opacity: .35; cursor: default; }
 .cal-leg { display: flex; gap: 12px; flex-wrap: wrap; font-size: .76rem; color: var(--txt2); margin-top: 8px; }
@@ -520,3 +521,33 @@ input[type=range] { accent-color: var(--acento); }
 .lista-simples li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
 .alerta-suspeito { margin: 8px 0 0; }
 .btn.gravando { background: var(--alerta); color: var(--bg); border-color: var(--alerta); }
+
+/* ---------- Pacote 9: troca de dia, estados vazios, tour ---------- */
+.tela.dia-esq { animation: dia-esq .22s ease-out; }
+.tela.dia-dir { animation: dia-dir .22s ease-out; }
+@keyframes dia-esq { from { opacity: .3; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes dia-dir { from { opacity: .3; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.vazio { text-align: center; padding: 18px 12px 10px; color: var(--txt2); }
+.vazio svg { width: 120px; height: 90px; color: var(--acento); display: block; margin: 0 auto 8px; }
+.vazio b { display: block; color: var(--txt); font-size: .98rem; }
+.vazio p { margin: 4px auto 0; max-width: 300px; font-size: .86rem; }
+.tour-fig { background: var(--sup2); border-radius: var(--raio-p); padding: 14px; min-height: 130px; display: flex; flex-direction: column; justify-content: center; gap: 8px; position: relative; }
+.tour-lin { display: flex; align-items: center; gap: 10px; background: var(--sup); border: 1px solid var(--borda); border-radius: 10px; padding: 8px 10px; font-size: .88rem; }
+.tour-lin span { color: var(--txt2); }
+.tour-lin.arrastando { transform: translateX(10px) rotate(-1.5deg); box-shadow: var(--sombra-alta); }
+.tour-tog { margin-left: auto; width: 34px; height: 20px; border-radius: 10px; background: var(--borda); position: relative; }
+.tour-tog::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--sup); }
+.tour-tog.on { background: var(--acento); }
+.tour-tog.on::after { left: 17px; }
+.tour-anel { align-items: center; }
+.tour-anel svg { width: 120px; height: 120px; }
+.tour-dedo { position: absolute; right: 22%; bottom: 14px; font-size: 1.6rem; animation: tocar 1.4s ease-in-out infinite; }
+@keyframes tocar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.tour-ref { display: flex; align-items: center; gap: 8px; background: var(--sup); border-radius: 10px; padding: 12px; position: relative; }
+.tour-ref .num { margin-left: auto; }
+.tour-ref .tour-dedo { position: static; font-size: 1.3rem; }
+.tour-barras { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; }
+.tour-pontos { display: flex; justify-content: center; gap: 6px; margin: 14px 0 10px; }
+.tour-pontos i { width: 8px; height: 8px; border-radius: 50%; background: var(--borda); }
+.tour-pontos i.on { background: var(--acento); width: 20px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .tela.dia-esq, .tela.dia-dir, .tour-dedo { animation: none; } }

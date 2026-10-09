@@ -3,7 +3,7 @@
 
 import { estado, salvarConfig, lerDia, gravarDia } from '../state.js';
 import { criarRefeicaoSalva, lancarSalva, somar } from '../diary.js';
-import { abrirFolha, fecharFolha, aviso, esc, $ } from '../ui.js';
+import { abrirFolha, fecharFolha, aviso, esc, $, vibrar } from '../ui.js';
 import { fmtKcal, fmtMacro } from '../utils.js';
 
 const lista = () => (estado.config.refeicoesSalvas ||= []);
@@ -57,7 +57,7 @@ export function folhaSalvas({ data = estado.dataAtual, refId = estado.refeicaoAl
       const r = $('[name=ref]', p).value, nomeRef = refs.find((x) => x.id === r)?.nome;
       const antes = await lerDia(data);
       await gravarDia(lancarSalva(antes, r, nomeRef, s));
-      navigator.vibrate?.(12);
+      vibrar(12);
       fecharFolha();
       await aoLancar?.();
       aviso(`✓ ${s.nome} → ${nomeRef}`, { acao: async () => { await gravarDia(antes); aoLancar?.(); } });

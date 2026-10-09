@@ -6,7 +6,7 @@ import { db } from '../db.js';
 import { criarItem, adicionarItem, distribuicaoRefeicoes } from '../diary.js';
 import { catalogo, registrarRecente } from '../custom.js';
 import { candidatosFrequentes, sugerirCombinacoes, fracaoProximaRefeicao } from '../inteligencia.js';
-import { abrirFolha, fecharFolha, aviso, esc, $ } from '../ui.js';
+import { abrirFolha, fecharFolha, aviso, esc, $, vibrar } from '../ui.js';
 import { chaveData, somarDias, fmtKcal, fmtG } from '../utils.js';
 
 // ---------- Histórico recente (cache curto em memória) ----------
@@ -90,7 +90,7 @@ export async function folhaOQueComer({ dia, restante, aoLancar }) {
     let d = antes;
     for (const it of c.itens) { d = adicionarItem(d, refId, nomeRef, criarItem(it.food, it.g)); registrarRecente(it.food.id); }
     await gravarDia(d);
-    navigator.vibrate?.(15);
+    vibrar(15);
     fecharFolha();
     await aoLancar?.();
     aviso(`${c.itens.length} item(ns) → ${nomeRef}`, { acao: async () => { await gravarDia(antes); aoLancar?.(); } });

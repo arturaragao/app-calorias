@@ -13,7 +13,9 @@ import { abrirScanner } from './scanner.js';
 import { diasDesdeUltima } from './reg-dobras.js';
 import { diasSemBackup } from '../backup.js';
 import { contagemDoDia } from '../photos.js';
-import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
+import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha, vibrar } from '../ui.js';
+import { estadoVazio } from '../vazio.js';
+import { talvezTour } from './tour.js';
 import { chaveData, somarDias, fmtData, fmtKcal, fmtG, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
@@ -24,11 +26,12 @@ import { folhaOQueComer, diariosRecentes, contextoSuspeito } from './sugestao.js
 import { refeicaoDeSempre, avaliarSuspeito } from '../inteligencia.js';
 import { enviarAgora } from './drive-ui.js';
 
-let tela, dia, meta, fotosCont = {}, ignorarClique = false, alvoProtRef = 0, chips = {}, agoraRestante = null;
+let tela, dia, meta, fotosCont = {}, ignorarClique = false, alvoProtRef = 0, chips = {}, agoraRestante = null, anelAntes = null;
 
 export async function render(t) {
   tela = t;
   await desenhar();
+  talvezTour();
 }
 
 function rotuloData(chave) {
@@ -92,6 +95,9 @@ async function desenhar() {
       <span class="num"><b>${f(v)}</b> / ${f(m)} ${un}</span></div><div class="trilho"><div class="enche" style="width:${pct}%"></div></div></div>`;
   };
   const refs = refeicoesDoDia(dia, estado.config.refeicoes);
+  const diaSemItens = !Object.values(dia.refeicoes).some((l) => l.length);
+  // o anel anima a partir do valor anterior só no mesmo dia (trocar de dia redesenha direto)
+  if (anelAntes && anelAntes.data !== estado.dataAtual) anelAntes = null;
   const ehHoje = estado.dataAtual === chaveData();
   const [dias, bk, ativos, agua] = await Promise.all([
     estado.config.dobras?.lembrete !== false ? diasDesdeUltima().catch(() => null) : null,
@@ -126,8 +132,8 @@ async function desenhar() {
           <svg viewBox="0 0 150 150" aria-hidden="true"><defs><linearGradient id="grad-anel" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="var(--acento)"/><stop offset="1" stop-color="var(--acento-forte)"/></linearGradient></defs>
             <circle class="fundo" cx="75" cy="75" r="64"/>
-            <circle class="valor" cx="75" cy="75" r="64" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/></svg>
-          <div class="centro"><span class="grande num">${fmtKcal(Math.abs(restante))}</span>
+            <circle class="valor" cx="75" cy="75" r="64" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - (anelAntes?.frac ?? frac))}"/></svg>
+          <div class="centro"><span class="grande num" data-anel-num>${fmtKcal(Math.abs(anelAntes?.restante ?? restante))}</span>
             <span class="mudo">${restante < 0 ? 'kcal acima' : 'restantes'}</span></div>
         </div>
         <div>
@@ -148,35 +154,53 @@ async function desenhar() {
         <div class="trilho"><div class="enche" style="width:${Math.min(100, (mlAgua / ag.metaMl) * 100)}%"></div></div></div>
       <button class="btn peq suave" data-agua aria-label="Adicionar 1 copo de ${ag.copoMl} ml">+ ${fmtNum(ag.copoMl)} ml</button>
     </section>
+    ${diaSemItens ? estadoVazio('prato', ehHoje ? 'Nada lançado hoje ainda' : 'Nada lançado neste dia', 'Toque em “+ Adicionar alimento” numa refeição ou deslize para os lados para trocar o dia.') : ''}
     <div data-bloco="refeicoes">${refs.map((r) => cartaoRefeicao(r)).join('')}</div>
     <button class="btn bloco suave" data-bloco="copiar" data-copiar-dia>${ICONES.copiar} Copiar o dia anterior</button>
-    <p class="mudo" style="text-align:center;margin-top:14px">Toque no nome da refeição para ver o painel dela. Deslize um item para a esquerda para apagar.</p>
+    <p class="mudo" style="text-align:center;margin-top:14px">Toque no nome da refeição para ver o painel dela. Deslize um item para a esquerda para apagar; deslize fora dos itens para trocar o dia.</p>
     ${botaoOrganizar('diario')}`;
   aplicarLayout(tela, 'diario');
+  animarAnel(anelAntes, { restante, frac, C });
+  anelAntes = { restante, frac, data: estado.dataAtual };
   tela.onclick = clique;
   tela.onkeydown = (e) => { if (e.key === 'Enter' && e.target.matches('[data-detalhe], [data-painel-ref]')) e.target.click(); };
   ligarDeslizar();
 }
 
-/** Deslizar item para a esquerda apaga (com desfazer). */
+/** Deslizar item para a esquerda apaga (com desfazer); deslizar fora dos itens troca o dia. */
 function ligarDeslizar() {
-  let alvo = null, x0 = 0, y0 = 0, dx = 0, horizontal = null;
+  let alvo = null, x0 = 0, y0 = 0, dx = 0, horizontal = null, trocaDia = false;
+  tela.style.touchAction = 'pan-y';                     // gesto horizontal fica com o app; rolagem vertical normal
   tela.onpointerdown = (e) => {
+    if (e.pointerType === 'mouse') return;
     const li = e.target.closest('.item');
-    if (!li || e.pointerType === 'mouse') return;
-    alvo = li; x0 = e.clientX; y0 = e.clientY; dx = 0; horizontal = null;
+    if (!li && e.target.closest('input, select, textarea, .semana')) return;
+    alvo = li || tela; trocaDia = !li; x0 = e.clientX; y0 = e.clientY; dx = 0; horizontal = null;
   };
   tela.onpointermove = (e) => {
     if (!alvo) return;
     const mx = e.clientX - x0, my = e.clientY - y0;
     if (horizontal == null && Math.abs(mx) + Math.abs(my) > 8) horizontal = Math.abs(mx) > Math.abs(my) * 1.3;
     if (!horizontal) return;
+    if (trocaDia) { dx = mx; tela.style.transform = `translateX(${mx * 0.25}px)`; return; }
     dx = Math.min(0, mx);
     alvo.classList.add('arrastando');
     alvo.style.transform = `translateX(${dx}px)`;
   };
   const soltar = () => {
     if (!alvo) return;
+    if (trocaDia) {
+      alvo = null; tela.style.transform = '';
+      if (horizontal && Math.abs(dx) > 70) {
+        ignorarClique = true; setTimeout(() => { ignorarClique = false; }, 400);
+        vibrar(8);
+        const passo = dx < 0 ? 1 : -1;
+        tela.classList.remove('dia-esq', 'dia-dir'); void tela.offsetWidth;
+        tela.classList.add(passo > 0 ? 'dia-esq' : 'dia-dir');
+        mudarDia(somarDias(estado.dataAtual, passo));
+      }
+      return;
+    }
     const li = alvo; alvo = null;
     li.classList.remove('arrastando');
     if (horizontal && dx < -8) {                        // o "click" que segue o arraste não abre a edição
@@ -185,7 +209,7 @@ function ligarDeslizar() {
     }
     if (dx < -110) {
       li.style.transform = 'translateX(-100%)';
-      navigator.vibrate?.(15);
+      vibrar(15);
       const refId = li.closest('[data-ref]').dataset.ref;
       setTimeout(() => apagar(refId, li.dataset.item), 160);
     } else li.style.transform = '';
@@ -218,6 +242,25 @@ function cartaoRefeicao(r) {
   </section>`;
 }
 
+/** Anima o número do anel e o arco do valor anterior até o atual (sem animação se o sistema pede menos movimento). */
+function animarAnel(antes, { restante, frac, C }) {
+  const num = tela.querySelector('[data-anel-num]'), arco = tela.querySelector('.anel .valor');
+  if (!num || !arco) return;
+  const fim = () => { num.textContent = fmtKcal(Math.abs(restante)); arco.setAttribute('stroke-dashoffset', C * (1 - frac)); };
+  if (!antes || document.visibilityState !== 'visible' || matchMedia('(prefers-reduced-motion: reduce)').matches
+    || (antes.restante === restante && antes.frac === frac)) return fim();
+  setTimeout(() => { if (num.isConnected) fim(); }, 650);   // garante o valor final mesmo se a animação for interrompida
+  arco.style.transition = 'stroke-dashoffset .5s ease-out';
+  requestAnimationFrame(() => arco.setAttribute('stroke-dashoffset', C * (1 - frac)));
+  const t0 = performance.now(), de = antes.restante, dur = 500;
+  const passo = (t) => {
+    const k = Math.min(1, (t - t0) / dur), e = 1 - (1 - k) ** 3;
+    num.textContent = fmtKcal(Math.abs(de + (restante - de) * e));
+    if (k < 1 && num.isConnected) requestAnimationFrame(passo); else fim();
+  };
+  requestAnimationFrame(passo);
+}
+
 /** Chips de 1 toque (só em refeição vazia). */
 function chipsRefeicao(r) {
   const c = chips[r.id];
@@ -241,7 +284,7 @@ async function clique(e) {
     const r = (await db.get('water', estado.dataAtual)) || { itens: [] };
     r.itens.push({ ts: Date.now(), ml: ag.copoMl });
     await db.put('water', estado.dataAtual, r);
-    navigator.vibrate?.(10);
+    vibrar(10);
     await desenhar();
     return aviso(`+${fmtNum(ag.copoMl)} ml de água`, { acao: async () => { r.itens.pop(); await db.put('water', estado.dataAtual, r); desenhar(); } });
   }
@@ -262,12 +305,12 @@ async function clique(e) {
     location.hash = '#adicionar';
     return;
   }
-  if (e.target.closest('[data-chip-ontem]')) { navigator.vibrate?.(10); return copiarDeOntem(refId); }
+  if (e.target.closest('[data-chip-ontem]')) { vibrar(10); return copiarDeOntem(refId); }
   if (e.target.closest('[data-chip-sempre]')) {
     const itens = chips[refId]?.sempre || [];
     const antes = dia;
     await gravarDia(lancarSalva(dia, refId, nomeRef, { itens }));
-    navigator.vibrate?.(10);
+    vibrar(10);
     await desenhar();
     return aviso(`${itens.length} item(ns) → ${nomeRef}`, { acao: async () => { await gravarDia(antes); desenhar(); } });
   }
@@ -417,7 +460,7 @@ async function alternarTreino() {
   d.tags = d.tags || [];
   if (d.tags.includes('treino')) d.tags = d.tags.filter((t) => t !== 'treino'); else d.tags.push('treino');
   await gravarDia(d);
-  navigator.vibrate?.(10);
+  vibrar(10);
   await desenhar();
   const extra = Number(estado.metas.treinoExtra) || 0;
   if (ehTreino(d) && !extra) aviso('Dia marcado como treino. Para a meta subir nesses dias, defina o extra em Metas.', { ms: 6000, acao: () => { location.hash = '#metas'; }, rotulo: 'Metas' });

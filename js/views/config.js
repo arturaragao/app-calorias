@@ -13,6 +13,9 @@ import { cartaoDrive, ligarCartaoDrive, confirmarEImportar } from './drive-ui.js
 import { lerChave, salvarChave, chaveValida, rotuloCota } from '../ia.js';
 import { limiteDiario, definirLimite, LIMITE_PADRAO } from '../ia-cota.js';
 import { localDisponivel } from '../ia-local.js';
+import { abrirTour } from './tour.js';
+
+const vibrarLigado = () => { try { return localStorage.getItem('vibrar') !== 'nao'; } catch { return true; } };
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
 import { CORES_PADRAO, NOMES_CORES, PALETAS, aplicarCores } from '../cores.js';
@@ -91,6 +94,9 @@ export async function render(tela) {
       <div class="grade2"><button class="btn" data-csv="itens">Item por item</button><button class="btn" data-csv="totais">Totais por dia</button></div></div>
     <div class="card"><h2 style="margin-bottom:6px">Armazenamento</h2><p class="mudo" id="arm" style="margin-top:0">…</p>
       <button class="btn perigo bloco" data-apagar-tudo>Apagar todos os dados</button></div>
+    <div class="card"><h2 style="margin-bottom:6px">Toque e ajuda</h2>
+      <label class="linha"><input type="checkbox" id="vibrar" ${vibrarLigado() ? 'checked' : ''} style="flex:0;width:22px;height:22px"><span>Vibração leve ao lançar, apagar e trocar de dia</span></label>
+      <button class="btn bloco suave" data-tour style="margin-top:10px">Rever o tour do app</button></div>
     <div class="card"><h2 style="margin-bottom:6px">Sobre</h2>
       <p class="mudo">Base de alimentos: <b>Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada</b>,
       NEPA/UNICAMP, Campinas, 2011. Valores por 100 g de parte comestível. “Tr” (traço) conta como 0; valores ausentes na tabela
@@ -130,6 +136,7 @@ export async function render(tela) {
   }).catch(() => {});
 
   tela.onchange = (e) => {
+    if (e.target.id === 'vibrar') { try { localStorage.setItem('vibrar', e.target.checked ? 'sim' : 'nao'); } catch {} if (e.target.checked) navigator.vibrate?.(15); return; }
     if (e.target.name === 'ia-limite') {
       const n = lerNumero(e.target.value);
       if (!(n >= 1 && n <= 500)) { e.target.value = limiteDiario(); return aviso('Use um número de 1 a 500.'); }
@@ -141,6 +148,7 @@ export async function render(tela) {
   tela.onclick = async (e) => {
     const b = e.target.closest('button');
     if (!b || b.closest('#drive')) return;
+    if ('tour' in b.dataset) return abrirTour();
     if (b.dataset.paleta) {
       await salvarCores({ ...cores(), acento: b.dataset.paleta });
       $$('[data-paleta]', tela).forEach((x) => x.setAttribute('aria-pressed', x === b));

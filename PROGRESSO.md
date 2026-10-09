@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro novo (Pacotes 6–9). Pacotes 6 (v14), 7 (v15) e 8 (v16) entregues; próximo: Pacote 9, após OK do Artur.
+**Etapa atual:** roteiro novo (Pacotes 6–9). Pacotes 6–9 entregues (v14–v17). Pendente só o backup no Drive (falta o ID do cliente OAuth do Artur).
 
 **Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
 - [x] Pacote 1 — Progresso profissional (v10)
@@ -11,8 +11,16 @@
 - [x] Pacote 6 (v14) — correções e robustez
 - [x] Pacote 7 (v15) — inteligência sem custo (o que comer agora, chips de 1 toque, lançamento suspeito, ditado por voz)
 - [x] Pacote 8 (v16) — IA gratuita (coach semanal, foto de cardápio/receita, Gemini Nano, limite diário visível)
-- [ ] Pacote 9 — acabamento (contraste AA, deslizar dias, animações, tour, Drive quando vier o ID OAuth)
+- [x] Pacote 9 (v17) — acabamento (contraste AA, deslizar dias, anel animado, estados vazios, vibração, tour); Drive aguarda o ID OAuth
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 9 (v17, 2026-10-09)**
+- Contraste WCAG AA: auditoria automática no navegador (todo texto visível × fundo efetivo) em Diário, Adicionar, Registros, Progresso, Ajustes, Metas e nas folhas (Detalhes, painel, quantidade, O que comer agora, Organizar), temas claro/escuro e as 7 paletas. Corrigido: dias "abaixo" do calendário no claro (--agua-forte, 3,9 → ≥ 4,5) e "Apagar" ao deslizar no escuro (texto var(--bg), 2,4 → 8). Teste novo confere os pares de tokens dos dois temas.
+- Diário: deslizar fora dos itens troca o dia (← amanhã / → ontem, com animação); número e arco do anel animam do valor anterior (só no mesmo dia; sem animação se a página está oculta ou o sistema pede menos movimento); estado vazio ilustrado no dia sem itens.
+- Estados vazios com ilustração SVG (js/vazio.js): Adicionar (Recentes/Favoritos/Meus/Receitas), Progresso sem dados, Peso sem registros.
+- Vibração leve central (ui.vibrar): avisos com "Desfazer", trocar de dia, chips, lançamentos; desligável em Ajustes › Toque e ajuda.
+- Tour de 3 telas no primeiro uso (views/tour.js: Organizar, Detalhes do dia, painel da refeição; deslizar ou Próximo); "Rever o tour do app" em Ajustes.
+- Testes: 132 aprovados. Conferido no navegador (375 px): tour, troca de dia por gesto, anel, estados vazios, Ajustes; sem erros.
 
 **Pacote 8 (v16, 2026-10-09)**
 - Motores de IA (js/ia.js): IA embutida do Chrome (Prompt API/Gemini Nano, js/ia-local.js) primeiro, se já estiver "available" (offline, sem cota; falhou → Gemini); senão Gemini com a chave; senão a função some (coach e atalho de cardápio) ou pede a chave (foto/texto/rótulo, como antes).

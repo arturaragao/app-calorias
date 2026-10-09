@@ -75,8 +75,14 @@ window.addEventListener('popstate', () => {
 
 // ---------- Aviso ----------
 let timer = null;
+/** Vibração leve de confirmação (desligável em Ajustes; ignorada se o aparelho não vibra). */
+export function vibrar(ms = 10) {
+  try { if (localStorage.getItem('vibrar') !== 'nao') navigator.vibrate?.(ms); } catch {}
+}
+
 export function aviso(msg, { acao, rotulo = 'Desfazer', ms = 5000 } = {}) {
   const a = $('#aviso');
+  if (acao && rotulo === 'Desfazer') vibrar(10);          // ação concluída (que pode ser desfeita)
   a.innerHTML = `<span>${esc(msg)}</span>${acao ? `<button>${esc(rotulo)}</button>` : ''}`;
   a.hidden = false;
   clearTimeout(timer);

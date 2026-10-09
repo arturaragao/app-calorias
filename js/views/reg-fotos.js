@@ -4,7 +4,7 @@
 import { db } from '../db.js';
 import { comprimir } from '../photos.js';
 import { lerPesos } from './reg-peso.js';
-import { $, $$, esc, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
+import { $, $$, esc, aviso, abrirFolha, fecharFolha, ICONES, vibrar } from '../ui.js';
 import { chaveData, fmtData, fmtNum, uid } from '../utils.js';
 
 export const POSES = [['frente', 'Frente'], ['lado', 'Lado'], ['costas', 'Costas']];
@@ -114,7 +114,7 @@ function folhaNova(depois) {
       atual.push({ id: uid(), blob, pose, ts: Date.now() });
       await gravar(data, atual);
       inp.closest('[data-pose]').querySelector('[data-ok]').textContent = '✓ salva';
-      navigator.vibrate?.(10);
+      vibrar(10);
     } catch (err) { console.error(err); aviso('Não consegui salvar essa foto.'); }
     inp.value = '';
   };

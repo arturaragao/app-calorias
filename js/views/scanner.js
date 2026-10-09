@@ -1,7 +1,7 @@
 // views/scanner.js — leitura de código de barras pela câmera traseira (BarcodeDetector do Chrome Android),
 // com campo manual de reserva. Resolve localmente (Meus alimentos) antes de consultar o Open Food Facts.
 
-import { abrirFolha, fecharFolha, aviso, esc } from '../ui.js';
+import { abrirFolha, fecharFolha, aviso, esc, vibrar } from '../ui.js';
 import { catalogo } from '../custom.js';
 import { limparCodigo, variantesCodigo, buscarCodigo, digitoOk } from '../off.js';
 import { folhaAlimento } from './alimento-form.js';
@@ -82,7 +82,7 @@ export async function abrirScanner({ aoAlimento }) {
           if (!c) continue;
           const confiavel = /ean|upc/.test(cod.format) && digitoOk(c);
           if (confiavel || c === anterior) {
-            navigator.vibrate?.(80);
+            vibrar(80);
             encerrar(); fecharFolha();
             return resolver(c, aoAlimento);
           }

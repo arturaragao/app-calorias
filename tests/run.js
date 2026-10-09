@@ -728,6 +728,36 @@ t('Coach: cache por semana guarda as 12 mais recentes', () => {
   eq(Object.keys(c).length, 12); eq(c['2026-01-14'].acao, '14'); eq(c['2026-01-01'], undefined);
 });
 
+// ---------- Pacote 9 ----------
+// Contraste WCAG 2.x (W3C, "relative luminance" e "contrast ratio") dos pares de cores usados com texto.
+const hex = (h) => { const v = h.replace('#', ''); return [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16)); };
+const lumW = (rgb) => { const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }; const [r, g, b] = rgb.map(f); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const contraste = (a, b) => { const l1 = lumW(a), l2 = lumW(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); };
+const css9 = readFileSync(new URL('../css/app.css', import.meta.url), 'utf8');
+const tokens = (bloco) => Object.fromEntries([...bloco.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], hex(m[2])]));
+const claro9 = tokens(css9.slice(css9.indexOf(':root {'), css9.indexOf('@media (prefers-color-scheme: dark)')));
+const escuro9 = tokens(css9.slice(css9.indexOf(':root[data-tema="escuro"]'), css9.indexOf('/* ---------- Base')));
+t('Contraste AA (≥ 4,5) dos textos nos dois temas', () => {
+  const pares = [['txt', 'bg'], ['txt', 'sup'], ['txt', 'sup2'], ['txt2', 'bg'], ['txt2', 'sup'], ['txt2', 'sup2'], ['acento-txt', 'acento'],
+    ['acento', 'sup'], ['alerta', 'sup'], ['perigo', 'sup'], ['bg', 'acento'], ['bg', 'alerta'], ['bg', 'perigo']];
+  for (const [nome, tk] of [['claro', claro9], ['escuro', escuro9]]) {
+    for (const [a, b] of pares) {
+      if (!tk[a] || !tk[b]) throw new Error(`${nome}: faltou --${!tk[a] ? a : b}`);
+      const r = contraste(tk[a], tk[b]);
+      if (r < 4.5) throw new Error(`${nome}: --${a} sobre --${b} = ${r.toFixed(2)}`);
+    }
+  }
+  // calendário "abaixo": no claro o fundo é a água escurecida (78% + preto); no escuro, a própria água
+  if (contraste(claro9.bg, claro9.agua.map((c) => c * 0.78)) < 4.5) throw new Error('claro: dia abaixo da meta');
+  if (contraste(escuro9.bg, escuro9.agua) < 4.5) throw new Error('escuro: dia abaixo da meta');
+});
+const V9 = await import('../js/vazio.js');
+t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
+  const h = V9.estadoVazio('estrela', 'Sem favoritos', 'Toque em ☆');
+  if (!h.includes('<svg') || !h.includes('aria-hidden="true"') || !h.includes('Sem favoritos') || !h.includes('Toque em ☆')) throw new Error(h);
+  if (!V9.estadoVazio('inexistente', 'x').includes('<svg')) throw new Error('fallback');
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

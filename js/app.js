@@ -37,7 +37,10 @@ export function aplicarTema(tema) {
 // senão o handler da tela anterior continua ativo numa tela que não define o seu.
 const HANDLERS_TELA = ['onclick', 'oninput', 'onchange', 'onkeydown', 'onsubmit',
   'onpointerdown', 'onpointermove', 'onpointerup', 'onpointercancel'];
-function limparHandlers(tela) { for (const h of HANDLERS_TELA) tela[h] = null; }
+function limparHandlers(tela) {
+  for (const h of HANDLERS_TELA) tela[h] = null;
+  tela.style.touchAction = ''; tela.style.transform = ''; tela.classList.remove('dia-esq', 'dia-dir');
+}
 
 export async function navegar() {
   fecharFolha(true);

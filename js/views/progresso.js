@@ -16,6 +16,7 @@ import { tabelaMicros } from './micros-ui.js';
 import { gerarRelatorioPDF } from './relatorio-pdf.js';
 import { carregarBase } from '../foods.js';
 import { aplicarLayout, botaoOrganizar, visivel } from '../layout.js';
+import { estadoVazio } from '../vazio.js';
 import { numerosCoach, contarEtiquetas, guardarResposta } from '../coach.js';
 import { coachSemanal, motorIA, rotuloCota } from '../ia.js';
 import { topo, esc, $, seg, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
@@ -72,6 +73,7 @@ export async function render(tela) {
     const comp = (atual, ant, f, un = '') => (atual == null || ant == null ? '<small>&nbsp;</small>' : (f(Math.abs(atual - ant)) === f(0) ? '<small>igual ao anterior</small>' : `<small>${sinal(atual - ant, f)}${un} vs anterior</small>`));
 
     tela.innerHTML = `${seg('periodo', PERIODOS, estado.periodoProg)}
+      ${!dias.length && !pesos.length ? estadoVazio('grafico', 'Seu progresso aparece aqui', 'Lance refeições e registre o peso por alguns dias para ver tendência, aderência e médias.') : ''}
       <div class="kpis num" data-bloco="kpis">
         <div class="kpi"><b>${mm.n ? fk(mm.consumo.kcal) : '—'}</b><span>kcal/dia</span>${cmp ? comp(cmp.kcal[0], cmp.kcal[1], fk) : ''}</div>
         <div class="kpi"><b>${mm.n ? fmtNum(Math.round(mm.consumo.prot)) + ' g' : '—'}</b><span>proteína/dia</span>${cmp ? comp(cmp.prot[0], cmp.prot[1], (v) => fmtNum(Math.round(v)), ' g') : ''}</div>
