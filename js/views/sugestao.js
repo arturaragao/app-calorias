@@ -35,6 +35,43 @@ export function refeicaoPeloHorario(refs = estado.config.refeicoes) {
   return (refs.find((r) => r.id === id) || refs[0])?.id;
 }
 
+// ---------- Primeira sugestão (cartão do Diário) ----------
+
+/** Refeição alvo: a do horário; se já tem itens, a próxima vazia. */
+function refeicaoAlvo(dia, refs) {
+  const vazias = new Set(refs.filter((r) => !(dia.refeicoes[r.id] || []).length).map((r) => r.id));
+  const ordem = refs.map((r) => r.id), ini = ordem.indexOf(refeicaoPeloHorario(refs));
+  return { vazias, refId: ordem.slice(Math.max(0, ini)).find((id) => vazias.has(id)) || ordem[Math.max(0, ini)] };
+}
+
+/** Melhor combinação para a próxima refeição (mesma lógica da folha), ou null. */
+export async function primeiraSugestao(dia, restante) {
+  const cat = await catalogo();
+  const recentes = await diariosRecentes(30);
+  const opc = { favoritos: estado.config.favoritos || [], ultimaQtd: estado.config.ultimaQtd || {} };
+  const refs = estado.config.refeicoes;
+  const { vazias, refId } = refeicaoAlvo(dia, refs);
+  let cands = candidatosFrequentes(recentes, (id) => cat.porId.get(id), { ...opc, refId });
+  if (cands.length < 2) cands = candidatosFrequentes(recentes, (id) => cat.porId.get(id), opc);
+  const f = fracaoProximaRefeicao(refId, refs.map((r) => r.id), vazias, distribuicaoRefeicoes(refs, estado.config.distRef));
+  const alvo = Object.fromEntries(['kcal', 'prot', 'carb', 'gord'].map((k) => [k, Math.max(0, restante[k] || 0) * f]));
+  if (alvo.kcal < 50) return null;
+  const combo = sugerirCombinacoes(alvo, cands, { n: 1 })[0];
+  return combo ? { refId, nomeRef: refs.find((r) => r.id === refId)?.nome || '', combo } : null;
+}
+
+/** Lança uma combinação na refeição, com desfazer. */
+export async function lancarCombo(data, refId, combo, aoLancar) {
+  const nomeRef = estado.config.refeicoes.find((x) => x.id === refId)?.nome;
+  const antes = await lerDia(data);
+  let d = antes;
+  for (const it of combo.itens) { d = adicionarItem(d, refId, nomeRef, criarItem(it.food, it.g)); registrarRecente(it.food.id); }
+  await gravarDia(d);
+  vibrar(15);
+  await aoLancar?.();
+  aviso(`${combo.itens.length} item(ns) → ${nomeRef}`, { acao: async () => { await gravarDia(antes); aoLancar?.(); } });
+}
+
 // ---------- Folha "O que comer agora" ----------
 
 /**
@@ -50,10 +87,8 @@ export async function folhaOQueComer({ dia, restante, aoLancar }) {
   const candsDe = (ref) => { const c = candidatosFrequentes(recentes, (id) => cat.porId.get(id), { ...opc, refId: ref }); return c.length >= 2 ? c : candsDia; };
   const refs = estado.config.refeicoes;
   const dist = distribuicaoRefeicoes(refs, estado.config.distRef);
-  const vazias = new Set(refs.filter((r) => !(dia.refeicoes[r.id] || []).length).map((r) => r.id));
-  // refeição pelo horário; se já tem itens, a próxima vazia
-  const ordem = refs.map((r) => r.id), ini = ordem.indexOf(refeicaoPeloHorario(refs));
-  let refId = ordem.slice(Math.max(0, ini)).find((id) => vazias.has(id)) || ordem[Math.max(0, ini)], modo = 'ref', combos = [];
+  const alvoInicial = refeicaoAlvo(dia, refs), vazias = alvoInicial.vazias;
+  let refId = alvoInicial.refId, modo = 'ref', combos = [];
   const p = abrirFolha('O que comer agora', '<div id="oqc"></div>', { foco: false });
   const r0 = (o, k) => Math.max(0, o[k] || 0);
   const desenhar = () => {
@@ -84,15 +119,7 @@ export async function folhaOQueComer({ dia, restante, aoLancar }) {
     if (m) { modo = m.dataset.modo; return desenhar(); }
     const b = e.target.closest('[data-lancar-combo]');
     if (!b) return;
-    const c = combos[Number(b.dataset.lancarCombo)];
-    const nomeRef = refs.find((x) => x.id === refId)?.nome;
-    const antes = await lerDia(dia.data);
-    let d = antes;
-    for (const it of c.itens) { d = adicionarItem(d, refId, nomeRef, criarItem(it.food, it.g)); registrarRecente(it.food.id); }
-    await gravarDia(d);
-    vibrar(15);
     fecharFolha();
-    await aoLancar?.();
-    aviso(`${c.itens.length} item(ns) → ${nomeRef}`, { acao: async () => { await gravarDia(antes); aoLancar?.(); } });
+    await lancarCombo(dia.data, refId, combos[Number(b.dataset.lancarCombo)], aoLancar);
   };
 }

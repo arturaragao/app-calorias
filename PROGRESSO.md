@@ -1,15 +1,26 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro 2.0 (ROTEIRO-2.md, Pacotes 10–16). Pacote 10 entregue (v19); aguardando OK do Artur para o Pacote 11.
+**Etapa atual:** roteiro 2.0. Pacotes 10 e 11 entregues (v19–v20); Pacote 12 em andamento (autorizado junto com o 11).
 
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
-- [ ] Pacote 11 — Diário redesenhado
+- [x] Pacote 11 — Diário redesenhado (v20)
 - [ ] Pacote 12 — Registro ultrarrápido sem gastar tokens
 - [ ] Pacote 13 — Planejamento, receitas e lista de compras
 - [ ] Pacote 14 — Inteligência prática
 - [ ] Pacote 15 — Atalhos e extras do Android
 - [ ] Pacote 16 — Qualidade de produto profissional
+
+**Pacote 11 (v20, 2026-10-09)**
+- Cartão-herói em 3 páginas (deslizar, pontos, última lembrada; altura acompanha a página): Calorias (anel atual) · Macros em anéis (proteína grande, "faltam X g") · Fibra, sódio e os 3 micronutrientes mais longe da referência. Toque abre Detalhes do dia.
+- Refeições compactas: cabeçalho com nome, kcal (toque recolhe/expande, lembrado), "+" e ⋯; mini-barra P/C/G; refeições vazias seguidas viram linhas de um cartão (ícone, nome, chips "Ontem"/"De sempre", "+"). Código de barras saiu das refeições (fica no ⋯, no "+" e na busca). Toque no nome de refeição vazia abre o ⋯ (com "Painel da refeição").
+- Linha do tempo (alternável, lembrado): itens por horário; itens novos guardam `ts`; antigos/copiados usam o horário padrão da refeição.
+- "+" central: toque = buscar; segurar 450 ms ou arrastar para cima = folha Buscar · Código · Foto · Falar · Adição rápida · Água · Peso (endereços #diario?acao=rapida|agua[&ml=N], #adicionar?falar=1).
+- Faixa da semana com ponto verde/âmbar/azul pela aderência (dias passados). "O que comer agora" vira cartão com a 1ª sugestão e Lançar; "Ver mais" abre a folha.
+- Texto de ajuda do rodapé removido; dicas únicas em balão (ui.talvezDica). Animações: item novo entra deslizando, refeição recolhe, anéis dos macros enchem (reduzir movimento respeitado).
+- "Copiar o dia anterior" só aparece com o dia vazio (continua por refeição no ⋯ e no chip "Ontem").
+- Dia com 1 refeição: ~1.400 px (≈ 1,65 tela de 844 px; antes ≈ 2,1). Recorrente: "+" da refeição → "+" do alimento em Recentes = 2 toques.
+- Testes: 140 aprovados. Contraste: 84 telas, 0 reprovações. Conferido no Edge (Playwright): páginas, linha do tempo, recolher, folha do "+" e Água; sem erros no console.
 
 **Pacote 10 (v19, 2026-10-09)**
 - DESIGN.md: tokens (tipografia 12–40 rem, grade 4 px, raios 8/12/18/28/pílula, elevação 1–3, movimento 120/200/320 ms + curvas, camada de estado 8/12%) e componentes; tabela emoji → ícone.

@@ -29,6 +29,7 @@ export async function semear({ dias = 42, hojeSoAlmoco = true } = {}) {
   await db.put('kv', 'metas', metasIniciais(perfil, inicio));
   const config = (await db.get('kv', 'config')) || {};
   await db.put('kv', 'config', { ...config, tourVisto: true, alvo: { peso: 78, inicio: { data: inicio, kg: 84 } } });
+  try { localStorage.setItem('dicasVistas', JSON.stringify(['heroi', 'mais', 'apagar', 'painel', 'trocar-dia'])); } catch {}   // capturas sem balões
 
   for (let i = dias; i >= 0; i--) {
     const data = somaDias(hoje, -i);

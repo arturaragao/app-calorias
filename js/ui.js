@@ -114,6 +114,37 @@ export function linhaLista({ icone = '', titulo, sub = '', fim = '', href = '', 
 export const esqueleto = (tipos = ['alto', 'medio', 'medio', '', '']) =>
   `<div class="esqueleto" aria-busy="true" aria-label="Carregando">${tipos.map((t) => `<i class="${t}"></i>`).join('')}</div>`;
 
+// ---------- Dicas de uso (coachmark) ----------
+// Cada dica aparece uma única vez (por aparelho), num balão apontando o elemento; some ao tocar em qualquer lugar.
+const dicasVistas = () => { try { return JSON.parse(localStorage.getItem('dicasVistas') || '[]'); } catch { return []; } };
+export const dicaVista = (chave) => dicasVistas().includes(chave);
+function marcarDica(chave) {
+  try { localStorage.setItem('dicasVistas', JSON.stringify([...new Set([...dicasVistas(), chave])])); } catch {}
+}
+
+/** Mostra a primeira dica ainda não vista cujo elemento existe e está visível. lista: [{ chave, el, texto }]. */
+export function talvezDica(lista) {
+  if (document.querySelector('.dica-balao') || !$('#folha').hidden) return;
+  const d = lista.find((x) => x.el && !dicaVista(x.chave) && x.el.getBoundingClientRect().height);
+  if (!d) return;
+  marcarDica(d.chave);
+  const r = d.el.getBoundingClientRect();
+  const b = document.createElement('div');
+  b.className = 'dica-balao';
+  b.setAttribute('role', 'status');
+  b.innerHTML = `${ic('lightbulb', 'p')}<span>${esc(d.texto)}</span>`;
+  document.body.append(b);
+  const embaixo = r.bottom + b.offsetHeight + 16 < innerHeight - 90;   // não cobre a barra inferior
+  const x = Math.min(innerWidth - 12 - b.offsetWidth, Math.max(12, r.left + r.width / 2 - b.offsetWidth / 2));
+  b.style.left = x + 'px';
+  b.style.top = (embaixo ? r.bottom + 10 : r.top - b.offsetHeight - 10) + 'px';
+  b.style.setProperty('--seta-x', Math.max(16, Math.min(b.offsetWidth - 16, r.left + r.width / 2 - x)) + 'px');
+  b.classList.add(embaixo ? 'embaixo' : 'em-cima');
+  const sumir = () => { b.classList.add('saindo'); setTimeout(() => b.remove(), 200); removeEventListener('pointerdown', sumir, true); removeEventListener('scroll', sumir, true); };
+  setTimeout(() => { addEventListener('pointerdown', sumir, true); addEventListener('scroll', sumir, true); }, 300);
+  setTimeout(sumir, 9000);
+}
+
 // ---------- Tamanho do texto ----------
 export const ESCALAS_FONTE = [0.85, 0.92, 1, 1.08, 1.15, 1.22, 1.3];
 /** Aplica a escala do texto (0,85× a 1,3×) na raiz; guardada por aparelho. */

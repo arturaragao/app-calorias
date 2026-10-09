@@ -1,6 +1,6 @@
 // diary.js — lógica pura do diário: itens com snapshot de nutrientes e totais.
 // Dia = { data, nomes: {refId: nome}, refeicoes: {refId: [item]} }
-// item = { id, foodId, nome, fonte, g, porcao: {nome, g, qtd} | null, n: {kcal,…}, falta: [] }
+// item = { id, ts (lançamento), foodId, nome, fonte, g, porcao: {nome, g, qtd} | null, n: {kcal,…}, falta: [] }
 
 import { uid } from './utils.js';
 
@@ -43,7 +43,7 @@ export const gramasDaPorcao = (porcao, qtd) => porcao.g * qtd;
 export function criarItem(food, gramas, porcao = null) {
   const { n, falta } = nutrientesPorGramas(food, gramas);
   return {
-    id: uid(), foodId: food.id, nome: food.nome, fonte: food.fonte || '',
+    id: uid(), ts: Date.now(), foodId: food.id, nome: food.nome, fonte: food.fonte || '',
     g: gramas, porcao, n, falta,
     por100: { ...Object.fromEntries(NUTRIENTES.map((k) => [k, food[k] ?? null])), ...(food.mic ? { mic: food.mic } : {}) },
   };
@@ -62,11 +62,34 @@ export function criarItemRapido({ nome, ...valores }) {
     const v = valores[k];
     if (v == null || Number.isNaN(v)) { n[k] = 0; if (k === 'fibra' || k === 'sodio_mg') falta.push(k); } else n[k] = v;
   }
-  return { id: uid(), foodId: null, rapido: true, nome: nome || 'Adição rápida', fonte: '', g: 0, porcao: null, n, falta };
+  return { id: uid(), foodId: null, rapido: true, nome: nome || 'Adição rápida', fonte: '', g: 0, porcao: null, n, falta, ts: Date.now() };
 }
 
-/** Cópia de itens com ids novos (copiar refeição/dia). */
-export const copiarItens = (itens) => itens.map((it) => ({ ...structuredClone(it), id: uid() }));
+/** Cópia de itens com ids novos (copiar refeição/dia). O horário não é copiado (vale o horário padrão da refeição). */
+export const copiarItens = (itens) => itens.map(({ ts, ...it }) => ({ ...structuredClone(it), id: uid() }));
+
+// ---------- Linha do tempo (horário de cada item) ----------
+
+/** Horário padrão (min desde 0 h) de cada refeição, para itens sem horário próprio. */
+export const HORA_PADRAO_REF = { cafe: 7 * 60 + 30, almoco: 12 * 60 + 30, lanche: 16 * 60, jantar: 20 * 60, ceia: 22 * 60 };
+
+/** Minuto do dia do item: o horário em que foi lançado, se foi lançado no próprio dia; senão o padrão da refeição. */
+export function minutoDoItem(item, data, refId, ordemRef = 0) {
+  if (item.ts) {
+    const d = new Date(item.ts);
+    const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (chave === data) return d.getHours() * 60 + d.getMinutes();
+  }
+  return HORA_PADRAO_REF[refId] ?? 12 * 60 + ordemRef;
+}
+
+/** Itens do dia em ordem de horário: [{ refId, item, min }] (empate: ordem das refeições e dos itens). */
+export function linhaDoTempo(dia, refs) {
+  const out = [];
+  refs.forEach((r, ir) => (dia.refeicoes[r.id] || []).forEach((item, ii) =>
+    out.push({ refId: r.id, item, min: minutoDoItem(item, dia.data, r.id, ir), ir, ii })));
+  return out.sort((a, b) => a.min - b.min || a.ir - b.ir || a.ii - b.ii).map(({ ir, ii, ...x }) => x);
+}
 
 /** Acrescenta os itens de `origem` (dia inteiro ou uma refeição) em `destino`. */
 export function copiarPara(destino, origem, refId = null) {
@@ -141,7 +164,7 @@ export function criarRefeicaoSalva(nome, itens) {
 /** Lança todos os itens de uma refeição salva na refeição `refId` do dia (ids novos). */
 export function lancarSalva(dia, refId, refNome, salva) {
   let d = dia;
-  for (const it of salva.itens) d = adicionarItem(d, refId, refNome, { ...structuredClone(it), id: uid() });
+  for (const it of salva.itens) d = adicionarItem(d, refId, refNome, { ...structuredClone(it), id: uid(), ts: Date.now() });
   return d;
 }
 

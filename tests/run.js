@@ -806,6 +806,34 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   });
 }
 
+// ---------- Pacote 11: Diário ----------
+{
+  const D11 = await import('../js/diary.js');
+  const M11 = await import('../js/micros.js');
+  const ts = (data, h, m) => new Date(`${data}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`).getTime();
+  t('Horário do item: lançado no dia usa a hora; antigo/copiado usa o padrão da refeição', () => {
+    if (D11.minutoDoItem({ ts: ts('2026-10-09', 8, 15) }, '2026-10-09', 'cafe') !== 495) throw new Error('hora do lançamento');
+    if (D11.minutoDoItem({ ts: ts('2026-10-08', 8, 15) }, '2026-10-09', 'jantar') !== 20 * 60) throw new Error('outro dia → padrão');
+    if (D11.minutoDoItem({}, '2026-10-09', 'almoco') !== 12 * 60 + 30) throw new Error('sem horário → padrão');
+    if (D11.copiarItens([{ id: 'a', ts: 1, n: {} }])[0].ts !== undefined) throw new Error('cópia não leva o horário');
+    const it = D11.criarItem({ id: 'x', nome: 'x', kcal: 100 }, 100);
+    if (!(it.ts > 0)) throw new Error('item novo sem ts');
+  });
+  t('Linha do tempo ordena por horário entre refeições', () => {
+    const dia = { data: '2026-10-09', nomes: {}, refeicoes: {
+      almoco: [{ id: 'a', ts: ts('2026-10-09', 13, 0) }], cafe: [{ id: 'c' }], lanche: [{ id: 'l', ts: ts('2026-10-09', 10, 30) }] } };
+    const ordem = D11.linhaDoTempo(dia, D11.REFEICOES_PADRAO).map((x) => x.item.id).join('');
+    if (ordem !== 'cla') throw new Error(ordem);
+  });
+  t('Micronutrientes mais distantes da referência (sem colesterol)', () => {
+    const itens = [{ g: 100, n: { kcal: 100 }, por100: { mic: { calcio_mg: 500, vitc_mg: 90, ferro_mg: 1 } } }];
+    const r = M11.microsMaisDistantes(itens, 'M', 30, 3);
+    if (r.length !== 3 || r.some((m) => m.campo === 'colest_mg') || r[0].frac > r[2].frac) throw new Error(JSON.stringify(r));
+    if (r.some((m) => m.campo === 'vitc_mg')) throw new Error('vit C está na meta');
+    if (M11.microsMaisDistantes([{ g: 100, n: { kcal: 100 } }], 'M', 30).length) throw new Error('sem dados → vazio');
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

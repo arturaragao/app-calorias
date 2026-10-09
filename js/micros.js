@@ -43,3 +43,15 @@ export function somarMicros(itens, micDe = (it) => it.por100?.mic) {
   }
   return { tot, cobertura: kcalTotal ? kcalCom / kcalTotal : 0 };
 }
+
+/**
+ * Os `n` micronutrientes com meta mais distantes dela no dia (menor fração da referência).
+ * Só faz sentido com cobertura razoável; devolve [] se nenhum item tem micronutrientes.
+ */
+export function microsMaisDistantes(itens, sexo, idade, n = 3, micDe) {
+  const { tot, cobertura } = somarMicros(itens, micDe);
+  if (!cobertura) return [];
+  return MICROS.filter((m) => refMicro(m, sexo, idade))
+    .map((m) => ({ campo: m[0], nome: m[1], un: m[2], val: tot[m[0]], ref: refMicro(m, sexo, idade), frac: tot[m[0]] / refMicro(m, sexo, idade) }))
+    .sort((a, b) => a.frac - b.frac).slice(0, n).map((x) => ({ ...x, cobertura }));
+}

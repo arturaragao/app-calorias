@@ -215,7 +215,7 @@ dialog.dialogo .acoes { display: flex; justify-content: flex-end; gap: var(--e2)
 .barra.passou .rot b { color: var(--alerta); }
 
 /* ---------- Água no diário ---------- */
-.agua-card { display: flex; align-items: center; gap: 12px; }
+.agua-card { display: flex; align-items: center; gap: 12px; padding: var(--e3) var(--e4); }
 .agua-card .gota { width: 42px; height: 42px; border-radius: 50%; background: color-mix(in srgb, var(--agua) 16%, transparent); color: var(--agua); display: grid; place-items: center; flex: 0 0 42px; }
 .agua-card .gota svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 .agua-card .info { flex: 1; min-width: 0; }
@@ -641,3 +641,119 @@ input[type=range] { accent-color: var(--acento); }
 .nota .i.p { margin-right: 2px; }
 .tour-dedo .i { width: 28px; height: 28px; color: var(--acento); }
 .org-lista li .ico .i { width: 20px; height: 20px; }
+
+/* ---------- Pacote 11: Diário redesenhado ---------- */
+/* faixa da semana: ponto colorido pela aderência (dias passados) */
+.semana .meta .ponto { background: var(--acento); }
+.semana .acima .ponto { background: var(--alerta); }
+.semana .abaixo .ponto { background: var(--agua); }
+
+/* cartão-herói em páginas (deslizar horizontal) */
+.heroi { padding: 0; overflow: hidden; }
+.heroi-pags { display: flex; align-items: flex-start; transition: height var(--dur-m) var(--curva); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
+.heroi-pags::-webkit-scrollbar { display: none; }
+.heroi-pag { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; padding: var(--e4) var(--e4) var(--e2); cursor: pointer; min-width: 0; }
+.heroi-pag:focus-visible { outline-offset: -4px; }
+.heroi-pontos { display: flex; justify-content: center; gap: 2px; padding: 0 0 var(--e1); }
+.heroi-pontos button { width: 28px; height: 24px; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
+.heroi-pontos button::after { content: ''; width: 7px; height: 7px; border-radius: var(--r-pilula); background: var(--borda); transition: width var(--dur-m) var(--curva), background-color var(--dur-m) var(--curva); }
+.heroi-pontos button[aria-selected=true]::after { width: 20px; background: var(--acento); }
+.macros-grandes { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: var(--e2); min-height: 196px; }
+.macros-dir { display: grid; gap: var(--e3); }
+.mac { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; }
+.mac-anel { position: relative; }
+.mac-anel svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.mac-anel circle { fill: none; stroke-width: 9; }
+.mac-anel .fundo { stroke: var(--anel-fundo); }
+.mac-anel .valor { stroke-linecap: round; animation: encher 600ms var(--curva-enfase) both; }
+@keyframes encher { from { stroke-dashoffset: var(--c); } }
+.mac.prot .valor { stroke: var(--prot); } .mac.carb .valor { stroke: var(--carb); } .mac.gord .valor { stroke: var(--gord); }
+.mac-anel .centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.mac-anel .centro b { font-size: var(--fs-16); }
+.mac.prot .mac-anel .centro b { font-size: var(--fs-28); font-weight: var(--fw-b); letter-spacing: -.02em; }
+.mac-anel .centro span { font-size: var(--fs-12); color: var(--txt2); }
+.mac-nome { font-size: var(--fs-13); font-weight: var(--fw-sb); margin-top: 2px; }
+.mac.prot .mac-nome { font-size: var(--fs-16); }
+.mac-falta { font-size: var(--fs-12); color: var(--txt2); }
+.mac-falta b { color: var(--txt); }
+.mac.passou .mac-falta b { color: var(--alerta); }
+.barra.micro .enche { background: color-mix(in srgb, var(--acento) 70%, var(--sup)); }
+.barra.sodio.passou .enche { background: var(--alerta); }
+
+/* "O que comer agora" */
+.agora-card .card-tit h2 { display: flex; align-items: center; gap: var(--e2); font-size: var(--fs-16); }
+.agora-card .card-tit h2 .i { color: var(--acento); }
+.agora-card .linha .btn.prim { flex: 1; }
+.agora-card .linha .btn.texto { flex: 0 0 auto; }
+.agora-card .card-tit { margin-bottom: 4px; }
+.agora-itens { margin: 0 0 var(--e3); font-size: var(--fs-14); }
+.agora-itens b { font-weight: var(--fw-sb); }
+
+/* modo de visualização */
+.seg-modo { margin: 0 0 var(--e2); }
+.seg-modo button { min-height: 34px; font-size: var(--fs-13); }
+.seg-modo button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* refeição com itens: compacta, recolhível */
+.ref .ref-tit { gap: 0; }
+.ref .ref-tit h2 { flex: 1; font-size: var(--fs-16); }
+.ref .ref-tit .ico { width: 44px; height: 44px; flex-basis: 44px; }
+.ref-kcal { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--txt); min-height: 44px; padding: 0 6px; border-radius: var(--r-s); cursor: pointer; font: inherit; white-space: nowrap; }
+.ref-kcal .mudo { font-size: var(--fs-13); }
+.ref-kcal .i { color: var(--txt2); transition: transform var(--dur-m) var(--curva); }
+.recolhida .ref-kcal .i { transform: rotate(-90deg); }
+.ref-mini { display: flex; align-items: center; gap: var(--e2); margin: 2px 0 0 44px; font-size: var(--fs-12); }
+.ref-mini .pilha { width: 54px; height: 6px; flex: none; }
+.ref-mini .num { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ref-mini .prot-ok { color: var(--acento); font-weight: var(--fw-sb); }
+.ref-mini .chip-tog { min-height: 32px; padding: 0 var(--e2); }
+.ref-corpo { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur-m) var(--curva); }
+.ref-corpo-in { overflow: hidden; min-height: 0; }
+.recolhida .ref-corpo { grid-template-rows: 0fr; }
+.ref .itens { margin-top: var(--e2); }
+.item-wrap.novo { animation: item-in var(--dur-l) var(--curva-enfase); }
+@keyframes item-in { from { opacity: 0; transform: translateX(32px); } }
+
+/* refeições vazias: uma linha cada, juntas num cartão */
+.refs-vazias { padding: var(--e1) var(--e3); }
+.ref-vazia { display: flex; align-items: center; gap: var(--e1); min-height: 56px; border-bottom: 1px solid var(--borda); }
+.ref-vazia:last-child { border-bottom: 0; }
+.rv-nome { display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--txt); font: inherit; font-weight: var(--fw-sb); padding: 6px 4px 6px 0; cursor: pointer; border-radius: var(--r-s); flex: none; max-width: 48%; text-align: left; }
+.rv-nome > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-chips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.rv-chips > :first-child { margin-left: auto; }
+.rv-chips::-webkit-scrollbar { display: none; }
+.rv-chips .chip-tog { min-height: 32px; padding: 0 10px; flex: none; }
+.rv-add { color: var(--acento); }
+.ref-vazia .ref-ico { width: 32px; height: 32px; flex-basis: 32px; border-radius: 10px; }
+
+/* linha do tempo */
+.tempo { padding: var(--e2) var(--e4); }
+.tempo .itens { margin: 0; }
+.tempo-h { display: flex; align-items: center; gap: var(--e2); padding: var(--e3) 0 var(--e1); font-size: var(--fs-13); font-weight: var(--fw-sb); color: var(--txt2); }
+.tempo-h .num { color: var(--txt); min-width: 42px; }
+.tempo-h .ref-ico { width: 24px; height: 24px; flex-basis: 24px; border-radius: 7px; }
+.tempo-h .ref-ico .i { width: 15px; height: 15px; }
+
+/* dica de uso (coachmark) */
+.dica-balao { position: fixed; z-index: 40; max-width: min(300px, calc(100vw - 24px)); display: flex; gap: var(--e2); align-items: flex-start;
+  background: var(--aviso-bg); color: var(--aviso-txt); border: 1px solid var(--aviso-borda); border-radius: var(--r-s); padding: 10px 12px;
+  font-size: var(--fs-14); box-shadow: var(--elev-3); animation: dica-in var(--dur-l) var(--curva-enfase); pointer-events: none; }
+.dica-balao .i { color: var(--aviso-acao); margin-top: 2px; }
+.dica-balao::before { content: ''; position: absolute; left: calc(var(--seta-x) - 7px); width: 14px; height: 14px; background: inherit; border: inherit; transform: rotate(45deg); }
+.dica-balao.embaixo::before { top: -8px; border-right: 0; border-bottom: 0; }
+.dica-balao.em-cima::before { bottom: -8px; border-left: 0; border-top: 0; }
+.dica-balao.saindo { opacity: 0; transition: opacity var(--dur-m) var(--curva); }
+@keyframes dica-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* folha de ações do "+" */
+.nav a.fab { touch-action: none; -webkit-touch-callout: none; }
+.acoes-grade { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e2) var(--e1); }
+.acao { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: none; color: var(--txt); font: inherit; font-size: var(--fs-12); font-weight: var(--fw-m); padding: var(--e2) 2px; border-radius: var(--r-m); cursor: pointer; text-align: center; line-height: 1.2; }
+.acao-ico { width: 56px; height: 56px; border-radius: var(--r-m); background: var(--acento-suave); color: var(--acento-forte); display: grid; place-items: center; }
+:root[data-tema="escuro"] .acao-ico { color: var(--acento); }
+@media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) .acao-ico { color: var(--acento); } }
+.ref-vazia.duas { flex-wrap: wrap; }
+.ref-vazia.duas .rv-chips { order: 3; flex-basis: 100%; padding: 0 0 var(--e2) 42px; }
+.ref-vazia.duas .rv-chips > :first-child { margin-left: 0; }
+.ref-vazia.duas .rv-nome { flex: 1; max-width: none; }

@@ -36,6 +36,10 @@ Referência de todas as telas. Inspiração: Material 3 Expressive (sem copiar o
 | Esqueleto | `ui.esqueleto(['alto','medio',''])` | Mostrado se a tela demora > 150 ms para montar. |
 | Campo numérico com stepper | `ui.campoPasso(...)` + `ui.ligarPassos` | `−`/`+` de 48 px. |
 | Chave liga/desliga | `.linha-chave` + `.chave` | Linha inteira clicável. |
+| Carrossel de páginas | `.heroi` > `.heroi-pags` > `.heroi-pag` + `.heroi-pontos` | scroll-snap; ponto ativo vira pílula; altura acompanha a página. |
+| Anel de macro | `anelMacro()` (diario.js) → `.mac` | Consumido no centro, "faltam X g" embaixo; proteína maior. |
+| Dica única (coachmark) | `ui.talvezDica([{ chave, el, texto }])` | Balão com seta apontando o elemento; uma vez por aparelho. |
+| Grade de ações | `.acoes-grade` > `.acao` (`views/acoes.js`) | Ícone 56 px tonal + rótulo; 4 por linha. |
 
 ## Ícones
 

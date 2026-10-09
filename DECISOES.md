@@ -100,3 +100,9 @@
 - 2026-10-09 · Confirmações com `<dialog>` próprio (ui.confirmar); "voltar"/Esc/toque fora = cancelar.
 - 2026-10-09 · Aviso (toast): base fica 22 px + 12 px acima da barra (o "+" sobe 22 px); claro = superfície invertida escura; escuro = `--sup2` 88% + texto, com borda e sombra alta.
 - 2026-10-09 · Ferramentas de desenvolvimento como devDependencies (playwright-core usando o Edge/Chrome instalado, lucide-static); nunca carregadas pelo app. node_modules/ e capturas/ fora do git.
+- 2026-10-09 · Cartão-herói: scroll-snap nativo (sem biblioteca); gesto de troca de dia ignora toques que começam no carrossel, nos chips e no seletor de modo. Página lembrada por aparelho (localStorage `heroiPag`).
+- 2026-10-09 · Micronutrientes do herói: só itens com snapshot `por100.mic` (sem carregar a base no Diário); referência = DRI de js/micros.js; colesterol fora (sem meta).
+- 2026-10-09 · Horário do item: `ts` gravado ao criar (criarItem, criarItemRapido, lancarSalva); cópias perdem o `ts`. Horários padrão: café 07:30, almoço 12:30, lanche 16:00, jantar 20:00, ceia 22:00; outras 12:00.
+- 2026-10-09 · Aderência na faixa da semana = situacaoDia (±10% da meta do dia, histórico de metas e dia de treino); hoje fica neutro até acabar.
+- 2026-10-09 · Dicas únicas (localStorage `dicasVistas`), só depois do tour; uma por vez, somem ao tocar/rolar ou em 9 s.
+- 2026-10-09 · Folha do "+": segurar 450 ms ou arrastar 28 px para cima; cada ação é um endereço (servem para atalhos/rotinas do Android no Pacote 15). Água por endereço aceita `ml` (1–5000).

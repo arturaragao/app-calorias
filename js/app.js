@@ -112,6 +112,8 @@ async function iniciar() {
   aplicarTema(estado.config.tema);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => aplicarTema(estado.config.tema));
   window.addEventListener('hashchange', navegar);
+  // "+" central: segurar ou arrastar para cima abre as ações rápidas
+  import('./views/acoes.js').then((m) => m.ligarBotaoMais($('.nav a.fab'))).catch(() => {});
   // "Organizar" no fim de cada tela (ordem e visibilidade dos blocos)
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-organizar]');
