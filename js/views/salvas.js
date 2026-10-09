@@ -2,6 +2,7 @@
 // Guardadas em estado.config.refeicoesSalvas (entram no backup).
 
 import { estado, salvarConfig, lerDia, gravarDia } from '../state.js';
+import { ic } from '../icones.js';
 import { criarRefeicaoSalva, lancarSalva, somar } from '../diary.js';
 import { abrirFolha, fecharFolha, aviso, esc, $, vibrar } from '../ui.js';
 import { fmtKcal, fmtMacro } from '../utils.js';
@@ -39,7 +40,7 @@ export function folhaSalvas({ data = estado.dataAtual, refId = estado.refeicaoAl
         return `<li><button data-lancar="${s.id}"><span><span class="nome">${esc(s.nome)}</span>
           <span class="mudo">${s.itens.map((i) => esc(i.nome)).join(', ').slice(0, 90)}</span></span>
           <span class="num" style="white-space:nowrap"><b>${fmtKcal(t.kcal)}</b> <span class="mudo">kcal</span></span></button>
-          <button class="ico" data-apagar="${s.id}" aria-label="Apagar ${esc(s.nome)}"><svg viewBox="0 0 24 24"><path d="M5 7h14 M10 7V4h4v3 M7 7l1 13h8l1-13"/></svg></button></li>`;
+          <button class="ico" data-apagar="${s.id}" aria-label="Apagar ${esc(s.nome)}">${ic('trash-2')}</button></li>`;
       }).join('')}</ul>`
       : '<p class="mudo">Nenhuma refeição salva ainda. No diário, toque em ⋯ de uma refeição já lançada › “Salvar como refeição salva”.</p>');
     p.onclick = async (e) => {
@@ -60,7 +61,7 @@ export function folhaSalvas({ data = estado.dataAtual, refId = estado.refeicaoAl
       vibrar(12);
       fecharFolha();
       await aoLancar?.();
-      aviso(`✓ ${s.nome} → ${nomeRef}`, { acao: async () => { await gravarDia(antes); aoLancar?.(); } });
+      aviso(`${s.nome} → ${nomeRef}`, { acao: async () => { await gravarDia(antes); aoLancar?.(); } });
     };
   };
   desenhar();

@@ -2,7 +2,7 @@
 
 import { validarBackup, importar } from '../backup.js';
 import { estadoDrive, salvarEstadoDrive, clientId, obterToken, enviarBackup, baixarBackup, desconectar } from '../drive.js';
-import { $, aviso } from '../ui.js';
+import { $, aviso, confirmar } from '../ui.js';
 
 const kb = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 const quando = (ts) => new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -16,7 +16,7 @@ export async function confirmarEImportar(obj, origem = '') {
     `${c.diary || 0} dia(s) de diário, ${c.customFoods || 0} alimento(s), ${c.recipes || 0} receita(s), ${c.weights || 0} dia(s) de peso, ` +
     `${c.skinfolds || 0} avaliação(ões) de dobras${obj.comFotos ? `, ${c.photos || 0} refeição(ões) com foto` : ' (sem fotos: as fotos atuais serão mantidas)'}.\n\n` +
     'Isso SUBSTITUI os dados atuais deste aparelho. Continuar?';
-  if (!confirm(resumo)) return;
+  if (!(await confirmar(resumo, { titulo: 'Restaurar backup', ok: 'Restaurar' }))) return;
   try {
     await importar(obj);
     try { sessionStorage.setItem('importado', '1'); } catch {}
@@ -70,7 +70,7 @@ export function ligarCartaoDrive(tela, aoMudar) {
         <button class="btn" data-dr="restaurar">Restaurar do Drive</button></div>
       <button class="btn peq suave" data-dr="desconectar" style="margin-top:8px">Desconectar</button>
       <p class="mudo">Envia sozinho quando o app está aberto e há novidades. O Google exige login a cada ~1 h em apps sem servidor:
-        quando vencer, o Diário mostra “☁️ tocar para enviar” (um toque por dia, no máximo).</p>`;
+        quando vencer, o Diário mostra “tocar para enviar” (um toque por dia, no máximo).</p>`;
   };
   desenhar();
   raiz.onsubmit = (e) => {
@@ -90,7 +90,7 @@ export function ligarCartaoDrive(tela, aoMudar) {
     if (op === 'restaurar') return restaurarDoDrive();
     if (op === 'trocar-id') { salvarEstadoDrive({ clientId: '' }); return desenhar(); }
     if (op === 'desconectar') {
-      if (!confirm('Desconectar do Drive? O backup que já está lá não é apagado.')) return;
+      if (!(await confirmar('Desconectar do Drive? O backup que já está lá não é apagado.', { titulo: 'Google Drive', ok: 'Desconectar' }))) return;
       desconectar(); return desenhar();
     }
     b.disabled = true;

@@ -2,6 +2,7 @@
 // com campo manual de reserva. Resolve localmente (Meus alimentos) antes de consultar o Open Food Facts.
 
 import { abrirFolha, fecharFolha, aviso, esc, vibrar } from '../ui.js';
+import { ic } from '../icones.js';
 import { catalogo } from '../custom.js';
 import { limparCodigo, variantesCodigo, buscarCodigo, digitoOk } from '../off.js';
 import { folhaAlimento } from './alimento-form.js';
@@ -16,7 +17,7 @@ export async function abrirScanner({ aoAlimento }) {
   const temDetector = 'BarcodeDetector' in window;
   const p = abrirFolha('Ler código de barras', `
     ${temDetector ? `<div class="camera"><video id="vid" playsinline muted></video><div class="mira"></div>
-      <button class="btn peq lanterna" id="luz" hidden>🔦 Lanterna</button>
+      <button class="btn peq lanterna" id="luz" hidden>${ic('flashlight')} Lanterna</button>
       <div class="zoom" id="zoom" hidden><span>1×</span><input type="range" id="zr" aria-label="Zoom"><span id="zv"></span></div></div>
       <p class="mudo" id="st">Aponte para o código, a uns 15–20 cm, com o código na faixa. Toque na imagem para focar.</p>`
     : '<p class="nota">Este navegador não lê códigos pela câmera. Digite os números abaixo.</p>'}

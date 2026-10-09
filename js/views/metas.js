@@ -1,6 +1,7 @@
 // views/metas.js — editor de metas: kcal, macros (% / g / g/kg), fibra, sódio, modo por dia da semana.
 
 import { estado, salvarMetas, salvarConfig, pesoAtual } from '../state.js';
+import { ic } from '../icones.js';
 import {
   resolverConjunto, gramasParaGkg, gramasParaPct,
   somaPct, metaCalorica, registrarHistorico, MACROS,
@@ -20,7 +21,7 @@ export async function render(t) {
   m = structuredClone(estado.metas);
   diaSel = diaSemana(chaveData());
   peso = await pesoAtual();
-  topo('<a class="ico" href="#config" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><h1>Metas</h1><span style="width:44px"></span>');
+  topo('<a class="ico" href="#config" aria-label="Voltar">' + ic('chevron-left') + '</a><h1>Metas</h1><span style="width:48px"></span>');
   desenhar();
 }
 
@@ -53,7 +54,7 @@ function desenhar() {
     </form>
     <div class="card"><label class="linha"><input type="checkbox" id="recalc" ${estado.config.recalcularComPeso ? 'checked' : ''} style="flex:0;width:22px;height:22px">
       <span>Recalcular a meta calórica quando o peso mudar</span></label></div>
-    <form class="card" id="f-treino" novalidate><h2 style="margin-bottom:6px">🏋️ Dia de treino</h2>
+    <form class="card" id="f-treino" novalidate><h2 style="margin-bottom:6px">${ic('dumbbell')} Dia de treino</h2>
       <p class="mudo" style="margin-top:0">Nos dias marcados como treino no Diário, a meta sobe este tanto (somado aos carboidratos;
         proteína e gordura não mudam). 0 = a marcação serve só como anotação.</p>
       <div class="linha"><input type="text" inputmode="numeric" name="extra" value="${fmtNum(m.treinoExtra || 0)}" style="max-width:120px" aria-label="kcal extras">

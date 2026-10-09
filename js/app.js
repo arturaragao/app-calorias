@@ -2,7 +2,7 @@
 
 import { iniciarDB } from './db.js';
 import { estado, carregarEstado } from './state.js';
-import { $, $$, aviso, fecharFolha } from './ui.js';
+import { $, $$, aviso, fecharFolha, esqueleto } from './ui.js';
 import { chaveData } from './utils.js';
 import { carregarBase } from './foods.js';
 import { tentarAuto } from './drive.js';
@@ -53,14 +53,20 @@ export async function navegar() {
   });
   $('.nav').hidden = !estado.perfil;
   const tela = $('#tela');
+  // esqueleto só se a tela demorar a montar (> 150 ms) e ainda não tiver desenhado nada novo
+  const antes = tela.firstElementChild;
+  let pronta = false;
+  const tEsq = setTimeout(() => { if (!pronta && (!tela.firstElementChild || tela.firstElementChild === antes)) tela.innerHTML = esqueleto(); }, 150);
   try {
     const mod = await ROTAS[rota]();
     limparHandlers(tela);
-    tela.innerHTML = '';
+    if (tela.firstElementChild === antes) tela.innerHTML = '';
     await mod.render(tela, rota);
+    pronta = true; clearTimeout(tEsq);
     window.scrollTo(0, 0);
     tela.classList.remove('entrando'); void tela.offsetWidth; tela.classList.add('entrando');   // transição suave
   } catch (e) {
+    pronta = true; clearTimeout(tEsq);
     console.error(e);
     tela.innerHTML = `<div class="card"><p>Erro ao abrir a tela.</p><p class="mudo">${String(e.message || e)}</p></div>`;
   }
@@ -106,7 +112,7 @@ async function iniciar() {
   aplicarTema(estado.config.tema);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => aplicarTema(estado.config.tema));
   window.addEventListener('hashchange', navegar);
-  // "⇅ Organizar" no fim de cada tela (ordem e visibilidade dos blocos)
+  // "Organizar" no fim de cada tela (ordem e visibilidade dos blocos)
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-organizar]');
     if (b) folhaOrganizar(b.dataset.organizar, navegar);

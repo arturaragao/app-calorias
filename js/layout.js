@@ -4,6 +4,7 @@
 // Esconder não remove a funcionalidade: o bloco volta a qualquer momento em "Organizar".
 
 import { estado, salvarConfig } from './state.js';
+import { ic } from './icones.js';
 import { abrirFolha, esc, aviso, vibrar } from './ui.js';
 import { BLOCOS, NOME_TELA, mesclarOrdem, ordenarPorOrdem } from './layout-ordem.js';
 
@@ -29,7 +30,7 @@ export function aplicarLayout(raiz, tela) {
 
 /** Botão discreto no fim da tela. */
 export const botaoOrganizar = (tela) =>
-  `<button class="btn bloco organizar" data-organizar="${tela}">⇅ Organizar ${esc(NOME_TELA[tela])}</button>`;
+  `<button class="btn bloco organizar" data-organizar="${tela}">${ic('arrow-up-down')} Organizar ${esc(NOME_TELA[tela])}</button>`;
 
 /** Folha com a lista arrastável (segurar e arrastar, ou pela alça) e chave de mostrar/esconder. */
 export function folhaOrganizar(tela, aoSalvar) {
@@ -45,8 +46,8 @@ export function folhaOrganizar(tela, aoSalvar) {
   const desenhar = () => {
     ul.innerHTML = ordem.map((id) => `<li data-id="${id}" class="${esc2.has(id) ? 'oculto' : ''}">
       <span class="alca" aria-hidden="true">⋮⋮</span><span class="nome">${esc(nomes[id])}</span>
-      <button type="button" class="ico" data-mover="-1" aria-label="Subir ${esc(nomes[id])}">▲</button>
-      <button type="button" class="ico" data-mover="1" aria-label="Descer ${esc(nomes[id])}">▼</button>
+      <button type="button" class="ico" data-mover="-1" aria-label="Subir ${esc(nomes[id])}">${ic('chevron-up')}</button>
+      <button type="button" class="ico" data-mover="1" aria-label="Descer ${esc(nomes[id])}">${ic('chevron-down')}</button>
       <label class="chave"><input type="checkbox" ${esc2.has(id) ? '' : 'checked'} aria-label="Mostrar ${esc(nomes[id])}"><i></i></label></li>`).join('');
   };
   desenhar();

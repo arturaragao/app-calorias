@@ -1,7 +1,7 @@
 // views/alimento-form.js — criar/editar alimento personalizado (ou duplicar um da base).
 
 import { salvarAlimento, apagarAlimento, paraPor100, avisoKcalMacros, nomesExistentes } from '../custom.js';
-import { abrirFolha, fecharFolha, esc, aviso } from '../ui.js';
+import { abrirFolha, fecharFolha, esc, aviso, confirmar } from '../ui.js';
 import { fmtNum, lerNumero, normalizar } from '../utils.js';
 import { limparCodigo } from '../off.js';
 
@@ -56,7 +56,7 @@ export function folhaAlimento(food, opcoes = {}) {
 
   f.onclick = async (e) => {
     if (!e.target.closest('[data-apagar]')) return;
-    if (!confirm(`Excluir "${food.nome}"? Itens já lançados no diário não mudam.`)) return;
+    if (!(await confirmar(`Excluir "${food.nome}"? Itens já lançados no diário não mudam.`, { titulo: 'Excluir alimento', ok: 'Excluir', perigo: true }))) return;
     const antes = await apagarAlimento(food.id);
     fecharFolha();
     aviso('Alimento excluído', { acao: async () => { await salvarAlimento(antes); opcoes.aoSalvar?.(antes); } });

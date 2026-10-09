@@ -4,7 +4,7 @@ import { db } from '../db.js';
 import { estado, salvarConfig } from '../state.js';
 import { CIRC_PADRAO, diferencas, foraDaFaixa } from '../body.js';
 import { graficoLinha } from '../chart.js';
-import { $, esc, aviso, abrirFolha, ICONES } from '../ui.js';
+import { $, esc, aviso, abrirFolha, ICONES, confirmar } from '../ui.js';
 import { chaveData, fmtData, fmtNum, lerNumero, uid } from '../utils.js';
 
 const defs = () => (estado.config.circDef ||= structuredClone(CIRC_PADRAO));
@@ -55,7 +55,7 @@ export async function render(el) {
     if (!data || data > chaveData()) { $('#erro', el).textContent = 'Data inválida.'; return; }
     if (!Object.keys(novos).length) { $('#erro', el).textContent = 'Preencha ao menos uma medida.'; return; }
     const fora = D.filter((d) => novos[d.id] != null && foraDaFaixa('circ', novos[d.id]));
-    if (fora.length && !confirm(`Valor fora da faixa usual (10–250 cm): ${fora.map((d) => `${d.nome} ${fmtNum(novos[d.id])}`).join(', ')}. Salvar mesmo assim?`)) return;
+    if (fora.length && !(await confirmar(`Valor fora da faixa usual (10–250 cm): ${fora.map((d) => `${d.nome} ${fmtNum(novos[d.id])}`).join(', ')}. Salvar mesmo assim?`, { titulo: 'Valor incomum', ok: 'Salvar' }))) return;
     const atual = (await db.get('circumferences', data)) || { valores: {} };
     await db.put('circumferences', data, { valores: { ...atual.valores, ...novos } });
     aviso('Medição salva');
@@ -100,7 +100,7 @@ function editarLista(aoMudar) {
     const v = e.target.value.trim();
     if (v) { D[i].nome = v; salvar(); }
   });
-  p.addEventListener('click', (e) => {
+  p.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
     if ('nova' in b.dataset) { D.push({ id: 'c' + uid(), nome: 'Nova medida' }); desenhar(); return salvar(); }
@@ -109,7 +109,7 @@ function editarLista(aoMudar) {
     if ('cima' in b.dataset) [D[i - 1], D[i]] = [D[i], D[i - 1]];
     else if ('baixo' in b.dataset) [D[i + 1], D[i]] = [D[i], D[i + 1]];
     else if ('rem' in b.dataset) {
-      if (!confirm(`Remover "${D[i].nome}" da lista? Os valores já registrados continuam salvos.`)) return;
+      if (!(await confirmar(`Remover "${D[i].nome}" da lista? Os valores já registrados continuam salvos.`, { titulo: 'Remover medida', ok: 'Remover', perigo: true }))) return;
       D.splice(i, 1);
     }
     desenhar(); salvar();

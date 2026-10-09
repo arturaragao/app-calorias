@@ -2,6 +2,7 @@
 // Usada ao adicionar um alimento e ao editar um item do diário.
 
 import { estado, salvarConfig } from '../state.js';
+import { ic } from '../icones.js';
 import { carregarBase, porcoesDe, rotuloFonte, ehLiquido, densidadeDe } from '../foods.js';
 import { nutrientesPorGramas } from '../diary.js';
 import { abrirFolha, fecharFolha, esc, aviso, vibrar } from '../ui.js';
@@ -37,11 +38,11 @@ export async function folhaQuantidade(food, opcoes) {
   const painel = abrirFolha(opcoes.titulo || food.nome, `
     <p class="mudo" style="margin-top:-6px">${opcoes.titulo ? esc(food.nome) + '<br>' : ''}${esc(rotuloFonte(food))} · por 100 g: ${fmtKcal(food.kcal)} kcal</p>
     ${opcoes.semAcoes ? '' : `<div class="linha" style="flex-wrap:wrap;margin-bottom:10px">
-      <button type="button" class="btn peq" data-fav aria-pressed="${ehFavorito(food.id)}">${ehFavorito(food.id) ? '★ Favorito' : '☆ Favoritar'}</button>
+      <button type="button" class="btn peq" data-fav aria-pressed="${ehFavorito(food.id)}">${ehFavorito(food.id) ? ic('star', 'cheio') + ' Favorito' : ic('star') + ' Favoritar'}</button>
       ${String(food.id).startsWith('c-') ? '<button type="button" class="btn peq" data-editar-alim>Editar alimento</button>'
         : String(food.id).startsWith('r-') ? '<button type="button" class="btn peq" data-editar-rec>Editar receita</button>'
         : '<button type="button" class="btn peq" data-duplicar>Duplicar e editar</button>'}</div>`}
-    ${falta.includes('kcal') ? `<div class="nota alerta"><p style="margin:0 0 8px"><b>Sem dados na ${esc(food.fonte || 'fonte')}</b>: a tabela não traz calorias nem macros deste alimento (lançaria 0 kcal). Use o rótulo da embalagem ou busque no Open Food Facts (🌐 abaixo da busca).</p>
+    ${falta.includes('kcal') ? `<div class="nota alerta"><p style="margin:0 0 8px"><b>Sem dados na ${esc(food.fonte || 'fonte')}</b>: a tabela não traz calorias nem macros deste alimento (lançaria 0 kcal). Use o rótulo da embalagem ou busque no Open Food Facts (botão abaixo da busca).</p>
       <button type="button" class="btn peq" data-criar-rotulo>Criar pelo rótulo</button></div>`
       : falta.length ? '<p class="nota alerta">Alguns nutrientes não constam na fonte (contam como 0).</p>' : ''}
     <div class="seg" role="group"><button type="button" data-modo="g" aria-pressed="${modo === 'g'}">Gramas</button>
@@ -101,7 +102,7 @@ export async function folhaQuantidade(food, opcoes) {
     const t = e.target.closest('button');
     if (!t) return;
     if (t.dataset.modo) {
-      // gramas ↔ mL: mantém o número digitado
+      // gramas <-> mL: mantém o número digitado
       modo = t.dataset.modo;
       painel.querySelectorAll('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', b === t));
     } else if (t.dataset.d || t.dataset.q) {
@@ -113,7 +114,7 @@ export async function folhaQuantidade(food, opcoes) {
       inp.value = fmtNum(Math.max(0, Math.round(((isNaN(v) ? 0 : v) + passo) * 100) / 100));
     } else if ('fav' in t.dataset) {
       const fav = alternarFavorito(food.id);
-      t.textContent = fav ? '★ Favorito' : '☆ Favoritar';
+      t.innerHTML = fav ? ic('star', 'cheio') + ' Favorito' : ic('star') + ' Favoritar';
       t.setAttribute('aria-pressed', fav);
       return;
     } else if ('editarAlim' in t.dataset || 'duplicar' in t.dataset) {
@@ -142,7 +143,7 @@ export async function folhaQuantidade(food, opcoes) {
         const msg = avaliarSuspeito(food, q.g, await contextoSuspeito(food.id).catch(() => ({})));
         if (msg) {
           const el = painel.querySelector('#suspeito');
-          el.textContent = '⚠ ' + msg; el.hidden = false;
+          el.innerHTML = ic('triangle-alert', 'p') + ' ' + esc(msg); el.hidden = false;
           t.textContent = 'Lançar mesmo assim';
           vibrar([20, 40, 20]);
           confirmado = true;
@@ -167,7 +168,7 @@ function editarPorcoes(food, atuais, voltar) {
   const linhas = (ps) => ps.map((p, i) => `<div class="linha" style="margin-bottom:8px" data-i="${i}">
       <input type="text" name="n${i}" value="${esc(p.nome)}" aria-label="Nome da porção">
       <input type="text" inputmode="decimal" name="g${i}" value="${fmtNum(p.g)}" style="flex:0 0 90px" aria-label="Gramas">
-      <button type="button" class="ico" data-rem="${i}" aria-label="Remover">✕</button></div>`).join('');
+      <button type="button" class="ico" data-rem="${i}" aria-label="Remover">${ic('x')}</button></div>`).join('');
   let lista = atuais.map((p) => ({ nome: p.nome, g: p.g }));
   const painel = abrirFolha('Porções de ' + food.nome, `<p class="mudo">Nome e gramas de cada porção. Vale só para este alimento.</p>
     <div id="ps">${linhas(lista)}</div>

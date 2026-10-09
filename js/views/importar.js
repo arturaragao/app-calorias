@@ -1,12 +1,13 @@
 // views/importar.js — importar alimentos de CSV para "Meus alimentos" (pré-visualização e validação).
 
 import { analisarCSV, MODELO_CSV } from '../csv.js';
+import { ic } from '../icones.js';
 import { salvarAlimento, nomesExistentes } from '../custom.js';
 import { topo, esc, $, aviso, ICONES } from '../ui.js';
 import { fmtKcal, fmtMacro, fmtMg } from '../utils.js';
 
 export async function render(tela) {
-  topo(`<a class="ico" href="#config" aria-label="Voltar">${ICONES.voltar}</a><h1>Importar CSV</h1><span style="width:44px"></span>`);
+  topo(`<a class="ico" href="#config" aria-label="Voltar">${ICONES.voltar}</a><h1>Importar CSV</h1><span style="width:48px"></span>`);
   const modelo = URL.createObjectURL(new Blob(['﻿' + MODELO_CSV], { type: 'text/csv;charset=utf-8' }));
   tela.innerHTML = `
     <div class="card">
@@ -33,7 +34,7 @@ export async function render(tela) {
       <div style="overflow-x:auto"><table class="tabela num"><tr><th>Nome</th><th>kcal</th><th>P</th><th>C</th><th>G</th><th>Fibra</th><th>Na</th><th>Status</th></tr>
       ${L.slice(0, 200).map((l) => `<tr><td>${esc(l.food.nome || '—')}</td><td>${fmtKcal(l.food.kcal)}</td><td>${fmtMacro(l.food.prot)}</td><td>${fmtMacro(l.food.carb)}</td>
         <td>${fmtMacro(l.food.gord)}</td><td>${fmtMacro(l.food.fibra)}</td><td>${fmtMg(l.food.sodio_mg)}</td>
-        <td style="text-align:left">${l.erros.length ? `<span class="erro">✗ ${esc(l.erros.join(', '))}</span>` : l.avisos.length ? `<span class="alerta">⚠ ${esc(l.avisos.join(', '))}</span>` : '✓'}</td></tr>`).join('')}
+        <td style="text-align:left">${l.erros.length ? `<span class="erro">${ic('x', 'p')} ${esc(l.erros.join(', '))}</span>` : l.avisos.length ? `<span class="alerta">${ic('triangle-alert', 'p')} ${esc(l.avisos.join(', '))}</span>` : ic('check', 'p')}</td></tr>`).join('')}
       </table></div>${L.length > 200 ? `<p class="mudo">Mostrando 200 de ${L.length}.</p>` : ''}
       ${dup.length ? '<label class="linha" style="margin:10px 0"><input type="checkbox" id="incluirDup" style="flex:0;width:22px;height:22px"><span>Importar também as duplicatas</span></label>' : ''}
       <button class="btn prim bloco" id="salvar" ${validas.length ? '' : 'disabled'}>Salvar em Meus alimentos</button></div>`;

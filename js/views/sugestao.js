@@ -73,8 +73,8 @@ export async function folhaOQueComer({ dia, restante, aoLancar }) {
         <ul class="lista-simples">${c.itens.map((it) => `<li><span>${esc(it.food.nome)}</span> <b class="num">${fmtG(it.g)} g</b></li>`).join('')}</ul>
         <p class="num mudo" style="margin:6px 0 8px">${fmtKcal(c.tot.kcal)} kcal · P ${fmtG(c.tot.prot)} · C ${fmtG(c.tot.carb)} · G ${fmtG(c.tot.gord)} g</p>
         <button class="btn prim bloco" data-lancar-combo="${i}">Lançar em ${esc(nomeRef)}</button></div>`).join('')
-        : `<p class="nota">${r0(restante, 'kcal') < 50 ? 'Você já está na meta de hoje. 🎯' : alvo.kcal < 50 ? 'Quase nada previsto para esta refeição; veja "Restante do dia".'
-          : 'Ainda não há alimentos frequentes ou favoritos suficientes. Lance refeições por alguns dias ou favorite alimentos (☆) para receber sugestões.'}</p>`}
+        : `<p class="nota">${r0(restante, 'kcal') < 50 ? 'Você já está na meta de hoje.' : alvo.kcal < 50 ? 'Quase nada previsto para esta refeição; veja "Restante do dia".'
+          : 'Ainda não há alimentos frequentes ou favoritos suficientes. Lance refeições por alguns dias ou favorite alimentos para receber sugestões.'}</p>`}
       ${combos.length ? '<p class="mudo" style="font-size:.78rem">Sugestão aproximada; ajuste as quantidades no diário se quiser.</p>' : ''}`;
   };
   desenhar();

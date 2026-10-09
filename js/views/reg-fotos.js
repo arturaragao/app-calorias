@@ -4,7 +4,7 @@
 import { db } from '../db.js';
 import { comprimir } from '../photos.js';
 import { lerPesos } from './reg-peso.js';
-import { $, $$, esc, aviso, abrirFolha, fecharFolha, ICONES, vibrar } from '../ui.js';
+import { $, $$, esc, aviso, abrirFolha, fecharFolha, ICONES, vibrar, confirmar } from '../ui.js';
 import { chaveData, fmtData, fmtNum, uid } from '../utils.js';
 
 export const POSES = [['frente', 'Frente'], ['lado', 'Lado'], ['costas', 'Costas']];
@@ -87,7 +87,7 @@ export async function render(el) {
       const p = abrirFolha(`${nomePose(f.pose)} · ${fmtData(data)}`, `<img src="${url(f.blob)}" alt="" style="width:100%;border-radius:12px">
         <button class="btn perigo bloco" data-apagar style="margin-top:10px">Apagar foto</button>`);
       $('[data-apagar]', p).onclick = async () => {
-        if (!confirm('Apagar esta foto?')) return;
+        if (!(await confirmar('Apagar esta foto?', { titulo: 'Apagar foto', ok: 'Apagar', perigo: true }))) return;
         const antes = r.fotos;
         await gravar(data, antes.filter((x) => x.id !== id));
         fecharFolha(); render(el);
@@ -113,7 +113,7 @@ function folhaNova(depois) {
       const atual = ((await db.get('photos', PREFIXO + data)) || { fotos: [] }).fotos.filter((f) => f.pose !== pose);
       atual.push({ id: uid(), blob, pose, ts: Date.now() });
       await gravar(data, atual);
-      inp.closest('[data-pose]').querySelector('[data-ok]').textContent = '✓ salva';
+      inp.closest('[data-pose]').querySelector('[data-ok]').textContent = 'Salva';
       vibrar(10);
     } catch (err) { console.error(err); aviso('Não consegui salvar essa foto.'); }
     inp.value = '';

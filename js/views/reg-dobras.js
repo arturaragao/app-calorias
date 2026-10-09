@@ -5,7 +5,7 @@ import { estado, salvarConfig, pesoAtual } from '../state.js';
 import { PROTOCOLOS, SITIOS, calcularDobras, foraDaFaixa } from '../body.js';
 import { graficoLinha } from '../chart.js';
 import { idadePerfil } from './onboarding.js';
-import { $, esc, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
+import { $, esc, aviso, abrirFolha, fecharFolha, ICONES, confirmar } from '../ui.js';
 import { chaveData, fmtData, fmtNum, lerNumero, uid, dataDeChave } from '../utils.js';
 
 const cfg = () => (estado.config.dobras ||= { protocolo: 'parrillo', sitiosPers: [], lembrete: true });
@@ -93,8 +93,8 @@ export async function render(el) {
     $('#erro', el).textContent = erro;
     if (erro) return;
     const altas = sitios.filter((s) => foraDaFaixa('dobra', d.valores[s]));
-    if (altas.length && !confirm(`Dobra acima de 80 mm (ou abaixo de 1): ${altas.map((s) => nomeSitio(s)).join(', ')}. Salvar mesmo assim?`)) return;
-    if (foraDaFaixa('peso', d.peso) && !confirm(`Peso de ${fmtNum(d.peso)} kg fora da faixa usual. Salvar mesmo assim?`)) return;
+    if (altas.length && !(await confirmar(`Dobra acima de 80 mm (ou abaixo de 1): ${altas.map((s) => nomeSitio(s)).join(', ')}. Salvar mesmo assim?`, { titulo: 'Valor incomum', ok: 'Salvar' }))) return;
+    if (foraDaFaixa('peso', d.peso) && !(await confirmar(`Peso de ${fmtNum(d.peso)} kg fora da faixa usual. Salvar mesmo assim?`, { titulo: 'Peso incomum', ok: 'Salvar' }))) return;
     const reg = { id: uid(), ts: Date.now(), data: d.data, protocolo: prot, valores: d.valores, sexo: perfil.sexo, idade, peso: d.peso,
       soma: r.soma, dc: r.dc, pct: r.pct, mGorda: r.mGorda, mMagra: r.mMagra, sitios: r.sitios,
       nomes: Object.fromEntries(r.sitios.map((s) => [s, nomeSitio(s)])) };

@@ -14,10 +14,10 @@ export const REFEICOES_PADRAO = [
   { id: 'ceia', nome: 'Ceia' },
 ];
 
-/** Etiquetas do dia (notas/etiquetas aparecem no calendário e no relatório). 'treino' ativa a meta de dia de treino. */
+/** Etiquetas do dia: [id, rótulo, ícone do sprite] (notas/etiquetas aparecem no calendário e no relatório). 'treino' ativa a meta de dia de treino. */
 export const ETIQUETAS = [
-  ['treino', '🏋️ Treino'], ['livre', '🍕 Dia livre'], ['festa', '🎉 Festa/restaurante'],
-  ['doente', '🤒 Doente'], ['viagem', '✈️ Viagem'], ['sono', '😴 Dormiu mal'], ['plantao', '🏥 Plantão'],
+  ['treino', 'Treino', 'dumbbell'], ['livre', 'Dia livre', 'pizza'], ['festa', 'Festa/restaurante', 'party-popper'],
+  ['doente', 'Doente', 'thermometer'], ['viagem', 'Viagem', 'plane'], ['sono', 'Dormiu mal', 'bed'], ['plantao', 'Plantão', 'hospital'],
 ];
 export const ehTreino = (dia) => !!dia?.tags?.includes('treino');
 export const temAnotacao = (dia) => !!(dia?.tags?.length || dia?.nota);

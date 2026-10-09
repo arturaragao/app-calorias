@@ -1,6 +1,23 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro novo (Pacotes 6–9). Pacotes 6–9 entregues (v14–v17). Pendente só o backup no Drive (falta o ID do cliente OAuth do Artur).
+**Etapa atual:** roteiro 2.0 (ROTEIRO-2.md, Pacotes 10–16). Pacote 10 entregue (v19); aguardando OK do Artur para o Pacote 11.
+
+**Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
+- [x] Pacote 10 — Sistema de design 2.0 (v19)
+- [ ] Pacote 11 — Diário redesenhado
+- [ ] Pacote 12 — Registro ultrarrápido sem gastar tokens
+- [ ] Pacote 13 — Planejamento, receitas e lista de compras
+- [ ] Pacote 14 — Inteligência prática
+- [ ] Pacote 15 — Atalhos e extras do Android
+- [ ] Pacote 16 — Qualidade de produto profissional
+
+**Pacote 10 (v19, 2026-10-09)**
+- DESIGN.md: tokens (tipografia 12–40 rem, grade 4 px, raios 8/12/18/28/pílula, elevação 1–3, movimento 120/200/320 ms + curvas, camada de estado 8/12%) e componentes; tabela emoji → ícone.
+- Ícones: sprite único icons/sprite.svg (58 ícones Lucide, ISC, 12,8 KB) gerado por scripts/gerar_sprite.mjs só com os usados; helper ic() em js/icones.js; barra inferior, refeições, Ajustes e todas as telas migradas. Zero emoji de interface (teste falha se aparecer; etiquetas do dia agora têm ícone).
+- Componentes: botões preenchido/tonal/contorno/texto com camada de estado (desabilitado sem opacidade), chips com ícone, segmentado em pílula, linha de lista (ui.linhaLista), diálogo próprio (ui.confirmar substitui os 16 window.confirm), aviso reposicionado acima do "+" e escuro no tema escuro, esqueleto ao abrir tela lenta (> 150 ms), chave liga/desliga, fileira de atalhos com degradê indicando rolagem.
+- Ajustes › Aparência: tamanho do texto 85%–130% (variável raiz, aplicado antes de pintar). Sobre cita Lucide.
+- Ferramentas (só desenvolvimento, devDependencies): scripts/capturas.mjs (5 telas × 2 temas, 390 px, dados de tests/semente.js), scripts/comparar_capturas.mjs, scripts/auditar_contraste.mjs (84 telas: 2 temas × 7 paletas × 6 telas, 0 reprovações), scripts/servidor.mjs.
+- Testes: 137 aprovados. Conferido no navegador: ícones, aviso, diálogo (Playwright), sem erros no console.
 
 **Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
 - [x] Pacote 1 — Progresso profissional (v10)
@@ -130,5 +147,6 @@
 - Limitação da fonte: na TACO, "Leite, de vaca, integral" (taco-458) e "desnatado, UHT" (taco-457) não têm kcal/macros (NA). O app agora avisa e oferece criar pelo rótulo/Open Food Facts.
 
 ## Manutenção
+- Ícone novo: usar ic('nome-lucide') e rodar `node scripts/gerar_sprite.mjs` (requer `npm i`). Capturas: `node scripts/capturas.mjs <rótulo>`; contraste: `node scripts/auditar_contraste.mjs`.
 - Mudou arquivo publicado → incrementar `VERSAO` em `sw.js` **e** em `js/versao.js`; arquivo JS novo → incluir em `ARQUIVOS` (testes conferem os dois).
 - Publicar: `git add -A; git commit; git push` com `$env:GCM_INTERACTIVE='always'`.

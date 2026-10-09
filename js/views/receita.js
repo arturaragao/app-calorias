@@ -4,7 +4,7 @@ import { catalogo, salvarReceita, apagarReceita, alimentoDaReceita } from '../cu
 import { buscar, rotuloFonte } from '../foods.js';
 import { NUTRIENTES } from '../diary.js';
 import { db } from '../db.js';
-import { topo, esc, $, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
+import { topo, esc, $, aviso, abrirFolha, fecharFolha, ICONES, confirmar } from '../ui.js';
 import { fmtKcal, fmtMacro, fmtNum, lerNumero } from '../utils.js';
 
 let rec, cat, tela;
@@ -16,7 +16,7 @@ export async function render(t) {
   rec = id ? structuredClone(await db.get('recipes', id)) : null;
   rec ||= { nome: '', ingredientes: [], porcoes: 1, pesoFinal: null };
   topo(`<a class="ico" href="#adicionar?aba=receitas" aria-label="Voltar">${ICONES.voltar}</a>
-    <h1>${rec.id ? 'Editar receita' : 'Nova receita'}</h1><span style="width:44px"></span>`);
+    <h1>${rec.id ? 'Editar receita' : 'Nova receita'}</h1><span style="width:48px"></span>`);
   tela.innerHTML = `
     <form class="card" id="fr" novalidate>
       <label class="campo"><span>Nome da receita</span><input type="text" name="nome" maxlength="80" value="${esc(rec.nome)}"></label>
@@ -48,7 +48,7 @@ export async function render(t) {
     if (b.dataset.rem != null) { rec.ingredientes.splice(Number(b.dataset.rem), 1); return desenharIngs(); }
     if ('salvar' in b.dataset) return salvar();
     if ('apagar' in b.dataset) {
-      if (!confirm(`Excluir a receita "${rec.nome}"? Itens já lançados no diário não mudam.`)) return;
+      if (!(await confirmar(`Excluir a receita "${rec.nome}"? Itens já lançados no diário não mudam.`, { titulo: 'Excluir receita', ok: 'Excluir', perigo: true }))) return;
       const antes = await apagarReceita(rec.id);
       aviso('Receita excluída', { acao: async () => { await salvarReceita(antes); } });
       location.hash = '#adicionar?aba=receitas';

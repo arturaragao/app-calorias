@@ -1,6 +1,7 @@
 // ui.js — utilidades de interface: folha (bottom sheet), avisos com "desfazer", topo, campos.
 
 import { escapeHtml, fmtNum, lerNumero } from './utils.js';
+import { ic } from './icones.js';
 
 export const $ = (sel, raiz = document) => raiz.querySelector(sel);
 export const $$ = (sel, raiz = document) => [...raiz.querySelectorAll(sel)];
@@ -8,31 +9,17 @@ export const esc = escapeHtml;
 
 /** Ícones das refeições padrão (refeições criadas pelo usuário usam o prato). */
 export const ICONES_REF = {
-  cafe: '<svg viewBox="0 0 24 24"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z M16 10h1.5a2.5 2.5 0 0 1 0 5H16 M8 3.5c0 1 1 1.5 1 2.5 M12 3.5c0 1 1 1.5 1 2.5"/></svg>',
-  almoco: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="6"/><path d="M3 4v5a2 2 0 0 0 2 2v9 M5 4v5 M7 4v5a2 2 0 0 1-2 2 M21 4c-1.5 1-2 3-2 6h2v10"/></svg>',
-  lanche: '<svg viewBox="0 0 24 24"><path d="M12 7c-1.5-1.5-5-1.5-6.5 1S4.6 15 6.5 18s3.5 3 5.5 2c2 1 3.6 1 5.5-2s2.5-7.5 1-10S13.5 5.5 12 7z M12 7c0-2 1-3.5 3-4"/></svg>',
-  jantar: '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
-  ceia: '<svg viewBox="0 0 24 24"><path d="M18 15a7 7 0 0 1-9-9 7 7 0 1 0 9 9z M17 3l.7 1.6L19.3 5l-1.6.7L17 7.3l-.7-1.6L14.7 5l1.6-.4z"/></svg>',
-  outro: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>',
+  cafe: ic('coffee'), almoco: ic('utensils'), lanche: ic('apple'), jantar: ic('soup'), ceia: ic('moon-star'), outro: ic('utensils-crossed'),
 };
 export const iconeRef = (id) => ICONES_REF[id] || ICONES_REF.outro;
 
+/** Ícones de interface mais usados (todos do sprite; ver DESIGN.md). */
 export const ICONES = {
-  lupa: '<svg class="lupa" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
-  gota: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5s6 6.5 6 10.5a6 6 0 0 1-12 0c0-4 6-10.5 6-10.5z"/></svg>',
-  mais: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12 M6 12h12"/></svg>',
-  pontos: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',
-  raio: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/></svg>',
-  copiar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
-  camera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
-  voltar: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
-  avancar: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
-  fechar: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12 M18 6L6 18"/></svg>',
-  lixo: '<svg viewBox="0 0 24 24"><path d="M5 7h14 M10 7V4h4v3 M7 7l1 13h8l1-13"/></svg>',
-  cima: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
-  baixo: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
-  codigo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7v10 M7 7v10 M10 7v10 M13 7v10 M15.5 7v10 M18 7v10 M20 7v10" stroke-width="1.5"/><path d="M2 4h3 M19 4h3 M2 20h3 M19 20h3 M2 4v3 M22 4v3 M2 17v3 M22 17v3"/></svg>',
+  lupa: ic('search', 'lupa'), gota: ic('droplet'), mais: ic('plus'), pontos: ic('ellipsis'), raio: ic('zap'),
+  copiar: ic('copy'), camera: ic('camera'), voltar: ic('chevron-left'), avancar: ic('chevron-right'), fechar: ic('x'),
+  lixo: ic('trash-2'), cima: ic('chevron-up'), baixo: ic('chevron-down'), codigo: ic('scan-barcode'),
 };
+export { ic };
 
 // ---------- Topo ----------
 export function topo(html) { $('#topo').innerHTML = html; }
@@ -88,6 +75,53 @@ export function aviso(msg, { acao, rotulo = 'Desfazer', ms = 5000 } = {}) {
   clearTimeout(timer);
   if (acao) a.querySelector('button').onclick = () => { a.hidden = true; acao(); };
   timer = setTimeout(() => (a.hidden = true), ms);
+}
+
+// ---------- Diálogo ----------
+/** Confirmação no padrão do app (substitui window.confirm). Resolve true/false; "voltar" do Android = cancelar. */
+export function confirmar(texto, { titulo = 'Confirmar', ok = 'Confirmar', cancelar = 'Cancelar', perigo = false } = {}) {
+  return new Promise((resolve) => {
+    const d = document.createElement('dialog');
+    d.className = 'dialogo';
+    d.innerHTML = `<h2>${esc(titulo)}</h2><p>${esc(texto)}</p><div class="acoes">
+      <button type="button" class="btn texto" value="nao">${esc(cancelar)}</button>
+      <button type="button" class="btn texto${perigo ? ' perigo' : ''}" value="sim">${esc(ok)}</button></div>`;
+    let feito = false;
+    const fim = (v) => { if (feito) return; feito = true; if (d.open) d.close(); d.remove(); resolve(v); };
+    d.addEventListener('click', (e) => {
+      const b = e.target.closest('button[value]');
+      if (b) fim(b.value === 'sim');
+      else if (e.target === d) fim(false);                                 // toque fora = cancelar
+    });
+    d.addEventListener('close', () => fim(false));                         // "voltar"/Esc
+    document.body.append(d);
+    d.showModal();
+    d.querySelector('[value=sim]').focus();
+  });
+}
+
+// ---------- Componentes ----------
+/** Linha de lista (1 ou 2 linhas). href → <a>; senão <button>. attrs: atributos extras já escapados. */
+export function linhaLista({ icone = '', titulo, sub = '', fim = '', href = '', attrs = '' }) {
+  const tag = href ? 'a' : 'button';
+  return `<${tag} class="ll${sub ? ' duas' : ''}"${href ? ` href="${href}"` : ' type="button"'} ${attrs}>
+    ${icone ? `<span class="ref-ico" aria-hidden="true">${icone}</span>` : ''}
+    <span class="ll-txt">${titulo}${sub ? `<small>${sub}</small>` : ''}</span>
+    <span class="ll-fim">${fim}${href ? ic('chevron-right') : ''}</span></${tag}>`;
+}
+
+/** Esqueleto de carregamento: tipos 'alto' (cartão grande), 'medio' (cartão) ou '' (linha de texto). */
+export const esqueleto = (tipos = ['alto', 'medio', 'medio', '', '']) =>
+  `<div class="esqueleto" aria-busy="true" aria-label="Carregando">${tipos.map((t) => `<i class="${t}"></i>`).join('')}</div>`;
+
+// ---------- Tamanho do texto ----------
+export const ESCALAS_FONTE = [0.85, 0.92, 1, 1.08, 1.15, 1.22, 1.3];
+/** Aplica a escala do texto (0,85× a 1,3×) na raiz; guardada por aparelho. */
+export function aplicarEscalaFonte(v) {
+  const n = Math.min(1.3, Math.max(0.85, Number(v) || 1));
+  document.documentElement.style.setProperty('--escala-fonte', String(n));
+  try { localStorage.setItem('escalaFonte', String(n)); } catch {}
+  return n;
 }
 
 // ---------- Campos ----------

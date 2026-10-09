@@ -50,8 +50,8 @@ export async function compartilharRelatorio(r) {
   });
 
   const linha = (t, y) => texto(t, 72, y, { tam: 34, c: C.txt2 });
-  if (r.melhor) linha(`✅ Mais perto da meta: ${fmtData(r.melhor.data).slice(0, 5)} · ${fmtKcal(r.melhor.tot.kcal)} kcal`, 1040);
-  if (r.pior) linha(`⚠️ Mais longe: ${fmtData(r.pior.data).slice(0, 5)} · ${fmtKcal(r.pior.tot.kcal)} kcal (${sinal(r.pior.tot.kcal - r.pior.meta.kcal, fmtKcal)})`, 1100);
+  if (r.melhor) linha(`Mais perto da meta: ${fmtData(r.melhor.data).slice(0, 5)} · ${fmtKcal(r.melhor.tot.kcal)} kcal`, 1040);
+  if (r.pior) linha(`Mais longe: ${fmtData(r.pior.data).slice(0, 5)} · ${fmtKcal(r.pior.tot.kcal)} kcal (${sinal(r.pior.tot.kcal - r.pior.meta.kcal, fmtKcal)})`, 1100);
   linha(`Fibra ${fmtNum(Math.round(m.consumo.fibra))} g/dia · Sódio ${fmtNum(Math.round(m.consumo.sodio_mg))} mg/dia`, 1160);
   texto('Calorias e Macros', W - 72, H - 50, { peso: 600, tam: 30, c: C.acento, al: 'right' });
 

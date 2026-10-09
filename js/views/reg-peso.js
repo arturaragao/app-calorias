@@ -6,7 +6,7 @@ import { pesoDoDia, foraDaFaixa, mediaMovel } from '../body.js';
 import { metaCalorica, registrarHistorico } from '../goals.js';
 import { graficoLinha } from '../chart.js';
 import { idadePerfil } from './onboarding.js';
-import { $, aviso, ICONES } from '../ui.js';
+import { $, aviso, ICONES, confirmar } from '../ui.js';
 import { chaveData, fmtData, fmtNum, fmtKcal, lerNumero } from '../utils.js';
 import { estadoVazio } from '../vazio.js';
 
@@ -52,7 +52,7 @@ export async function render(el) {
     const erro = !(kg > 0) ? 'Informe o peso em kg.' : !data ? 'Informe a data.' : data > chaveData() ? 'A data não pode ser futura.' : '';
     $('#erro', el).textContent = erro;
     if (erro) return;
-    if (foraDaFaixa('peso', kg) && !confirm(`${fmtNum(kg)} kg está fora da faixa usual (30–300 kg). Registrar mesmo assim?`)) return;
+    if (foraDaFaixa('peso', kg) && !(await confirmar(`${fmtNum(kg)} kg está fora da faixa usual (30–300 kg). Registrar mesmo assim?`, { titulo: 'Peso incomum', ok: 'Registrar' }))) return;
     const regs = (await db.get('weights', data)) || [];
     regs.push({ ts: Date.now(), kg });
     await db.put('weights', data, regs);

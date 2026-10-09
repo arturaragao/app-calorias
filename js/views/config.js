@@ -1,7 +1,8 @@
 // views/config.js — configurações: perfil, metas, tema, refeições e sobre.
 
 import { estado, salvarConfig } from '../state.js';
-import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha, entregarArquivo } from '../ui.js';
+import { ic } from '../icones.js';
+import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha, entregarArquivo, confirmar, ESCALAS_FONTE, aplicarEscalaFonte } from '../ui.js';
 import { csvItens, csvTotais } from '../exportar.js';
 import { db } from '../db.js';
 import { metaDoDia } from '../goals.js';
@@ -15,6 +16,8 @@ import { limiteDiario, definirLimite, LIMITE_PADRAO } from '../ia-cota.js';
 import { localDisponivel } from '../ia-local.js';
 import { abrirTour } from './tour.js';
 
+const escalaAtual = () => { try { return Number(localStorage.getItem('escalaFonte')) || 1; } catch { return 1; } };
+const rotuloEscala = () => `${Math.round(escalaAtual() * 100)}%`;
 const vibrarLigado = () => { try { return localStorage.getItem('vibrar') !== 'nao'; } catch { return true; } };
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
@@ -34,11 +37,11 @@ export async function render(tela) {
   const p = estado.perfil;
   const item = (href, ico, tit, sub) => `<a href="${href}"><span class="ref-ico" aria-hidden="true">${ico}</span><span>${tit}<small>${sub}</small></span></a>`;
   const I = {
-    perfil: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/></svg>',
-    metas: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>',
-    meus: '<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z M9 10h6 M9 14h6 M9 18h3"/></svg>',
-    rec: '<svg viewBox="0 0 24 24"><path d="M4 11h16v2a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z M8 8c0-2 2-2 2-4 M13 8c0-2 2-2 2-4"/></svg>',
-    csv: '<svg viewBox="0 0 24 24"><path d="M12 4v11 M7.5 10.5L12 15l4.5-4.5 M5 19h14"/></svg>',
+    perfil: ic('user-round'),
+    metas: ic('target'),
+    meus: ic('notebook-tabs'),
+    rec: ic('chef-hat'),
+    csv: ic('file-down'),
   };
   tela.innerHTML = `
     <div class="card config-lista" style="padding:4px 16px">
@@ -53,6 +56,10 @@ export async function render(tela) {
     </div>
     <p class="secao">Aparência</p>
     <div class="card">${seg('tema', [['sistema', 'Sistema'], ['escuro', 'Escuro'], ['claro', 'Claro']], estado.config.tema)}
+      <div class="linha-chave"><span>Tamanho do texto<small>Vale para todo o app, neste aparelho</small></span>
+        <div class="passo-fonte"><button type="button" class="ico" data-fonte="-1" aria-label="Diminuir texto">${ic('a-arrow-down')}</button>
+        <b class="num" id="fonte-val">${rotuloEscala()}</b>
+        <button type="button" class="ico" data-fonte="1" aria-label="Aumentar texto">${ic('a-arrow-up')}</button></div></div>
       <h2 style="margin:4px 0 8px">Cor principal</h2>
       <div class="paletas">${PALETAS.map(([n, c]) => `<button type="button" data-paleta="${c}" aria-label="${n}" title="${n}"
         aria-pressed="${(cores().acento || CORES_PADRAO.acento).toLowerCase() === c}" style="--c:${c}"></button>`).join('')}</div>
@@ -63,7 +70,7 @@ export async function render(tela) {
       <button class="btn peq suave" data-cores-padrao style="margin-top:10px">Restaurar cores padrão</button></div>
     <p class="secao">Organizar telas</p>
     <div class="card config-lista" style="padding:4px 16px">
-      ${Object.entries(NOME_TELA).map(([id, n]) => `<a role="button" tabindex="0" data-organizar="${id}"><span class="ref-ico" aria-hidden="true">⇅</span><span>${n}<small>Ordem dos blocos e o que aparece</small></span></a>`).join('')}
+      ${Object.entries(NOME_TELA).map(([id, n]) => `<a role="button" tabindex="0" data-organizar="${id}"><span class="ref-ico" aria-hidden="true">${ic('arrow-up-down')}</span><span>${n}<small>Ordem dos blocos e o que aparece</small></span></a>`).join('')}
     </div>
     <p class="secao">Diário</p>
     <div class="card"><div class="card-tit"><h2>Refeições</h2><button class="btn peq suave" data-nova>+ Nova</button></div>
@@ -82,7 +89,7 @@ export async function render(tela) {
       <p class="mudo" style="margin-top:0">Usa a cota gratuita da API do Gemini com a sua chave. Crie em
         <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> e <b>não ative faturamento</b>
         no projeto: assim, passou do limite, ela só recusa — nunca cobra. A chave fica só neste aparelho.</p>
-      <form id="f-ia" class="linha"><input type="password" name="chave" placeholder="${lerChave() ? 'Chave salva ✓ (cole outra para trocar)' : 'Cole a chave (AIza…)'}" autocomplete="off" style="flex:1">
+      <form id="f-ia" class="linha"><input type="password" name="chave" placeholder="${lerChave() ? 'Chave salva (cole outra para trocar)' : 'Cole a chave (AIza…)'}" autocomplete="off" style="flex:1">
         <button class="btn prim">Salvar</button></form>
       ${lerChave() ? '<button class="btn peq suave" data-ia-remover style="margin-top:8px">Remover chave</button>' : ''}
       <p class="mudo" id="ia-status" style="margin:10px 0 6px"></p>
@@ -95,7 +102,7 @@ export async function render(tela) {
     <div class="card"><h2 style="margin-bottom:6px">Armazenamento</h2><p class="mudo" id="arm" style="margin-top:0">…</p>
       <button class="btn perigo bloco" data-apagar-tudo>Apagar todos os dados</button></div>
     <div class="card"><h2 style="margin-bottom:6px">Toque e ajuda</h2>
-      <label class="linha"><input type="checkbox" id="vibrar" ${vibrarLigado() ? 'checked' : ''} style="flex:0;width:22px;height:22px"><span>Vibração leve ao lançar, apagar e trocar de dia</span></label>
+      <label class="linha-chave"><span>Vibração leve<small>Ao lançar, apagar e trocar de dia</small></span><span class="chave"><input type="checkbox" id="vibrar" ${vibrarLigado() ? 'checked' : ''}><i></i></span></label>
       <button class="btn bloco suave" data-tour style="margin-top:10px">Rever o tour do app</button></div>
     <div class="card"><h2 style="margin-bottom:6px">Sobre</h2>
       <p class="mudo">Base de alimentos: <b>Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada</b>,
@@ -103,6 +110,7 @@ export async function render(tela) {
       ficam em branco e marcados como “dados parciais”.</p>
       <p class="mudo">Produtos industrializados: <b>Open Food Facts</b> (openfoodfacts.org), base colaborativa sob licença
       Open Database License (ODbL). Confira sempre com o rótulo.</p>
+      <p class="mudo">Ícones: <b>Lucide</b> (lucide.dev), licença ISC. Fonte: Roboto do sistema.</p>
       <p class="mudo">Porções caseiras são aproximadas e editáveis. TMB por Mifflin-St Jeor (Am J Clin Nutr 1990;51:241-7).
       Os dados ficam só neste aparelho (e no seu Google Drive, se conectar). Na estimativa por foto, a imagem vai ao Gemini (Google);
       na cota gratuita o Google pode usá-la para melhorar seus produtos.</p></div>`;
@@ -172,7 +180,7 @@ export async function render(tela) {
         const blob = await exportar($('#bk-fotos', tela).checked);
         const nome = `backup-calorias-${chaveData()}.json`;
         const arq = new File([blob], nome, { type: 'application/json' });
-        if (navigator.canShare?.({ files: [arq] }) && confirm('Compartilhar o backup (Drive, e-mail…)? Cancelar = só baixar.')) {
+        if (navigator.canShare?.({ files: [arq] }) && (await confirmar('Compartilhar o backup (Drive, e-mail…)? Cancelar = só baixar.', { titulo: 'Exportar backup', ok: 'Compartilhar', cancelar: 'Só baixar' }))) {
           await navigator.share({ files: [arq], title: nome }).catch(() => {});
         } else {
           const a = document.createElement('a');
@@ -186,11 +194,17 @@ export async function render(tela) {
       return;
     }
     if ('apagarTudo' in b.dataset) {
-      if (!confirm('Apagar TODOS os dados deste aparelho (diário, metas, alimentos, registros, fotos)?')) return;
-      if (!confirm('Tem certeza? Isso não pode ser desfeito. Recomendo exportar um backup antes.')) return;
+      if (!(await confirmar('Apagar TODOS os dados deste aparelho (diário, metas, alimentos, registros, fotos)?', { titulo: 'Apagar tudo', ok: 'Continuar', perigo: true }))) return;
+      if (!(await confirmar('Tem certeza? Isso não pode ser desfeito. Recomendo exportar um backup antes.', { titulo: 'Apagar tudo', ok: 'Apagar tudo', perigo: true }))) return;
       await apagarTudo();
       location.hash = '';
       location.reload();
+      return;
+    }
+    if (b.dataset.fonte) {
+      const i = ESCALAS_FONTE.findIndex((v) => v >= escalaAtual() - 0.001);
+      aplicarEscalaFonte(ESCALAS_FONTE[Math.min(ESCALAS_FONTE.length - 1, Math.max(0, (i < 0 ? 2 : i) + Number(b.dataset.fonte)))]);
+      $('#fonte-val', tela).textContent = rotuloEscala();
       return;
     }
     if (b.closest('[data-seg=tema]')) {

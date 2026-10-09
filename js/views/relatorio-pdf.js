@@ -45,7 +45,7 @@ export async function gerarRelatorioPDF(n) {
     .filter((c) => c.data >= ini && c.data <= hoje).sort((a, b) => (a.data < b.data ? -1 : 1));
   const defsCirc = estado.config.circDef || CIRC_PADRAO;
   const anot = P.anotacoesEntre(brutos, ini, hoje);
-  const rotTag = (t) => (ETIQUETAS.find(([id]) => id === t)?.[1] || t).replace(/^\S+\s/, '');
+  const rotTag = (t) => ETIQUETAS.find(([id]) => id === t)?.[1] || t;
   const base = await carregarBase().catch(() => null);
   const totalDiasPeriodo = P.diasEntre(ini, hoje) + 1;
   const idade = idadePerfil(p);

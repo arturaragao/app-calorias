@@ -92,3 +92,11 @@
 - 2026-10-09 · Vibração: avisos com "Desfazer" vibram 10 ms (ação concluída); preferência em localStorage `vibrar` (por aparelho), padrão ligado.
 - 2026-10-09 · Tour: aparece uma vez (config.tourVisto), também para quem já usava o app; fechar ou concluir marca como visto.
 - 2026-10-09 · Ícone do app: anel clássico refinado (opção A escolhida pelo Artur entre 4): trilho #24402f, arco #7ecc98 de 0° a 265°, ponto #e9f6ee na ponta, fundo #11231a→#0b1811; mesmo desenho no maskable (raio externo 0,35 < zona segura 0,40).
+- 2026-10-09 · Roteiro 2.0 salvo em ROTEIRO-2.md (Pacotes 10–16).
+- 2026-10-09 · Ícones: Lucide via sprite SVG externo (`<use href="icons/sprite.svg#nome">`), no cache do SW; traço 1,75; cor/traço herdados por CSS. Gráficos e ilustrações seguem com SVG próprio.
+- 2026-10-09 · Fonte: mantida a Roboto do sistema. No Android/S23+ ela já está instalada (0 KB, sem atraso de troca de fonte) e tem algarismos tabulares; Inter/Roboto Flex auto-hospedada custaria 45–100 KB no primeiro carregamento sem ganho visual perceptível no aparelho do Artur. Reavaliar só se o app passar a rodar fora do Android.
+- 2026-10-09 · Tamanho do texto: `--escala-fonte` em `html { font-size }` (degraus 85/92/100/108/115/122/130%), por aparelho (localStorage `escalaFonte`); espaçamentos em px não escalam (só o texto).
+- 2026-10-09 · Camada de estado via `background-image` com `currentColor` a 8/12% (`!important`, pois muitas regras usam o atalho `background`); desabilitado = texto 40% + contêiner 8%.
+- 2026-10-09 · Confirmações com `<dialog>` próprio (ui.confirmar); "voltar"/Esc/toque fora = cancelar.
+- 2026-10-09 · Aviso (toast): base fica 22 px + 12 px acima da barra (o "+" sobe 22 px); claro = superfície invertida escura; escuro = `--sup2` 88% + texto, com borda e sombra alta.
+- 2026-10-09 · Ferramentas de desenvolvimento como devDependencies (playwright-core usando o Edge/Chrome instalado, lucide-static); nunca carregadas pelo app. node_modules/ e capturas/ fora do git.

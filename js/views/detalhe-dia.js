@@ -2,6 +2,7 @@
 // Gráficos em SVG próprio; cada macro tem sempre a mesma cor (var(--prot/--carb/--gord), editáveis em Ajustes).
 
 import { estado, salvarConfig } from '../state.js';
+import { ic } from '../icones.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, camposFaltando, distribuicaoRefeicoes } from '../diary.js';
 import { carregarBase } from '../foods.js';
 import { tabelaMicros } from './micros-ui.js';
@@ -91,8 +92,8 @@ export async function detalheDia(dia, meta, { rotulo, alvoProt }) {
     ${falta.length ? `<p class="nota alerta">Alguns itens não têm todos os nutrientes na fonte (${falta.map((k) => ({ fibra: 'fibra', sodio_mg: 'sódio', kcal: 'kcal', prot: 'proteína', carb: 'carboidrato', gord: 'gordura' }[k])).join(', ')}); os totais podem estar subestimados.</p>` : ''}
     ${tabelaMicros(Object.values(dia.refeicoes).flat(), 1, base)}
     ${alvoProt ? `<p class="mudo">Proteína por refeição: alvo ≈ ${alvoProt} g (0,4 g/kg; Schoenfeld & Aragon, 2018), em 4 ou mais refeições.</p>` : ''}
-    ${meta.treinoExtra ? `<p class="nota">🏋️ Dia de treino: meta +${fmtKcal(meta.treinoExtra)} kcal (em carboidratos).</p>` : ''}
-    ${dia.nota ? `<p class="nota">📝 ${esc(dia.nota)}</p>` : ''}
+    ${meta.treinoExtra ? `<p class="nota">${ic('dumbbell', 'p')} Dia de treino: meta +${fmtKcal(meta.treinoExtra)} kcal (em carboidratos).</p>` : ''}
+    ${dia.nota ? `<p class="nota">${ic('notebook-pen', 'p')} ${esc(dia.nota)}</p>` : ''}
     ${meta.macroModo !== 'pct' && Math.abs(meta.diferenca) >= 1 ? `<p class="nota">Meta calórica derivada dos macros (${fmtKcal(meta.kcal)} kcal); a planejada era ${fmtKcal(meta.kcalPlanejada)} kcal.</p>` : ''}`;
 
   const abrir = () => {

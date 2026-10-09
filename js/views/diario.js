@@ -1,6 +1,7 @@
 // views/diario.js — tela inicial: navegação por dia, anel de calorias, macros e refeições.
 
 import { estado, lerDia, gravarDia, pesoAtual, datasComRegistro } from '../state.js';
+import { ic } from '../icones.js';
 import { db } from '../db.js';
 import { totalAgua, AGUA_PADRAO } from './reg-agua.js';
 import { detalheDia, painelRefeicao } from './detalhe-dia.js';
@@ -123,9 +124,9 @@ async function desenhar() {
   agoraRestante = restMacros;
   tela.innerHTML = `
     ${faixaSemana(ativos)}
-    ${ehHoje && pendenteToque() ? '<button class="nota" data-drive>☁️ Backup diário no Google Drive pendente — tocar para enviar.</button>' : ''}
-    ${bk.dias > 30 && ehHoje ? `<a class="nota" href="#config">💾 ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar.</a>` : ''}
-    ${dias > 30 && ehHoje ? `<a class="nota" href="#registros?aba=dobras">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
+    ${ehHoje && pendenteToque() ? '<button class="nota" data-drive>' + ic('cloud-upload', 'p') + ' Backup diário no Google Drive pendente — tocar para enviar.</button>' : ''}
+    ${bk.dias > 30 && ehHoje ? `<a class="nota" href="#config">${ic('save', 'p')} ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar.</a>` : ''}
+    ${dias > 30 && ehHoje ? `<a class="nota" href="#registros?aba=dobras">${ic('ruler', 'p')} Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
     <section class="card" data-bloco="resumo" data-detalhe tabindex="0" role="button" aria-label="Resumo do dia. Toque para ver os detalhes.">
       <div class="resumo">
         <div class="anel ${restante < 0 ? 'excesso' : ''}">
@@ -146,7 +147,7 @@ async function desenhar() {
         <div><b>${fmtKcal(tot.kcal)} <small>kcal</small></b><span>Consumido</span></div>
         <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)} <small>kcal</small></b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>
     </section>
-    ${ehHoje && restante >= 50 ? `<button class="btn bloco suave" data-bloco="agora" data-agora>🍽 O que comer agora <span class="mudo num">· faltam ${fmtKcal(restante)} kcal</span></button>` : ''}
+    ${ehHoje && restante >= 50 ? `<button class="btn bloco suave" data-bloco="agora" data-agora>${ic('utensils')} O que comer agora <span class="mudo num">· faltam ${fmtKcal(restante)} kcal</span></button>` : ''}
     ${faixaEtiquetas()}
     <section class="card agua-card" data-bloco="agua" aria-label="Água">
       <div class="gota">${ICONES.gota}</div>
@@ -228,7 +229,7 @@ function cartaoRefeicao(r) {
       ${nf ? `<button class="btn peq suave" data-fotos aria-label="${nf} foto(s) da refeição">${ICONES.camera}${nf}</button>` : ''}
       <span class="num" style="white-space:nowrap;margin:0 2px 0 8px"><b>${fmtKcal(t.kcal)}</b> <span class="mudo">kcal</span></span>
       <button class="ico" data-menu aria-label="Mais opções de ${esc(r.nome)}">${ICONES.pontos}</button></span></div>
-    ${itens.length ? `<div class="ref-tot num"><span class="m-p ${alvoProtRef && t.prot >= alvoProtRef ? 'prot-ok' : ''}" title="Alvo por refeição: ${alvoProtRef} g (0,4 g/kg)">P ${fmtG(t.prot)} g${alvoProtRef && t.prot >= alvoProtRef ? ' ✓' : ''}</span><span class="m-c">C ${fmtG(t.carb)} g</span><span class="m-g">G ${fmtG(t.gord)} g</span></div>` : ''}
+    ${itens.length ? `<div class="ref-tot num"><span class="m-p ${alvoProtRef && t.prot >= alvoProtRef ? 'prot-ok' : ''}" title="Alvo por refeição: ${alvoProtRef} g (0,4 g/kg)">P ${fmtG(t.prot)} g${alvoProtRef && t.prot >= alvoProtRef ? ' ' + ic('check', 'p') : ''}</span><span class="m-c">C ${fmtG(t.carb)} g</span><span class="m-g">G ${fmtG(t.gord)} g</span></div>` : ''}
     ${itens.length ? `<ul class="itens">${itens.map((it) => `<li class="item-wrap"><div class="fundo-apagar" aria-hidden="true">Apagar</div>
       <div class="item" data-item="${it.id}">
       <div class="info" data-editar><div class="nome">${esc(it.nome)}</div>
@@ -265,8 +266,8 @@ function animarAnel(antes, { restante, frac, C }) {
 function chipsRefeicao(r) {
   const c = chips[r.id];
   if (!c || (!c.ontem && !c.sempre.length)) return '';
-  return `<div class="chips-ref">${c.ontem ? `<button class="chip-tog" data-chip-ontem>↺ Repetir de ontem (${c.ontem})</button>` : ''}${
-    c.sempre.length ? `<button class="chip-tog" data-chip-sempre>⭐ Seu ${esc(r.nome.toLowerCase())} de sempre (${c.sempre.length})</button>` : ''}</div>`;
+  return `<div class="chips-ref">${c.ontem ? `<button class="chip-tog" data-chip-ontem>${ic('rotate-ccw', 'p')} Repetir de ontem (${c.ontem})</button>` : ''}${
+    c.sempre.length ? `<button class="chip-tog" data-chip-sempre>${ic('star', 'p')} Seu ${esc(r.nome.toLowerCase())} de sempre (${c.sempre.length})</button>` : ''}</div>`;
 }
 
 /** "38 g", "200 mL" ou "2 × fatia · 50 g" (gramas sem casas decimais só na exibição). */
@@ -335,10 +336,10 @@ async function clique(e) {
     const p = abrirFolha(nomeRef, `<div class="menu-lista">
       <button class="btn" data-op="rapida">${ICONES.raio} Adição rápida (kcal e macros)</button>
       <button class="btn" data-op="ia">${ICONES.camera} Estimar por foto (IA)</button>
-      <button class="btn" data-op="texto">✍️ Descrever o que comeu (IA)</button>
-      <button class="btn" data-op="cardapio">📋 Foto de cardápio (IA)</button>
-      <button class="btn" data-op="salvas">⭐ Lançar refeição salva</button>
-      ${(dia.refeicoes[refId] || []).length ? '<button class="btn" data-op="salvar">💾 Salvar como refeição salva</button>' : ''}
+      <button class="btn" data-op="texto">${ic('pencil-line')} Descrever o que comeu (IA)</button>
+      <button class="btn" data-op="cardapio">${ic('clipboard-list')} Foto de cardápio (IA)</button>
+      <button class="btn" data-op="salvas">${ic('star')} Lançar refeição salva</button>
+      ${(dia.refeicoes[refId] || []).length ? '<button class="btn" data-op="salvar">' + ic('save') + ' Salvar como refeição salva</button>' : ''}
       <button class="btn" data-op="copiar">${ICONES.copiar} Copiar ${esc(nomeRef)} de ontem</button>
       <button class="btn" data-op="fotos">${ICONES.camera} Foto da refeição ${fotosCont[refId] ? `(${fotosCont[refId]})` : ''}</button>
       <button class="btn" data-op="scan">${ICONES.codigo} Ler código de barras</button></div>`);
@@ -450,9 +451,9 @@ function faixaEtiquetas() {
   const extra = Number(estado.metas.treinoExtra) || 0;
   const outros = tags.filter((t) => t !== 'treino').map((t) => ETIQUETAS.find(([id]) => id === t)?.[1] || t);
   return `<div class="etiquetas-dia" data-bloco="etiquetas">
-    <button class="chip-tog" data-treino aria-pressed="${tags.includes('treino')}">🏋️ Treino${extra && tags.includes('treino') ? ` +${fmtKcal(extra)} kcal` : ''}</button>
+    <button class="chip-tog" data-treino aria-pressed="${tags.includes('treino')}">${ic('dumbbell', 'p')} Treino${extra && tags.includes('treino') ? ` +${fmtKcal(extra)} kcal` : ''}</button>
     ${outros.map((r) => `<span class="chip">${esc(r)}</span>`).join('')}
-    <button class="chip-tog" data-nota aria-label="Nota e etiquetas do dia">${dia.nota ? '📝 ' + esc(dia.nota.slice(0, 28)) + (dia.nota.length > 28 ? '…' : '') : '📝 Nota'}</button></div>`;
+    <button class="chip-tog" data-nota aria-label="Nota e etiquetas do dia">${dia.nota ? ic('notebook-pen', 'p') + ' ' + esc(dia.nota.slice(0, 28)) + (dia.nota.length > 28 ? '…' : '') : ic('notebook-pen', 'p') + ' Nota'}</button></div>`;
 }
 
 async function alternarTreino() {
@@ -469,7 +470,7 @@ async function alternarTreino() {
 function folhaNota() {
   const tags = new Set(dia.tags || []);
   const p = abrirFolha('Nota do dia', `<form id="fn" novalidate>
-    <div class="etiquetas-dia">${ETIQUETAS.map(([id, r]) => `<button type="button" class="chip-tog" data-tag="${id}" aria-pressed="${tags.has(id)}">${r}</button>`).join('')}</div>
+    <div class="etiquetas-dia">${ETIQUETAS.map(([id, r, i]) => `<button type="button" class="chip-tog" data-tag="${id}" aria-pressed="${tags.has(id)}">${ic(i, 'p')} ${r}</button>`).join('')}</div>
     <label class="campo"><span>Nota (opcional)</span><textarea name="nota" rows="3" maxlength="300" placeholder="ex.: treino de perna; jantar fora">${esc(dia.nota || '')}</textarea></label>
     <p class="mudo">Etiquetas e notas aparecem no calendário e no relatório semanal do Progresso, para explicar dias fora da curva.</p>
     <button class="btn prim bloco">Salvar</button></form>`);

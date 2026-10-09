@@ -1,8 +1,9 @@
 // views/onboarding.js — perfil (primeiro uso e edição) e meta calórica sugerida.
 
 import { estado, salvarPerfil, salvarMetas } from '../state.js';
+import { ic } from '../icones.js';
 import { FATORES_ATIVIDADE, metaCalorica, metasIniciais, registrarHistorico } from '../goals.js';
-import { topo, esc, seg, $, $$, aviso, valorDe } from '../ui.js';
+import { topo, esc, seg, $, $$, aviso, valorDe, confirmar } from '../ui.js';
 import { chaveData, fmtKcal, fmtNum, idadeEm } from '../utils.js';
 import { blocoRestaurarInicio, ligarRestaurarInicio } from './drive-ui.js';
 
@@ -13,7 +14,7 @@ export function idadePerfil(p) {
 export async function render(tela) {
   const p = estado.perfil || { sexo: 'M', altura: '', peso: '', atividade: 'moderado', objetivo: 'manter', ritmo: 0.5 };
   const primeiro = !estado.perfil;
-  topo(primeiro ? '<h1>Bem-vindo</h1>' : '<a class="ico" href="#config" aria-label="Voltar"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><h1>Perfil</h1><span style="width:44px"></span>');
+  topo(primeiro ? '<h1>Bem-vindo</h1>' : '<a class="ico" href="#config" aria-label="Voltar">' + ic('chevron-left') + '</a><h1>Perfil</h1><span style="width:48px"></span>');
   tela.innerHTML = `
     ${primeiro ? blocoRestaurarInicio() + '<p class="mudo">Preencha seu perfil para calcular a meta inicial. Tudo pode ser ajustado depois.</p>' : ''}
     <form class="card" id="f" novalidate>
@@ -63,7 +64,7 @@ export async function render(tela) {
     const m = metaCalorica({ ...d, idade: idadePerfil(d) });
     $('#calc', f).innerHTML = `TMB (Mifflin-St Jeor): <b>${fmtKcal(m.tmb)}</b> kcal · Gasto (TDEE): <b>${fmtKcal(m.tdee)}</b> kcal<br>
       Ajuste: ${m.ajuste >= 0 ? '+' : '−'}${fmtKcal(Math.abs(m.ajuste))} kcal/dia → <b>Meta: ${fmtKcal(m.kcal)} kcal</b>
-      ${m.abaixoPiso ? `<br><span class="alerta">⚠ O cálculo daria ${fmtKcal(m.bruta)} kcal; ajustado ao piso de segurança de ${fmtKcal(m.piso)} kcal. Considere um ritmo menor.</span>` : ''}`;
+      ${m.abaixoPiso ? `<br><span class="alerta">${ic('triangle-alert', 'p')} O cálculo daria ${fmtKcal(m.bruta)} kcal; ajustado ao piso de segurança de ${fmtKcal(m.piso)} kcal. Considere um ritmo menor.</span>` : ''}`;
   };
   f.addEventListener('click', (e) => {
     const b = e.target.closest('[data-seg] button');
@@ -80,7 +81,7 @@ export async function render(tela) {
     const erro = validar(d);
     $('#erro', f).textContent = erro;
     if (erro) return;
-    if ((d.peso < 30 || d.peso > 300) && !confirm(`Peso de ${fmtNum(d.peso)} kg parece incomum. Confirmar?`)) return;
+    if ((d.peso < 30 || d.peso > 300) && !(await confirmar(`Peso de ${fmtNum(d.peso)} kg parece incomum. Confirmar?`, { titulo: 'Peso incomum', ok: 'Confirmar' }))) return;
     await salvarPerfil(d);
     const hoje = chaveData();
     const kcal = Math.round(metaCalorica({ ...d, idade: idadePerfil(d) }).kcal);

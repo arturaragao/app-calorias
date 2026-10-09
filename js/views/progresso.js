@@ -2,6 +2,7 @@
 // calorias por semana, calendário de aderência, relatório semanal, macros, origem das calorias, composição corporal e medidas.
 
 import { db, kvGet, kvSet } from '../db.js';
+import { ic } from '../icones.js';
 import { estado, salvarConfig, salvarMetas } from '../state.js';
 import { totalDia, ehTreino, ETIQUETAS, alvoProteinaRefeicao } from '../diary.js';
 import { metaDoDia, metaCalorica, registrarHistorico } from '../goals.js';
@@ -19,7 +20,7 @@ import { aplicarLayout, botaoOrganizar, visivel } from '../layout.js';
 import { estadoVazio } from '../vazio.js';
 import { numerosCoach, contarEtiquetas, guardarResposta } from '../coach.js';
 import { coachSemanal, motorIA, rotuloCota } from '../ia.js';
-import { topo, esc, $, seg, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
+import { topo, esc, $, seg, aviso, abrirFolha, fecharFolha, ICONES, confirmar } from '../ui.js';
 import { chaveData, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, somarDias, DIAS_CURTOS } from '../utils.js';
 
 const PERIODOS = [['7', '7 dias'], ['30', '30 dias'], ['90', '90 dias'], ['0', 'Tudo']];
@@ -97,7 +98,7 @@ export async function render(tela) {
       <div class="card" data-bloco="circ"><div class="card-tit"><h2>Circunferências</h2>
         <select id="s-circ" style="width:auto;min-height:40px">${defsCirc.map((d) => `<option value="${d.id}" ${d.id === circSel ? 'selected' : ''}>${esc(d.nome)}</option>`).join('')}</select></div>
         <div id="circ-resumo"></div><div id="g-circ"></div></div>
-      <button class="btn bloco suave" data-bloco="pdf" data-pdf style="margin-bottom:12px">📄 Relatório em PDF (para nutricionista)</button>
+      <button class="btn bloco suave" data-bloco="pdf" data-pdf style="margin-bottom:12px">${ic('file-text')} Relatório em PDF (para nutricionista)</button>
       <p class="mudo" style="text-align:center">Arraste o dedo sobre os gráficos para ver os valores.</p>
       ${botaoOrganizar('progresso')}`;
     aplicarLayout(tela, 'progresso');
@@ -119,7 +120,7 @@ export async function render(tela) {
   function cardPeso(tAtual, ritmo) {
     const alvo = estado.config.alvo, perfil = estado.perfil;
     const ritmoPlan = perfil?.objetivo === 'manter' ? 0 : (perfil?.objetivo === 'ganhar' ? 1 : -1) * (perfil?.ritmo || 0);
-    let blocoAlvo = '<button class="btn peq suave" data-alvo style="margin-top:10px">🎯 Definir peso-alvo</button>';
+    let blocoAlvo = '<button class="btn peq suave" data-alvo style="margin-top:10px">' + ic('target') + ' Definir peso-alvo</button>';
     if (alvo && tAtual != null) {
       const frac = P.fracaoAlvo(alvo.inicio.kg, tAtual, alvo.peso);
       const pr = P.projecao(tAtual, alvo.peso, ritmo, hoje);
@@ -128,7 +129,7 @@ export async function render(tela) {
           <span><b>Alvo: ${f1(alvo.peso)} kg</b> <span class="mudo">· início ${f1(alvo.inicio.kg)} kg em ${fmtData(alvo.inicio.data)}</span></span>
           <button class="btn peq suave" data-alvo>Editar</button></div>
         <div class="progresso-alvo" role="progressbar" aria-valuenow="${Math.round(frac * 100)}" aria-valuemin="0" aria-valuemax="100"><div style="width:${frac * 100}%"></div></div>
-        <p class="mudo" style="margin:0">${Math.round(frac * 100)}% do caminho · ${pr?.atingido ? '🎉 alvo atingido!' : `faltam ${f1(Math.abs(falta))} kg`}${
+        <p class="mudo" style="margin:0">${Math.round(frac * 100)}% do caminho · ${pr?.atingido ? 'alvo atingido!' : `faltam ${f1(Math.abs(falta))} kg`}${
           pr && !pr.atingido ? ` · no ritmo atual, por volta de <b>${fmtData(pr.data)}</b> (${fmtNum(Math.round(pr.semanas))} semanas)` : ''}${
           !pr && Math.abs(falta) >= 0.05 ? ' · no ritmo atual o alvo ainda não se aproxima' : ''}</p></div>`;
     }
@@ -167,7 +168,7 @@ export async function render(tela) {
       <div class="nota" style="margin-top:10px">Para <b>${obj}</b>, a meta sugerida é <b class="num">${fk(sug)} kcal</b>
         (atual ${fk(atual)}${Math.abs(dif) >= 1 ? `, ${sinal(dif, fk)}` : ''}).${sug === mc.piso ? ' Limitada ao piso de segurança.' : ''}
         <span class="mudo">Objetivo e ritmo vêm do seu <a href="#perfil">perfil</a>.</span></div>
-      ${Math.abs(dif) < 50 ? '<p class="mudo" style="margin-bottom:0">Sua meta já está alinhada ao seu gasto real. 👍</p>'
+      ${Math.abs(dif) < 50 ? '<p class="mudo" style="margin-bottom:0">Sua meta já está alinhada ao seu gasto real.</p>'
         : emGramas ? '<p class="mudo" style="margin-bottom:0">Seus macros estão em gramas (as kcal derivam deles): ajuste os gramas em <a href="#metas">Metas</a>.</p>'
         : `<button class="btn prim bloco" data-aplicar="${sug}" style="margin-top:8px">Aplicar ${fk(sug)} kcal como meta</button>`}
       <p class="mudo" style="margin-bottom:0">Base: ${g.registrados} dia(s) com registro de ${g.periodo} (${fmtNum(Math.round(g.cobertura * 100))}%). 1 kg ≈ 7700 kcal.
@@ -212,9 +213,9 @@ export async function render(tela) {
           <div><b>${r.aderencia.dentro} de ${r.registrados}</b><span>dias na meta</span></div>
           <div><b>${fmtNum(Math.round(m.consumo.prot))} g</b><span>proteína/dia (meta ${fmtNum(Math.round(m.meta.prot))})</span></div>
           <div><b>${r.deltaPeso != null ? sinal(r.deltaPeso) + ' kg' : '—'}</b><span>${r.pesoFim != null ? `tendência ${f1(r.pesoFim)} kg` : 'sem pesagens'}</span></div></div>
-        ${r.melhor ? `<p class="mudo" style="margin:4px 0">✅ Mais perto da meta: ${dif(r.melhor)}</p>` : ''}
-        ${r.pior ? `<p class="mudo" style="margin:4px 0">⚠️ Mais longe: ${dif(r.pior)}</p>` : ''}
-        ${P.anotacoesEntre(todosDiarios, r.inicio, r.fim).map((a) => `<p class="mudo" style="margin:4px 0">📝 ${dd5(a.data)}: ${esc([...a.tags.map(rotTag), a.nota].filter(Boolean).join(' · '))}</p>`).join('')}
+        ${r.melhor ? `<p class="mudo" style="margin:4px 0">${ic('circle-check', 'p')} Mais perto da meta: ${dif(r.melhor)}</p>` : ''}
+        ${r.pior ? `<p class="mudo" style="margin:4px 0">${ic('triangle-alert', 'p')} Mais longe: ${dif(r.pior)}</p>` : ''}
+        ${P.anotacoesEntre(todosDiarios, r.inicio, r.fim).map((a) => `<p class="mudo" style="margin:4px 0">${ic('notebook-pen', 'p')} ${dd5(a.data)}: ${esc([...a.tags.map(rotTag), a.nota].filter(Boolean).join(' · '))}</p>`).join('')}
         <p class="mudo" style="margin:4px 0">${r.registrados} de 7 dias registrados · P ${fmtNum(Math.round(m.pct.prot))}% · C ${fmtNum(Math.round(m.pct.carb))}% · G ${fmtNum(Math.round(m.pct.gord))}% das kcal</p>
         <button class="btn bloco" data-compartilhar style="margin-top:8px">Compartilhar resumo (imagem)</button>`
       : '<p class="mudo">Nenhum dia registrado nesta semana.</p>'}`;
@@ -239,7 +240,7 @@ export async function render(tela) {
     if (!visivel('progresso', 'coach')) return;   // escondido em "Organizar"
     el.hidden = false;
     const terminou = r.fim < hoje;
-    el.innerHTML = `<h2 style="margin-bottom:6px">🧭 Coach da semana (IA)</h2>
+    el.innerHTML = `<h2 style="margin-bottom:6px">${ic('sparkles')} Coach da semana (IA)</h2>
       ${salvo ? `<ul class="coach-obs">${salvo.observacoes.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>
           <p class="nota" style="margin:8px 0 4px"><b>Ação da semana:</b> ${esc(salvo.acao)}</p>
           <p class="mudo" style="margin:0;font-size:.76rem">Gerado em ${fmtData(salvo.data)} · ${salvo.motor === 'local' ? 'IA do Chrome' : 'Gemini'} · uma análise por semana.</p>`
@@ -327,7 +328,7 @@ export async function render(tela) {
     l.sort((a, b) => ordem.indexOf(a.id) - ordem.indexOf(b.id));
     return `<h2 style="margin:16px 0 4px;font-size:1rem">Proteína por refeição</h2>
       <p class="mudo" style="margin:0 0 4px">Alvo ≈ ${alvo} g por refeição (0,4 g/kg; Schoenfeld & Aragon, 2018).</p>
-      ${l.map((r) => `<div class="dist p"><div class="rot"><span>${esc(r.nome)}</span><span class="num"><b>${fmtNum(Math.round(r.prot))} g</b>${r.prot >= alvo ? ' ✓' : ''}
+      ${l.map((r) => `<div class="dist p"><div class="rot"><span>${esc(r.nome)}</span><span class="num"><b>${fmtNum(Math.round(r.prot))} g</b>${r.prot >= alvo ? ' ' + ic('check', 'p') : ''}
         <span class="mudo">(${r.dias} dia(s))</span></span></div><div class="trilho"><div class="enche" style="width:${Math.min(100, (r.prot / alvo) * 100)}%"></div></div></div>`).join('')}`;
   }
 
@@ -346,8 +347,8 @@ export async function render(tela) {
     $('#comp-resumo', tela).innerHTML = !pers && cm.length >= 2 ? `<div class="sub-num num" style="margin:0 0 8px">
         <span>Gordura <b>${sinal(b.pct - a.pct)} pontos</b></span><span>Massa gorda <b>${sinal(b.mGorda - a.mGorda)} kg</b></span>
         <span>Massa magra <b>${sinal(b.mMagra - a.mMagra)} kg</b></span></div>
-      ${b.mGorda < a.mGorda && b.mMagra >= a.mMagra - 0.3 ? '<p class="mudo" style="margin:0 0 8px">✅ Perdendo gordura e preservando massa magra.</p>'
-        : b.mMagra < a.mMagra - 0.5 ? '<p class="mudo" style="margin:0 0 8px">⚠️ A massa magra caiu: confira a proteína e o treino de força.</p>' : ''}` : '';
+      ${b.mGorda < a.mGorda && b.mMagra >= a.mMagra - 0.3 ? '<p class="mudo" style="margin:0 0 8px">' + ic('circle-check', 'p') + ' Perdendo gordura e preservando massa magra.</p>'
+        : b.mMagra < a.mMagra - 0.5 ? '<p class="mudo" style="margin:0 0 8px">' + ic('triangle-alert', 'p') + ' A massa magra caiu: confira a proteína e o treino de força.</p>' : ''}` : '';
   }
 
   function grafCirc(n) {
@@ -408,7 +409,7 @@ export async function render(tela) {
     const m = structuredClone(estado.metas);
     const media = (x) => (x.modo === 'semana' ? x.semana.reduce((s, c) => s + c.kcal, 0) / 7 : x.base.kcal);
     const delta = Math.round(sug - media(m));
-    if (!confirm(`Mudar a meta calórica em ${sinal(delta, fk)} kcal (para ~${fk(sug)}), a partir de hoje? Os dias anteriores mantêm a meta da época.`)) return;
+    if (!(await confirmar(`Mudar a meta calórica em ${sinal(delta, fk)} kcal (para ~${fk(sug)}), a partir de hoje? Os dias anteriores mantêm a meta da época.`, { titulo: 'Aplicar meta sugerida', ok: 'Aplicar' }))) return;
     const antes = estado.metas;
     m.base.kcal = Math.round(m.base.kcal + delta);
     m.semana.forEach((c) => { c.kcal = Math.round(c.kcal + delta); });

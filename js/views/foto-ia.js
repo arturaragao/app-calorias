@@ -3,6 +3,7 @@
 // os nutrientes vêm da tabela (item normal, com gramas editáveis no diário). Sem correspondência, usa os valores da IA.
 
 import { estado, lerDia, gravarDia } from '../state.js';
+import { ic } from '../icones.js';
 import { criarItem, criarItemRapido, adicionarItem, nutrientesPorGramas, NUTRIENTES } from '../diary.js';
 import { comprimir, fotosDe, gravarFotos } from '../photos.js';
 import { estimarFoto, estimarTexto, estimarCardapio, lerRotulo, salvarChave, chaveValida, motorIA, rotuloCota } from '../ia.js';
@@ -53,8 +54,8 @@ export async function folhaTextoIA({ data = estado.dataAtual, refId = estado.ref
   const p = abrirFolha('Descrever o que comeu (IA)', `<form id="ft" novalidate>
     <label class="campo"><span>O que você comeu?</span><textarea name="txt" rows="3" maxlength="400"
       placeholder="ex.: 2 ovos mexidos, 1 pão francês com manteiga e café com leite"></textarea></label>
-    ${suportaVoz() ? '<button type="button" class="btn bloco" data-ditar>🎤 Ditar</button>' : ''}
-    <p class="mudo">${suportaVoz() ? 'Toque em 🎤 Ditar e fale; toque de novo para parar.' : 'Dica: toque no microfone do teclado para ditar.'} Quantidades ajudam (“200 g de arroz”, “2 colheres”).</p>
+    ${suportaVoz() ? '<button type="button" class="btn bloco" data-ditar>' + ic('mic') + ' Ditar</button>' : ''}
+    <p class="mudo">${suportaVoz() ? 'Toque em Ditar e fale; toque de novo para parar.' : 'Dica: toque no microfone do teclado para ditar.'} Quantidades ajudam (“200 g de arroz”, “2 colheres”).</p>
     <p class="erro" id="erro"></p><button class="btn prim bloco">Estimar</button></form>`);
   mostrarCota(p, false);
   // ditado (Web Speech API): acrescenta ao que já estiver escrito
@@ -63,11 +64,11 @@ export async function folhaTextoIA({ data = estado.dataAtual, refId = estado.ref
   if (bDitar) bDitar.onclick = () => {
     if (parar) return parar();
     const campo = $('[name=txt]', p), antes = campo.value.trim();
-    bDitar.classList.add('gravando'); bDitar.textContent = '■ Parar (ouvindo…)';
+    bDitar.classList.add('gravando'); bDitar.innerHTML = ic('square') + ' Parar (ouvindo…)';
     vibrar(10);
     parar = ditar((final, parcial) => { campo.value = [antes, final, parcial].filter(Boolean).join(' ').slice(0, 400); }, (erro) => {
       parar = null;
-      bDitar.classList.remove('gravando'); bDitar.textContent = '🎤 Ditar';
+      bDitar.classList.remove('gravando'); bDitar.innerHTML = ic('mic') + ' Ditar';
       if (erro) $('#erro', p).textContent = erro;
     });
   };

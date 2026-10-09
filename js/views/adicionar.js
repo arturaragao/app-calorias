@@ -2,6 +2,7 @@
 // leitor de código de barras e "+" para lançar com um toque a última quantidade usada.
 
 import { estado, lerDia, gravarDia } from '../state.js';
+import { ic } from '../icones.js';
 import { buscar, rotuloFonte } from '../foods.js';
 import { catalogo, registrarRecente, ehFavorito } from '../custom.js';
 import { criarItem, adicionarItem, sugestoesRefeicao } from '../diary.js';
@@ -36,7 +37,7 @@ export async function render(tela) {
   topo(`<a class="ico" href="#diario" aria-label="Voltar ao diário">${ICONES.voltar}</a>
     <div class="tit-sel"><h1>Adicionar · ${esc(quando)}</h1>
       <select id="ref-alvo" aria-label="Refeição de destino">${refs.map((r) => `<option value="${r.id}" ${r.id === estado.refeicaoAlvo ? 'selected' : ''}>${esc(r.nome)}</option>`).join('')}</select></div>
-    <span style="width:44px"></span>`);
+    <span style="width:48px"></span>`);
   $('#ref-alvo').onchange = (e) => { estado.refeicaoAlvo = e.target.value; tela.dispatchEvent(new Event('trocou-ref')); };
   tela.innerHTML = `<div class="campo-busca"><div class="busca-box">${ICONES.lupa}
       <input type="search" id="q" placeholder="Buscar alimento" aria-label="Buscar alimento" autocomplete="off" enterkeyhint="search" value="${esc(ultimaBusca)}">
@@ -45,13 +46,13 @@ export async function render(tela) {
         `<button type="button" role="tab" data-bloco="aba-${v}" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
     <div class="acoes-rolar" role="group" aria-label="Outras formas de adicionar">
       <button class="btn peq suave" data-bloco="foto" data-foto-ia>${ICONES.camera} Foto do prato</button>
-      <button class="btn peq suave" data-bloco="texto" data-texto-ia>✍️ Descrever</button>
-      <button class="btn peq suave" data-bloco="cardapio" data-cardapio-ia>📋 Cardápio/receita</button>
-      <button class="btn peq suave" data-bloco="salvas" data-salvas>⭐ Refeições salvas</button>
-      <button class="btn peq suave" data-bloco="rotulo" data-rotulo>🏷️ Ler rótulo</button>
+      <button class="btn peq suave" data-bloco="texto" data-texto-ia>${ic('pencil-line')} Descrever</button>
+      <button class="btn peq suave" data-bloco="cardapio" data-cardapio-ia>${ic('clipboard-list')} Cardápio/receita</button>
+      <button class="btn peq suave" data-bloco="salvas" data-salvas>${ic('star')} Refeições salvas</button>
+      <button class="btn peq suave" data-bloco="rotulo" data-rotulo>${ic('tag')} Ler rótulo</button>
       <button class="btn peq suave" data-bloco="novo" data-novo-alim>+ Novo alimento</button>
       <a class="btn peq suave" data-bloco="receita" href="#receita">+ Nova receita</a>
-      <button class="btn peq" data-organizar="adicionar" aria-label="Organizar abas e atalhos">⇅</button></div>
+      <button class="btn peq" data-organizar="adicionar" aria-label="Organizar abas e atalhos">${ic('arrow-up-down')}</button></div>
     <div id="sug"></div>
     <div class="mudo" id="info"></div><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
     <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
@@ -68,9 +69,9 @@ export async function render(tela) {
   const linhaAlimento = (f) => {
     const u = estado.config.ultimaQtd[f.id];
     return `<li><button data-id="${esc(f.id)}">
-      <span><span class="nome">${ehFavorito(f.id) ? '★ ' : ''}${esc(f.nome)}</span><span class="mudo">${esc(rotuloFonte(f))}${u ? ` · última: ${esc(rotuloQtd(u))}` : ''}</span></span>
+      <span><span class="nome">${ehFavorito(f.id) ? ic('star', 'p cheio') + ' ' : ''}${esc(f.nome)}</span><span class="mudo">${esc(rotuloFonte(f))}${u ? ` · última: ${esc(rotuloQtd(u))}` : ''}</span></span>
       ${f.kcal == null /* sem kcal na fonte (ex.: leite integral/UHT na TACO): avisa em vez de mostrar 0 */
-        ? `<span class="mudo" style="white-space:nowrap;font-size:.78rem">⚠ sem dados na ${esc(f.fonte || 'fonte')}</span>`
+        ? `<span class="mudo" style="white-space:nowrap;font-size:.78rem">${ic('triangle-alert', 'p')} sem dados na ${esc(f.fonte || 'fonte')}</span>`
         : `<span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span>`}</button>
       ${u ? `<button class="rapido" data-rapido="${esc(f.id)}" aria-label="Adicionar ${esc(rotuloQtd(u))} de ${esc(f.nome)} com um toque">+</button>` : ''}</li>`;
   };
@@ -98,7 +99,7 @@ export async function render(tela) {
   };
   const VAZIO = {
     recentes: 'Os alimentos que você lançar aparecem aqui.',
-    favoritos: 'Toque em ☆ Favoritar na tela de quantidade para fixar um alimento aqui.',
+    favoritos: 'Toque em Favoritar na tela de quantidade para fixar um alimento aqui.',
     meus: 'Crie alimentos (rótulos, suplementos) em "+ Novo alimento" ou importe um CSV em Configurações.',
     receitas: 'Monte uma receita em "+ Nova receita" para lançar por porção ou por grama.',
   };
@@ -121,7 +122,7 @@ export async function render(tela) {
     desenharLote();
     // busca online opcional (só quando o usuário toca)
     $('#off', tela).hidden = !buscando;
-    $('[data-off-buscar]', tela).textContent = `🌐 Buscar “${q.value.trim()}” no Open Food Facts (industrializados)`;
+    $('[data-off-buscar]', tela).innerHTML = `${ic('globe')} Buscar “${esc(q.value.trim())}” no Open Food Facts (industrializados)`;
     $('#resoff', tela).innerHTML = '';
     offRes = [];
   };
@@ -205,7 +206,7 @@ export async function render(tela) {
     $('#ref-alvo').value = refId;
     registrarRecente(food.id);
     vibrar(12);
-    aviso(`✓ ${food.nome} (${fmtKcal(item.n.kcal)} kcal) → ${ref.nome}`, { acao: async () => { await gravarDia(antes); aviso('Desfeito'); } });
+    aviso(`${food.nome} (${fmtKcal(item.n.kcal)} kcal) → ${ref.nome}`, { acao: async () => { await gravarDia(antes); aviso('Desfeito'); } });
     if (!q.value.trim() && estado.abaAdicionar === 'recentes') pesquisar();
   }
 }

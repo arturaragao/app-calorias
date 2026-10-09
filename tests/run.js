@@ -758,6 +758,54 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   if (!V9.estadoVazio('inexistente', 'x').includes('<svg')) throw new Error('fallback');
 });
 
+// ---------- Pacote 10: sistema de design ----------
+{
+  const { readdirSync } = process.getBuiltinModule('node:fs');
+  const arqs10 = ['index.html', ...readdirSync(new URL('../js/', import.meta.url)).filter((f) => f.endsWith('.js')).map((f) => 'js/' + f),
+    ...readdirSync(new URL('../js/views/', import.meta.url)).map((f) => 'js/views/' + f)];
+  const fonte10 = Object.fromEntries(arqs10.map((a) => [a, readFileSync(new URL('../' + a, import.meta.url), 'utf8')]));
+  // Emoji só em conteúdo digitado pelo usuário: nenhum na interface. Lista permitida (arquivo → caracteres), hoje vazia.
+  const PERMITIDOS = {};
+  t('Interface sem emoji (ícones só do sprite)', () => {
+    const re = /[\p{Extended_Pictographic}★☆⇅✓✕✗↺▲▼]/gu;
+    const achados = [];
+    for (const [a, txt] of Object.entries(fonte10)) {
+      txt.split('\n').forEach((l, i) => { for (const m of l.matchAll(re)) if (!(PERMITIDOS[a] || []).includes(m[0])) achados.push(`${a}:${i + 1} ${m[0]}`); });
+    }
+    if (achados.length) throw new Error(achados.join(', '));
+  });
+  t('Todo ícone usado existe no sprite e o sprite não tem sobra', () => {
+    const sprite = readFileSync(new URL('../icons/sprite.svg', import.meta.url), 'utf8');
+    const noSprite = new Set([...sprite.matchAll(/<symbol id="([a-z0-9-]+)"/g)].map((m) => m[1]));
+    const usados = new Set();
+    for (const txt of Object.values(fonte10)) {
+      for (const m of txt.matchAll(/\bic\(\s*'([a-z0-9-]+)'/g)) usados.add(m[1]);
+      for (const m of txt.matchAll(/sprite\.svg#([a-z0-9-]+)/g)) usados.add(m[1]);
+    }
+    const faltam = [...usados].filter((n) => !noSprite.has(n));
+    if (faltam.length) throw new Error('faltam no sprite (rode node scripts/gerar_sprite.mjs): ' + faltam.join(', '));
+    if (noSprite.size < usados.size) throw new Error('sprite menor que o usado');
+  });
+  t('Nenhum <svg> de ícone desenhado à mão nas telas (só sprite, gráficos e ilustrações)', () => {
+    // permitidos: gráficos (chart.js, roscas, anel), ilustrações (vazio.js, tour.js) e o próprio helper
+    const livres = ['js/chart.js', 'js/vazio.js', 'js/views/tour.js', 'js/views/detalhe-dia.js', 'js/views/diario.js', 'js/views/relatorio-pdf.js', 'js/views/progresso.js', 'js/icones.js'];
+    const ruins = Object.entries(fonte10).filter(([a, txt]) => !livres.includes(a) && /<svg viewBox="0 0 24 24"/.test(txt)).map(([a]) => a);
+    if (ruins.length) throw new Error(ruins.join(', '));
+  });
+  const { ic: ic10 } = await import('../js/icones.js');
+  t('ic(): svg decorativo com <use> para o sprite', () => {
+    const h = ic10('star', 'p cheio');
+    if (!h.includes('aria-hidden="true"') || !h.includes('href="icons/sprite.svg#star"') || !h.includes('class="i p cheio"')) throw new Error(h);
+  });
+  t('DESIGN.md documenta os tokens usados no CSS', () => {
+    const design = readFileSync(new URL('../DESIGN.md', import.meta.url), 'utf8');
+    for (const tk of ['--fs-16', '--e4', '--r-m', '--elev-3', '--dur-m', '--curva-enfase', '--camada-press', '--escala-fonte']) {
+      if (!css9.includes(tk + ':')) throw new Error('CSS sem ' + tk);
+      if (!design.includes(tk)) throw new Error('DESIGN.md sem ' + tk);
+    }
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

@@ -1,6 +1,7 @@
 // views/fotos.js — fotos da refeição (câmera ou galeria), com observação. Sem IA no app.
 
 import { fotosDe, gravarFotos, adicionarFoto } from '../photos.js';
+import { ic } from '../icones.js';
 import { abrirFolha, esc, aviso, ICONES } from '../ui.js';
 import { fmtData } from '../utils.js';
 
@@ -8,7 +9,7 @@ export async function folhaFotos(data, refId, nomeRef, aoMudar) {
   let urls = [];
   const limpar = () => { urls.forEach(URL.revokeObjectURL); urls = []; };
   const p = abrirFolha(`Fotos — ${nomeRef} (${fmtData(data)})`, `
-    <label class="btn prim bloco" style="margin-bottom:10px">📷 Tirar ou escolher foto
+    <label class="btn prim bloco" style="margin-bottom:10px">${ic('camera')} Tirar ou escolher foto
       <input type="file" accept="image/*" id="arq" hidden></label>
     <p class="mudo">A foto é comprimida (~1280 px) e fica só neste aparelho. Para estimar porções, mande a foto ao Claude no chat e lance pela Adição rápida.</p>
     <div id="lst"></div>`, { fechar: () => { limpar(); aoMudar?.(); } });
