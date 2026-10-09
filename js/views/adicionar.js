@@ -4,14 +4,16 @@
 import { estado, lerDia, gravarDia } from '../state.js';
 import { buscar, rotuloFonte } from '../foods.js';
 import { catalogo, registrarRecente, ehFavorito } from '../custom.js';
-import { criarItem, adicionarItem } from '../diary.js';
+import { criarItem, adicionarItem, sugestoesRefeicao } from '../diary.js';
 import { topo, esc, $, $$, aviso, ICONES } from '../ui.js';
-import { fmtKcal, fmtData, fmtNum, chaveData } from '../utils.js';
+import { fmtKcal, fmtData, fmtNum, chaveData, somarDias } from '../utils.js';
 import { buscarNome } from '../off.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaAlimento } from './alimento-form.js';
 import { abrirScanner } from './scanner.js';
-import { folhaFotoIA } from './foto-ia.js';
+import { folhaFotoIA, folhaTextoIA, folhaRotulo } from './foto-ia.js';
+import { folhaSalvas } from './salvas.js';
+import { db } from '../db.js';
 
 const LOTE = 30;
 const ABAS = [['recentes', 'Recentes'], ['favoritos', 'Favoritos'], ['meus', 'Meus'], ['receitas', 'Receitas']];
@@ -31,30 +33,46 @@ export async function render(tela) {
     <div class="tit-sel"><h1>Adicionar · ${esc(quando)}</h1>
       <select id="ref-alvo" aria-label="Refeição de destino">${refs.map((r) => `<option value="${r.id}" ${r.id === estado.refeicaoAlvo ? 'selected' : ''}>${esc(r.nome)}</option>`).join('')}</select></div>
     <span style="width:44px"></span>`);
-  $('#ref-alvo').onchange = (e) => { estado.refeicaoAlvo = e.target.value; };
+  $('#ref-alvo').onchange = (e) => { estado.refeicaoAlvo = e.target.value; tela.dispatchEvent(new Event('trocou-ref')); };
   tela.innerHTML = `<div class="campo-busca"><div class="busca-box">${ICONES.lupa}
       <input type="search" id="q" placeholder="Buscar alimento" aria-label="Buscar alimento" autocomplete="off" enterkeyhint="search" value="${esc(ultimaBusca)}">
       <button type="button" class="ico" data-scan aria-label="Ler código de barras com a câmera">${ICONES.codigo}</button></div>
       <div class="seg abas" role="tablist" style="margin:8px 0 0">${ABAS.map(([v, r]) =>
         `<button type="button" role="tab" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
-    <div class="linha" style="margin:2px 0 8px"><button class="btn peq suave" data-novo-alim>+ Novo alimento</button>
-      <a class="btn peq suave" href="#receita">+ Nova receita</a>
-      <button class="btn peq suave" data-foto-ia>${ICONES.camera} Por foto</button></div>
+    <div class="acoes-rolar" role="group" aria-label="Outras formas de adicionar">
+      <button class="btn peq suave" data-foto-ia>${ICONES.camera} Foto do prato</button>
+      <button class="btn peq suave" data-texto-ia>✍️ Descrever</button>
+      <button class="btn peq suave" data-salvas>⭐ Refeições salvas</button>
+      <button class="btn peq suave" data-rotulo>🏷️ Ler rótulo</button>
+      <button class="btn peq suave" data-novo-alim>+ Novo alimento</button>
+      <a class="btn peq suave" href="#receita">+ Nova receita</a></div>
+    <div id="sug"></div>
     <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
     <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
   let cat = await catalogo();
+  const ini30 = somarDias(chaveData(), -30);
+  const recentesDiario = (await db.getAll('diary')).map(([, d]) => d).filter((d) => d.data >= ini30);
+  const linhaAlimento = (f) => {
+    const u = estado.config.ultimaQtd[f.id];
+    return `<li><button data-id="${esc(f.id)}">
+      <span><span class="nome">${ehFavorito(f.id) ? '★ ' : ''}${esc(f.nome)}</span><span class="mudo">${esc(rotuloFonte(f))}${u ? ` · última: ${esc(rotuloQtd(u))}` : ''}</span></span>
+      <span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span></button>
+      ${u ? `<button class="rapido" data-rapido="${esc(f.id)}" aria-label="Adicionar ${esc(rotuloQtd(u))} de ${esc(f.nome)} com um toque">+</button>` : ''}</li>`;
+  };
+  const desenharSugestoes = (buscando) => {
+    const el = $('#sug', tela);
+    const ref = refs.find((r) => r.id === estado.refeicaoAlvo);
+    const sug = buscando || estado.abaAdicionar !== 'recentes' ? []
+      : sugestoesRefeicao(recentesDiario, estado.refeicaoAlvo).map((s) => cat.porId.get(s.foodId)).filter(Boolean);
+    el.innerHTML = sug.length ? `<p class="secao" style="margin-top:6px">Você costuma comer no ${esc(ref?.nome || '')}</p>
+      <ul class="lista">${sug.map(linhaAlimento).join('')}</ul><p class="secao">Recentes</p>` : '';
+  };
   const q = $('#q', tela), res = $('#res', tela), info = $('#info', tela);
   let lista = [], mostrados = 0;
 
   const desenharLote = () => {
     const fatia = lista.slice(mostrados, mostrados + LOTE);
-    res.insertAdjacentHTML('beforeend', fatia.map((f) => {
-      const u = estado.config.ultimaQtd[f.id];
-      return `<li><button data-id="${esc(f.id)}">
-      <span><span class="nome">${ehFavorito(f.id) ? '★ ' : ''}${esc(f.nome)}</span><span class="mudo">${esc(rotuloFonte(f))}${u ? ` · última: ${esc(rotuloQtd(u))}` : ''}</span></span>
-      <span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span></button>
-      ${u ? `<button class="rapido" data-rapido="${esc(f.id)}" aria-label="Adicionar ${esc(rotuloQtd(u))} de ${esc(f.nome)} com um toque">+</button>` : ''}</li>`;
-    }).join(''));
+    res.insertAdjacentHTML('beforeend', fatia.map(linhaAlimento).join(''));
     mostrados += fatia.length;
   };
   const daAba = () => {
@@ -82,6 +100,7 @@ export async function render(tela) {
       info.textContent = lista.length ? '' : VAZIO[estado.abaAdicionar];
     }
     res.innerHTML = ''; mostrados = 0;
+    desenharSugestoes(buscando);
     desenharLote();
     // busca online opcional (só quando o usuário toca)
     $('#off', tela).hidden = !buscando;
@@ -107,6 +126,7 @@ export async function render(tela) {
     }
   }
   q.addEventListener('input', pesquisar);
+  tela.addEventListener('trocou-ref', () => desenharSugestoes(!!q.value.trim()));
   pesquisar();
 
   if (new URLSearchParams(location.hash.split('?')[1] || '').get('foto')) {
@@ -126,6 +146,9 @@ export async function render(tela) {
     const ab = e.target.closest('[data-aba]');
     if (ab) { estado.abaAdicionar = ab.dataset.aba; q.value = ''; return pesquisar(); }
     if (e.target.closest('[data-foto-ia]')) return folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-texto-ia]')) return folhaTextoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-salvas]')) return folhaSalvas({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-rotulo]')) return folhaRotulo({ aoSalvar: async (f) => { await recarregar(); abrir(f); } });
     if (e.target.closest('[data-novo-alim]')) return folhaAlimento(null, { aoSalvar: recarregar });
     const rp = e.target.closest('[data-rapido]');
     if (rp) {

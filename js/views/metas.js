@@ -6,7 +6,7 @@ import {
   somaPct, metaCalorica, registrarHistorico, MACROS,
 } from '../goals.js';
 import { topo, esc, $, $$, aviso, campoPasso, ligarPassos, valorDe, seg } from '../ui.js';
-import { chaveData, fmtKcal, fmtMacro, fmtNum, DIAS_CURTOS, DIAS_SEMANA, diaSemana } from '../utils.js';
+import { chaveData, fmtKcal, fmtMacro, fmtNum, lerNumero, DIAS_CURTOS, DIAS_SEMANA, diaSemana } from '../utils.js';
 import { idadePerfil } from './onboarding.js';
 
 const NOMES = { prot: 'Proteína', carb: 'Carboidrato', gord: 'Gordura' };
@@ -52,7 +52,13 @@ function desenhar() {
       <p class="mudo">As metas novas valem a partir de hoje; dias anteriores mantêm a meta que tinham.</p>
     </form>
     <div class="card"><label class="linha"><input type="checkbox" id="recalc" ${estado.config.recalcularComPeso ? 'checked' : ''} style="flex:0;width:22px;height:22px">
-      <span>Recalcular a meta calórica quando o peso mudar</span></label></div>`;
+      <span>Recalcular a meta calórica quando o peso mudar</span></label></div>
+    <form class="card" id="f-treino" novalidate><h2 style="margin-bottom:6px">🏋️ Dia de treino</h2>
+      <p class="mudo" style="margin-top:0">Nos dias marcados como treino no Diário, a meta sobe este tanto (somado aos carboidratos;
+        proteína e gordura não mudam). 0 = a marcação serve só como anotação.</p>
+      <div class="linha"><input type="text" inputmode="numeric" name="extra" value="${fmtNum(m.treinoExtra || 0)}" style="max-width:120px" aria-label="kcal extras">
+        <span class="mudo">kcal a mais</span><button class="btn prim">Salvar</button></div>
+      <p class="erro" id="erro-t"></p></form>`;
 
   const f = $('#f', tela);
   ligarPassos(f, () => { lerParaConjunto(); resumo(); });
@@ -85,6 +91,17 @@ function desenhar() {
     }
   };
   $('#recalc', tela).onchange = (e) => { estado.config.recalcularComPeso = e.target.checked; salvarConfig(); };
+  $('#f-treino', tela).onsubmit = async (e) => {
+    e.preventDefault();
+    const v = lerNumero(e.target.extra.value || '0');
+    if (!(v >= 0 && v <= 2000)) { $('#erro-t', tela).textContent = 'Use um valor entre 0 e 2000 kcal.'; return; }
+    $('#erro-t', tela).textContent = '';
+    m.treinoExtra = Math.round(v);
+    const salvo = structuredClone(estado.metas);
+    salvo.treinoExtra = m.treinoExtra;
+    await salvarMetas(registrarHistorico(salvo, chaveData()));
+    aviso(m.treinoExtra ? `Dia de treino: +${m.treinoExtra} kcal (vale a partir de hoje)` : 'Dia de treino sem extra de calorias');
+  };
   f.onsubmit = async (e) => {
     e.preventDefault();
     lerParaConjunto();

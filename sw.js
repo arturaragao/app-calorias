@@ -1,5 +1,5 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v10';   // manter igual a js/versao.js
+const VERSAO = 'v11';   // manter igual a js/versao.js
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',
@@ -14,7 +14,7 @@ const ARQUIVOS = [
   'js/ia.js', 'js/drive.js', 'js/views/foto-ia.js', 'js/views/drive-ui.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
   'icons/atalho-adicionar.png', 'icons/atalho-codigo.png', 'icons/atalho-peso.png', 'icons/atalho-foto.png',
-  'js/views/relatorio-img.js',
+  'js/views/relatorio-img.js', 'js/views/salvas.js',
 ];
 
 self.addEventListener('install', (e) => {

@@ -41,8 +41,9 @@ let diasAtivos = null;   // Set de datas com algum item (cache em memória, atua
 
 /** Dia sem itens é apagado do banco (mantém o banco enxuto e a contagem de dias correta). */
 export async function gravarDia(dia) {
-  if (temItens(dia)) { await db.put('diary', dia.data, dia); diasAtivos?.add(dia.data); }
-  else { await db.del('diary', dia.data); diasAtivos?.delete(dia.data); }
+  if (temItens(dia)) diasAtivos?.add(dia.data); else diasAtivos?.delete(dia.data);
+  if (temItens(dia) || dia.tags?.length || dia.nota) await db.put('diary', dia.data, dia);
+  else await db.del('diary', dia.data);
 }
 
 export async function datasComRegistro() {

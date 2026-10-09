@@ -48,7 +48,7 @@ export async function render(tela) {
         <label class="btn">Importar backup<input type="file" accept=".json,application/json" id="bk-arq" hidden></label></div>
       <p class="mudo">Guarde o arquivo fora do celular (Drive, e-mail para você). Importar substitui os dados atuais.</p>
     </div>
-    <div class="card" id="ia"><h2 style="margin-bottom:6px">Estimativa por foto (IA)</h2>
+    <div class="card" id="ia"><h2 style="margin-bottom:6px">IA (Gemini): foto, texto e rótulo</h2>
       <p class="mudo" style="margin-top:0">Usa a cota gratuita da API do Gemini com a sua chave. Crie em
         <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> e <b>não ative faturamento</b>
         no projeto: assim, passou do limite, ela só recusa — nunca cobra. A chave fica só neste aparelho.</p>

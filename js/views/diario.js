@@ -6,7 +6,7 @@ import { sequencia } from '../progress.js';
 import { totalAgua, AGUA_PADRAO } from './reg-agua.js';
 import { metaDoDia } from '../goals.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem, camposFaltando,
-  criarItemRapido, adicionarItem, copiarPara, criarItem } from '../diary.js';
+  criarItemRapido, adicionarItem, copiarPara, criarItem, ETIQUETAS, ehTreino, alvoProteinaRefeicao } from '../diary.js';
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
 import { abrirScanner } from './scanner.js';
 import { diasDesdeUltima } from './reg-dobras.js';
@@ -16,11 +16,12 @@ import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha } from '
 import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
-import { folhaFotoIA } from './foto-ia.js';
+import { folhaFotoIA, folhaTextoIA } from './foto-ia.js';
+import { folhaSalvarRefeicao, folhaSalvas } from './salvas.js';
 import { pendenteToque } from '../drive.js';
 import { enviarAgora } from './drive-ui.js';
 
-let tela, dia, meta, fotosCont = {}, ignorarClique = false;
+let tela, dia, meta, fotosCont = {}, ignorarClique = false, alvoProtRef = 0;
 
 export async function render(t) {
   tela = t;
@@ -74,7 +75,9 @@ async function mudarDia(chave) {
 async function desenhar() {
   desenharTopo();
   dia = await lerDia(estado.dataAtual);
-  meta = metaDoDia(estado.metas, estado.dataAtual, await pesoAtual());
+  const peso = await pesoAtual();
+  meta = metaDoDia(estado.metas, estado.dataAtual, peso, { treino: ehTreino(dia) });
+  alvoProtRef = alvoProteinaRefeicao(peso);
   fotosCont = await contagemDoDia(estado.dataAtual).catch(() => ({}));
   const tot = totalDia(dia);
   const restante = meta.kcal - tot.kcal;
@@ -120,6 +123,7 @@ async function desenhar() {
         <div><b>${fmtKcal(tot.kcal)}</b><span>Consumido</span></div>
         <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)}</b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>
     </section>
+    ${faixaEtiquetas()}
     <section class="card agua-card" aria-label="Água">
       <div class="gota">${ICONES.gota}</div>
       <div class="info"><div class="linha" style="justify-content:space-between"><b class="num">${fmtNum(mlAgua)} <span class="mudo">/ ${fmtNum(ag.metaMl)} ml</span></b>
@@ -181,7 +185,7 @@ function cartaoRefeicao(r) {
       ${nf ? `<button class="btn peq suave" data-fotos aria-label="${nf} foto(s) da refeição">${ICONES.camera}${nf}</button>` : ''}
       <span class="num" style="white-space:nowrap;margin:0 2px 0 8px"><b>${fmtKcal(t.kcal)}</b> <span class="mudo">kcal</span></span>
       <button class="ico" data-menu aria-label="Mais opções de ${esc(r.nome)}">${ICONES.pontos}</button></span></div>
-    ${itens.length ? `<div class="ref-tot num">P ${fmtMacro(t.prot)} g · C ${fmtMacro(t.carb)} g · G ${fmtMacro(t.gord)} g</div>` : ''}
+    ${itens.length ? `<div class="ref-tot num"><span class="${alvoProtRef && t.prot >= alvoProtRef ? 'prot-ok' : ''}" title="Alvo por refeição: ${alvoProtRef} g (0,4 g/kg)">P ${fmtMacro(t.prot)} g${alvoProtRef && t.prot >= alvoProtRef ? ' ✓' : ''}</span> · C ${fmtMacro(t.carb)} g · G ${fmtMacro(t.gord)} g</div>` : ''}
     ${itens.length ? `<ul class="itens">${itens.map((it) => `<li class="item-wrap"><div class="fundo-apagar" aria-hidden="true">Apagar</div>
       <div class="item" data-item="${it.id}">
       <div class="info" data-editar><div class="nome">${esc(it.nome)}</div>
@@ -208,6 +212,8 @@ async function clique(e) {
     return aviso(`+${fmtNum(ag.copoMl)} ml de água`, { acao: async () => { r.itens.pop(); await db.put('water', estado.dataAtual, r); desenhar(); } });
   }
   if (e.target.closest('[data-detalhe]')) return detalheDia();
+  if (e.target.closest('[data-treino]')) return alternarTreino();
+  if (e.target.closest('[data-nota]')) return folhaNota();
   const dr = e.target.closest('[data-drive]');
   if (dr) { dr.disabled = true; try { await enviarAgora(); dr.remove(); } catch (err) { aviso(err.message, { ms: 8000 }); dr.disabled = false; } return; }
   if (e.target.closest('[data-copiar-dia]')) return copiarDeOntem(null);
@@ -241,6 +247,9 @@ async function clique(e) {
     const p = abrirFolha(nomeRef, `<div class="menu-lista">
       <button class="btn" data-op="rapida">${ICONES.raio} Adição rápida (kcal e macros)</button>
       <button class="btn" data-op="ia">${ICONES.camera} Estimar por foto (IA)</button>
+      <button class="btn" data-op="texto">✍️ Descrever o que comeu (IA)</button>
+      <button class="btn" data-op="salvas">⭐ Lançar refeição salva</button>
+      ${(dia.refeicoes[refId] || []).length ? '<button class="btn" data-op="salvar">💾 Salvar como refeição salva</button>' : ''}
       <button class="btn" data-op="copiar">${ICONES.copiar} Copiar ${esc(nomeRef)} de ontem</button>
       <button class="btn" data-op="fotos">${ICONES.camera} Foto da refeição ${fotosCont[refId] ? `(${fotosCont[refId]})` : ''}</button>
       <button class="btn" data-op="scan">${ICONES.codigo} Ler código de barras</button></div>`);
@@ -248,6 +257,9 @@ async function clique(e) {
       const op = ev.target.closest('[data-op]')?.dataset.op;
       if (op === 'rapida') folhaRapida(null, refId);
       if (op === 'ia') { fecharFolha(); setTimeout(() => folhaFotoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
+      if (op === 'texto') { fecharFolha(); setTimeout(() => folhaTextoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
+      if (op === 'salvas') { fecharFolha(); setTimeout(() => folhaSalvas({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
+      if (op === 'salvar') { fecharFolha(); setTimeout(() => folhaSalvarRefeicao(dia.refeicoes[refId], nomeRef), 350); }
       if (op === 'copiar') { fecharFolha(); copiarDeOntem(refId); }
       if (op === 'fotos') folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
       if (op === 'scan') { fecharFolha(); sec.querySelector('[data-scan]').click(); }
@@ -355,5 +367,58 @@ function detalheDia() {
     <table class="tabela num"><tr><th></th><th>kcal</th><th>P</th><th>C</th><th>G</th><th>Fibra</th><th>Na</th></tr>
       ${refs.map((r) => { const t = totalRefeicao(dia, r.id); return `<tr><td>${esc(r.nome)}</td><td>${fmtKcal(t.kcal)}</td><td>${fmtMacro(t.prot)}</td><td>${fmtMacro(t.carb)}</td><td>${fmtMacro(t.gord)}</td><td>${fmtMacro(t.fibra)}</td><td>${fmtMg(t.sodio_mg)}</td></tr>`; }).join('')}
     </table>
+    ${alvoProtRef ? `<p class="mudo">Proteína por refeição: alvo ≈ ${alvoProtRef} g (0,4 g/kg; Schoenfeld & Aragon, 2018), em 4 ou mais refeições.</p>` : ''}
+    ${meta.treinoExtra ? `<p class="nota">🏋️ Dia de treino: meta +${fmtKcal(meta.treinoExtra)} kcal (em carboidratos).</p>` : ''}
+    ${dia.nota ? `<p class="nota">📝 ${esc(dia.nota)}</p>` : ''}
     ${meta.macroModo !== 'pct' && Math.abs(meta.diferenca) >= 1 ? `<p class="nota">Meta calórica derivada dos macros (${fmtKcal(meta.kcal)} kcal); a planejada era ${fmtKcal(meta.kcalPlanejada)} kcal.</p>` : ''}`);
+}
+
+// ---------- Etiquetas e nota do dia ----------
+
+function faixaEtiquetas() {
+  const tags = dia.tags || [];
+  const extra = Number(estado.metas.treinoExtra) || 0;
+  const outros = tags.filter((t) => t !== 'treino').map((t) => ETIQUETAS.find(([id]) => id === t)?.[1] || t);
+  return `<div class="etiquetas-dia">
+    <button class="chip-tog" data-treino aria-pressed="${tags.includes('treino')}">🏋️ Treino${extra && tags.includes('treino') ? ` +${fmtKcal(extra)} kcal` : ''}</button>
+    ${outros.map((r) => `<span class="chip">${esc(r)}</span>`).join('')}
+    <button class="chip-tog" data-nota aria-label="Nota e etiquetas do dia">${dia.nota ? '📝 ' + esc(dia.nota.slice(0, 28)) + (dia.nota.length > 28 ? '…' : '') : '📝 Nota'}</button></div>`;
+}
+
+async function alternarTreino() {
+  const d = structuredClone(dia);
+  d.tags = d.tags || [];
+  if (d.tags.includes('treino')) d.tags = d.tags.filter((t) => t !== 'treino'); else d.tags.push('treino');
+  await gravarDia(d);
+  navigator.vibrate?.(10);
+  await desenhar();
+  const extra = Number(estado.metas.treinoExtra) || 0;
+  if (ehTreino(d) && !extra) aviso('Dia marcado como treino. Para a meta subir nesses dias, defina o extra em Metas.', { ms: 6000, acao: () => { location.hash = '#metas'; }, rotulo: 'Metas' });
+}
+
+function folhaNota() {
+  const tags = new Set(dia.tags || []);
+  const p = abrirFolha('Nota do dia', `<form id="fn" novalidate>
+    <div class="etiquetas-dia">${ETIQUETAS.map(([id, r]) => `<button type="button" class="chip-tog" data-tag="${id}" aria-pressed="${tags.has(id)}">${r}</button>`).join('')}</div>
+    <label class="campo"><span>Nota (opcional)</span><textarea name="nota" rows="3" maxlength="300" placeholder="ex.: treino de perna; jantar fora">${esc(dia.nota || '')}</textarea></label>
+    <p class="mudo">Etiquetas e notas aparecem no calendário e no relatório semanal do Progresso, para explicar dias fora da curva.</p>
+    <button class="btn prim bloco">Salvar</button></form>`);
+  p.onclick = (e) => {
+    const b = e.target.closest('[data-tag]');
+    if (!b) return;
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', on);
+    if (on) tags.add(b.dataset.tag); else tags.delete(b.dataset.tag);
+  };
+  $('#fn', p).onsubmit = async (e) => {
+    e.preventDefault();
+    const d = structuredClone(dia);
+    d.tags = ETIQUETAS.map(([id]) => id).filter((id) => tags.has(id));
+    d.nota = e.target.nota.value.trim();
+    if (!d.tags.length) delete d.tags;
+    if (!d.nota) delete d.nota;
+    await gravarDia(d);
+    fecharFolha();
+    desenhar();
+  };
 }

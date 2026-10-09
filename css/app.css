@@ -358,3 +358,20 @@ button.nota { display: block; width: 100%; text-align: left; border: 0; font: in
 .rel-grade > div { background: var(--sup2); border-radius: 12px; padding: 10px; }
 .rel-grade b { display: block; font-size: 1.15rem; }
 .rel-grade span { font-size: .74rem; color: var(--txt2); }
+
+/* ---------- Pacotes 2 e 3: etiquetas, ações, IA ---------- */
+.etiquetas-dia { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 12px; }
+.chip-tog { border: 1px solid var(--borda); background: var(--sup); color: var(--txt2); font: inherit; font-size: .8rem; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer; min-height: 34px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-tog[aria-pressed="true"] { background: var(--acento-suave); color: var(--txt); border-color: var(--acento); }
+.acoes-rolar { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; margin: 2px 0 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.acoes-rolar::-webkit-scrollbar { display: none; }
+.acoes-rolar > * { flex: none; white-space: nowrap; }
+.ref-tot .prot-ok { color: var(--acento); font-weight: 600; }
+.ia-linha2 { display: flex; gap: 8px; align-items: center; }
+.ia-linha2 select { flex: 1; min-width: 0; min-height: 42px; font-size: .86rem; }
+.ia-g { display: flex; align-items: center; gap: 4px; flex: none; }
+.ia-g input { width: 70px; text-align: right; }
+.ia-n { margin-top: 6px; font-size: .82rem; }
+.cal button.anot { position: relative; }
+.cal button.anot::after { content: ''; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }

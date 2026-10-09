@@ -37,6 +37,25 @@ export function buscar(indice, consulta, { limite = 60, prioridade = null } = {}
   return res.slice(0, limite).map((r) => r[1].f);
 }
 
+/**
+ * Correspondência de um alimento identificado pela IA com a base (TACO + Meus alimentos).
+ * Tenta o nome no estilo TACO inteiro, depois o nome curto (correspondência "exata": vira o padrão);
+ * se nada, vai tirando os últimos trechos do nome TACO ("Carne, bovina, patinho, grelhado" → "Carne, bovina, patinho")
+ * só como opções. Devolve { opcoes: [food…] (até max), exata }.
+ */
+export function correspondencias(indice, { nomeTaco = '', nome = '' }, max = 3) {
+  for (const q of [nomeTaco, nome]) {
+    const r = q ? buscar(indice, q, { limite: max }) : [];
+    if (r.length) return { opcoes: r, exata: true };
+  }
+  const partes = nomeTaco.split(',').map((s) => s.trim()).filter(Boolean);
+  for (let n = partes.length - 1; n >= 1; n--) {
+    const r = buscar(indice, partes.slice(0, n).join(', '), { limite: max });
+    if (r.length) return { opcoes: r, exata: false };
+  }
+  return { opcoes: [], exata: false };
+}
+
 // ---------- Porções caseiras (aproximadas) ----------
 
 /**

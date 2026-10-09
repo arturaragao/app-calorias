@@ -4,10 +4,15 @@
 
 **Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
 - [x] Pacote 1 — Progresso profissional (v10)
-- [ ] Pacote 2 — Registrar mais rápido: refeições salvas, sugestões pelo horário, dia de treino × descanso, notas/etiquetas do dia, proteína por refeição
-- [ ] Pacote 3 — IA: foto ligada à TACO (IA só identifica e pesa), foto do rótulo → Meus alimentos, lançar por texto livre
+- [x] Pacote 2 — Registrar mais rápido (v11): refeições salvas, sugestões pelo horário, dia de treino × descanso, notas/etiquetas do dia, proteína por refeição
+- [x] Pacote 3 — IA (v11): foto ligada à TACO (IA só identifica e pesa), foto do rótulo → Meus alimentos, lançar por texto livre
 - [ ] Pacote 4 — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacotes 2 e 3 (v11)**
+- Refeições salvas (views/salvas.js, config.refeicoesSalvas); sugestões "Você costuma comer no …" no Adicionar (últimos 30 dias, frequência ≥ 2); dia de treino (etiqueta 'treino' + metas.treinoExtra em carboidratos, no histórico); nota e etiquetas do dia (calendário com ponto, relatório semanal); proteína por refeição (✓ no diário ≥ 0,4 g/kg; seção no Progresso).
+- IA: nome no estilo TACO → correspondência na base (foods.correspondencias); TACO vira item normal, sem correspondência vira Adição rápida; peso editável na revisão; "Descrever o que comeu" (texto/voz do teclado); "Ler rótulo" → Meus alimentos (por porção convertido a 100 g).
+- Testes: 106 aprovados. Testado no navegador com Gemini simulado.
 
 **Pacote 1 (v10)**
 - Progresso: 6 indicadores com comparação com o período anterior; peso com tendência (EMA 0,1, Hacker's Diet), ritmo real × planejado, peso-alvo com barra e projeção de data; gasto real (TDEE adaptativo, 28 dias, confiança) com meta sugerida e botão "Aplicar" (com desfazer); calendário mensal de aderência (toque abre o dia); relatório semanal navegável + imagem para compartilhar (relatorio-img.js); médias × meta em barras + g/kg de proteína; de onde vêm as calorias (por refeição, top 10 kcal/proteína); composição corporal (massa magra × gorda empilhadas + resumo); circunferências com diferença no período.

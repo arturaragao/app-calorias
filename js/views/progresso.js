@@ -3,7 +3,7 @@
 
 import { db } from '../db.js';
 import { estado, salvarConfig, salvarMetas } from '../state.js';
-import { totalDia } from '../diary.js';
+import { totalDia, ehTreino, ETIQUETAS, alvoProteinaRefeicao } from '../diary.js';
 import { metaDoDia, metaCalorica, registrarHistorico } from '../goals.js';
 import { PROTOCOLOS, CIRC_PADRAO } from '../body.js';
 import * as P from '../progress.js';
@@ -35,9 +35,12 @@ export async function render(tela) {
   };
   // dias com algum item lançado (objetos do diário guardados para a "origem das calorias")
   const brutos = (await db.getAll('diary')).map(([, d]) => d).filter((d) => Object.values(d.refeicoes).some((l) => l.length));
-  const dias = brutos.map((d) => ({ data: d.data, tot: totalDia(d), meta: metaDoDia(estado.metas, d.data, pesoEm(d.data)) }))
+  const dias = brutos.map((d) => ({ data: d.data, tot: totalDia(d), meta: metaDoDia(estado.metas, d.data, pesoEm(d.data), { treino: ehTreino(d) }) }))
     .sort((a, b) => (a.data < b.data ? -1 : 1));
   const porData = new Map(dias.map((d) => [d.data, d]));
+  const todosDiarios = (await db.getAll('diary')).map(([, d]) => d);
+  const anotEm = new Map(todosDiarios.filter((d) => d.tags?.length || d.nota).map((d) => [d.data, d]));
+  const rotTag = (t) => ETIQUETAS.find(([id]) => id === t)?.[1] || t;
   const tend = P.tendenciaPeso(pesos);
   const tendEm = new Map(tend.map((p) => [p.data, p.y]));
   const dobras = await lerDobras();
@@ -171,13 +174,14 @@ export async function render(tela) {
         ${cel.map((c) => {
           if (!c) return '<span></span>';
           const d = porData.get(c), s = P.situacaoDia(d);
-          return `<button class="${s || ''} ${c === hoje ? 'hoje' : ''}" data-dia="${c}" ${c > hoje ? 'disabled' : ''}
-            aria-label="${fmtData(c)}${d ? `: ${fk(d.tot.kcal)} de ${fk(d.meta.kcal)} kcal` : ': sem registro'}">${Number(c.slice(8))}</button>`;
+          const an = anotEm.get(c);
+          return `<button class="${s || ''} ${c === hoje ? 'hoje' : ''} ${an ? 'anot' : ''}" data-dia="${c}" ${c > hoje ? 'disabled' : ''}
+            aria-label="${fmtData(c)}${d ? `: ${fk(d.tot.kcal)} de ${fk(d.meta.kcal)} kcal` : ': sem registro'}${an ? ' · ' + esc([...(an.tags || []).map(rotTag), an.nota || ''].filter(Boolean).join(', ')) : ''}">${Number(c.slice(8))}</button>`;
         }).join('')}</div>
       <div class="cal-leg"><span><i style="background:var(--acento)"></i>na meta ${cont('meta')}</span>
         <span><i style="background:var(--alerta)"></i>acima ${cont('acima')}</span>
         <span><i style="background:var(--agua)"></i>abaixo ${cont('abaixo')}</span>
-        <span><i style="background:var(--sup2)"></i>sem registro</span></div>
+        <span><i style="background:var(--sup2)"></i>sem registro</span><span>• com nota/etiqueta</span></div>
       <p class="mudo" style="margin-bottom:0">Faixa de ±10% da meta do dia. Toque num dia para abrir o diário.</p>`;
   }
 
@@ -197,6 +201,7 @@ export async function render(tela) {
           <div><b>${r.deltaPeso != null ? sinal(r.deltaPeso) + ' kg' : '—'}</b><span>${r.pesoFim != null ? `tendência ${f1(r.pesoFim)} kg` : 'sem pesagens'}</span></div></div>
         ${r.melhor ? `<p class="mudo" style="margin:4px 0">✅ Mais perto da meta: ${dif(r.melhor)}</p>` : ''}
         ${r.pior ? `<p class="mudo" style="margin:4px 0">⚠️ Mais longe: ${dif(r.pior)}</p>` : ''}
+        ${P.anotacoesEntre(todosDiarios, r.inicio, r.fim).map((a) => `<p class="mudo" style="margin:4px 0">📝 ${dd5(a.data)}: ${esc([...a.tags.map(rotTag), a.nota].filter(Boolean).join(' · '))}</p>`).join('')}
         <p class="mudo" style="margin:4px 0">${r.registrados} de 7 dias registrados · P ${fmtNum(Math.round(m.pct.prot))}% · C ${fmtNum(Math.round(m.pct.carb))}% · G ${fmtNum(Math.round(m.pct.gord))}% das kcal</p>
         <button class="btn bloco" data-compartilhar style="margin-top:8px">Compartilhar resumo (imagem)</button>`
       : '<p class="mudo">Nenhum dia registrado nesta semana.</p>'}`;
@@ -239,11 +244,27 @@ export async function render(tela) {
       ${o.dias ? `${o.porRefeicao.map((r) => `<div class="dist"><div class="rot"><span>${esc(r.nome)}</span>
           <span class="num"><b>${fk(r.kcal)}</b> kcal/dia <span class="mudo">(${fmtNum(Math.round(r.pct))}%)</span></span></div>
           <div class="trilho"><div class="enche" style="width:${r.pct}%"></div></div></div>`).join('')}
+        ${protRef(n)}
         <div style="margin:14px 0 4px">${seg('top', [['kcal', 'Top calorias'], ['prot', 'Top proteína']], topModo)}</div>
         <ol class="top-lista num">${lista.map((a) => `<li><span>${esc(a.nome)}</span><span class="mudo">${a.vezes}×</span>
           <span><b>${topModo === 'kcal' ? fk(a.kcal) + ' kcal' : fmtMacro(a.prot) + ' g'}</b>/dia</span></li>`).join('')}</ol>
         <p class="mudo" style="margin-bottom:0">Médias por dia registrado (${o.dias} dia(s)).</p>`
       : '<p class="mudo">Sem dias registrados no período.</p>'}`;
+  }
+
+  /** Proteína média por refeição × alvo de 0,4 g/kg por refeição. */
+  function protRef(n) {
+    const ini = n ? somarDias(hoje, -(n - 1)) : '0000';
+    const l = P.proteinaPorRefeicao(brutos.filter((d) => d.data >= ini && d.data <= hoje),
+      Object.fromEntries(estado.config.refeicoes.map((r) => [r.id, r.nome])));
+    const alvo = alvoProteinaRefeicao(tend.at(-1)?.y || estado.perfil?.peso);
+    if (!l.length || !alvo) return '';
+    const ordem = estado.config.refeicoes.map((r) => r.id);
+    l.sort((a, b) => ordem.indexOf(a.id) - ordem.indexOf(b.id));
+    return `<h2 style="margin:16px 0 4px;font-size:1rem">Proteína por refeição</h2>
+      <p class="mudo" style="margin:0 0 4px">Alvo ≈ ${alvo} g por refeição (0,4 g/kg; Schoenfeld & Aragon, 2018).</p>
+      ${l.map((r) => `<div class="dist p"><div class="rot"><span>${esc(r.nome)}</span><span class="num"><b>${fmtNum(Math.round(r.prot))} g</b>${r.prot >= alvo ? ' ✓' : ''}
+        <span class="mudo">(${r.dias} dia(s))</span></span></div><div class="trilho"><div class="enche" style="width:${Math.min(100, (r.prot / alvo) * 100)}%"></div></div></div>`).join('')}`;
   }
 
   // ---------- Composição corporal ----------

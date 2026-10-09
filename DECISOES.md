@@ -56,3 +56,8 @@
 - 2026-10-08 · Origem das calorias: médias por dia registrado; adição rápida agrupada pelo nome sem o "(≈ g)".
 - 2026-10-08 · Relatório semanal padrão = última semana completa (segunda a domingo); imagem 1080×1250 PNG com as cores do tema atual.
 - 2026-10-08 · Atalhos do ícone: Adicionar, Foto do prato, Código de barras, Peso (Android mostra até 4).
+
+- 2026-10-08 · Dia de treino = etiqueta 'treino' do dia; metas.treinoExtra (kcal, todo em carboidrato) guardado no histórico; 0 = só anotação. Dia só com nota/etiqueta não é apagado do banco.
+- 2026-10-08 · Proteína por refeição: alvo 0,4 g/kg (Schoenfeld & Aragon, JISSN 2018;15:10).
+- 2026-10-08 · IA identifica e pesa; nutrientes vêm da TACO/Meus alimentos quando o nome TACO (ou o curto) encontra correspondência; senão, valores da IA como Adição rápida.
+- 2026-10-08 · Rótulo: base "porcao" é convertida para 100 g; sem kcal ou sem gramas da porção → não preenche.

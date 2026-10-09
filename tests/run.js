@@ -448,6 +448,62 @@ t('De onde vêm as calorias (por refeição e por alimento)', () => {
   eq(o.topKcal[0].nome, 'Arroz'); eq(o.topKcal[0].vezes, 2); eq(o.topKcal[1].nome, 'Feijão'); eq(o.topKcal[1].vezes, 2);
 });
 
+// ---------- Pacotes 2 e 3 ----------
+const G2 = await import('../js/goals.js');
+t('Dia de treino: soma o extra (vigente na data) em carboidratos', () => {
+  const metas = G2.metasIniciais({ sexo: 'M', idade: 30, peso: 80, altura: 180, atividade: 'moderado', objetivo: 'manter', ritmo: 0 }, '2026-01-01');
+  const comExtra = G2.registrarHistorico({ ...metas, treinoExtra: 300 }, '2026-02-01');
+  const normal = G2.metaDoDia(comExtra, '2026-02-05', 80);
+  const treino = G2.metaDoDia(comExtra, '2026-02-05', 80, { treino: true });
+  aprox(treino.kcal - normal.kcal, 300); aprox(treino.carb - normal.carb, 75); aprox(treino.prot, normal.prot);
+  const antes = G2.metaDoDia(comExtra, '2026-01-10', 80, { treino: true });
+  aprox(antes.kcal, G2.metaDoDia(comExtra, '2026-01-10', 80).kcal, 1e-9, 'antes do extra existir');
+});
+const D2 = await import('../js/diary.js');
+t('Refeições salvas: snapshot sem ids e lançamento com ids novos', () => {
+  const it1 = D2.criarItem(arroz, 150), it2 = D2.criarItem(frango, 120);
+  const s = D2.criarRefeicaoSalva('Almoço padrão', [it1, it2]);
+  eq(s.itens.length, 2); eq(s.itens[0].id, undefined);
+  const d = D2.lancarSalva(D2.diaVazio('2026-01-01'), 'almoco', 'Almoço', s);
+  eq(d.refeicoes.almoco.length, 2); if (d.refeicoes.almoco[0].id === it1.id) throw new Error('id repetido');
+  aprox(D2.totalDia(d).kcal, it1.n.kcal + it2.n.kcal);
+});
+t('Sugestões pela refeição: frequência ≥ 2, mais frequente primeiro', () => {
+  const dia = (data, ids) => ({ data, nomes: {}, refeicoes: { cafe: ids.map((id) => ({ foodId: id, g: 50, porcao: null, n: { kcal: 1, prot: 0 } })) } });
+  const s = D2.sugestoesRefeicao([dia('2026-01-01', ['pao', 'cafe']), dia('2026-01-02', ['pao', 'leite']), dia('2026-01-03', ['pao', 'cafe']), dia('2026-01-04', ['leite'])], 'cafe');
+  eq(s.map((x) => x.foodId).join(','), 'pao,leite,cafe'); eq(s[0].vezes, 3);
+  eq(D2.alvoProteinaRefeicao(80), 32);
+});
+t('Proteína por refeição e anotações do dia', () => {
+  const it = (prot) => ({ n: { kcal: 100, prot } });
+  const ds = [{ data: '2026-01-01', nomes: {}, refeicoes: { cafe: [it(10), it(15)], almoco: [it(40)] }, tags: ['treino'] },
+    { data: '2026-01-02', nomes: {}, refeicoes: { cafe: [it(20)], almoco: [] }, nota: 'festa' }];
+  const r = P.proteinaPorRefeicao(ds);
+  aprox(r.find((x) => x.id === 'cafe').prot, 22.5); eq(r.find((x) => x.id === 'almoco').dias, 1);
+  eq(P.anotacoesEntre(ds, '2026-01-01', '2026-01-07').length, 2);
+});
+const F2 = await import('../js/foods.js');
+t('Correspondência IA → TACO (exata e por aproximação)', () => {
+  const c1 = F2.correspondencias(idx, { nomeTaco: 'Arroz, tipo 1, cozido', nome: 'Arroz' });
+  eq(c1.exata, true); eq(c1.opcoes[0].nome, 'Arroz, tipo 1, cozido');
+  const c2 = F2.correspondencias(idx, { nomeTaco: 'Banana, prata, crua, xyzinexistente', nome: 'qwerty' });
+  eq(c2.exata, false); if (!c2.opcoes[0]?.nome.startsWith('Banana, prata')) throw new Error('aproximação');
+  eq(F2.correspondencias(idx, { nomeTaco: '', nome: 'zzzz' }).opcoes.length, 0);
+});
+const IA2 = await import('../js/ia.js');
+t('Rótulo: por porção vira por 100 g; por 100 g mantém', () => {
+  const a = IA2.rotuloParaAlimento({ nome: 'Whey', marca: 'Marca X', porcao_g: 30, porcao_desc: '1 scoop', base: 'porcao', kcal: 120, prot: 24, carb: 3, gord: 1.5, sodio_mg: 60 });
+  aprox(a.kcal, 400); aprox(a.prot, 80); aprox(a.sodio_mg, 200); eq(a.nome, 'Whey — Marca X'); eq(a.porcoes[0].g, 30); eq(a.porcoes[0].nome, '1 scoop');
+  eq(a.falta.join(','), 'fibra');
+  const b = IA2.rotuloParaAlimento({ nome: 'Granola', base: '100g', kcal: 420, prot: 9 });
+  aprox(b.kcal, 420); eq(b.porcoes.length, 0);
+  eq(IA2.rotuloParaAlimento({ nome: 'x', base: 'porcao', kcal: 100 }), null, 'porção sem gramas');
+  eq(IA2.rotuloParaAlimento({ nome: 'x' }), null, 'sem kcal');
+});
+t('IA: nome no estilo TACO é preservado', () => {
+  eq(IA2.normalizarEstimativa({ itens: [{ nome: 'Arroz', nome_taco: 'Arroz, tipo 1, cozido', gramas: 100, kcal: 128, prot: 2.5, carb: 28, gord: 0.2 }] }).itens[0].nomeTaco, 'Arroz, tipo 1, cozido');
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

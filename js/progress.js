@@ -212,6 +212,30 @@ export function gradeMes(ano, mes) {
   return celulas;
 }
 
+// ---------- Proteína por refeição ----------
+
+/** Média de proteína por refeição, considerando só os dias em que a refeição teve itens. [{id, nome, prot, dias}] */
+export function proteinaPorRefeicao(diarios, nomesRef = {}) {
+  const m = new Map();
+  for (const d of diarios) {
+    for (const [refId, itens] of Object.entries(d.refeicoes)) {
+      if (!itens.length) continue;
+      const r = m.get(refId) || { id: refId, nome: nomesRef[refId] || d.nomes?.[refId] || refId, soma: 0, dias: 0 };
+      r.soma += itens.reduce((s, it) => s + (it.n.prot || 0), 0); r.dias++;
+      m.set(refId, r);
+    }
+  }
+  return [...m.values()].map(({ soma, ...r }) => ({ ...r, prot: soma / r.dias }));
+}
+
+// ---------- Anotações do dia ----------
+
+/** Dias com etiquetas ou nota no intervalo, em ordem. diarios: objetos do diário. */
+export function anotacoesEntre(diarios, ini, fim) {
+  return diarios.filter((d) => d.data >= ini && d.data <= fim && (d.tags?.length || d.nota))
+    .sort((a, b) => (a.data < b.data ? -1 : 1)).map((d) => ({ data: d.data, tags: d.tags || [], nota: d.nota || '' }));
+}
+
 // ---------- De onde vêm as calorias ----------
 
 const nomeBase = (nome) => (nome || '').replace(/\s*\(≈.*\)$/, '');

@@ -14,6 +14,14 @@ export const REFEICOES_PADRAO = [
   { id: 'ceia', nome: 'Ceia' },
 ];
 
+/** Etiquetas do dia (notas/etiquetas aparecem no calendário e no relatório). 'treino' ativa a meta de dia de treino. */
+export const ETIQUETAS = [
+  ['treino', '🏋️ Treino'], ['livre', '🍕 Dia livre'], ['festa', '🎉 Festa/restaurante'],
+  ['doente', '🤒 Doente'], ['viagem', '✈️ Viagem'], ['sono', '😴 Dormiu mal'], ['plantao', '🏥 Plantão'],
+];
+export const ehTreino = (dia) => !!dia?.tags?.includes('treino');
+export const temAnotacao = (dia) => !!(dia?.tags?.length || dia?.nota);
+
 export function diaVazio(data) {
   return { data, nomes: {}, refeicoes: {} };
 }
@@ -122,3 +130,45 @@ export function refeicoesDoDia(dia, configuradas) {
   }
   return lista;
 }
+
+// ---------- Refeições salvas ("meu café de sempre") ----------
+
+/** Cria uma refeição salva a partir dos itens (snapshot, sem ids). */
+export function criarRefeicaoSalva(nome, itens) {
+  return { id: uid(), nome, itens: itens.map(({ id, ...resto }) => structuredClone(resto)), criada: Date.now() };
+}
+
+/** Lança todos os itens de uma refeição salva na refeição `refId` do dia (ids novos). */
+export function lancarSalva(dia, refId, refNome, salva) {
+  let d = dia;
+  for (const it of salva.itens) d = adicionarItem(d, refId, refNome, { ...structuredClone(it), id: uid() });
+  return d;
+}
+
+// ---------- Sugestões pelo horário ----------
+
+/**
+ * O que costuma ser lançado nesta refeição: alimentos (com foodId) nos diários dados, por frequência
+ * (desempate: mais recente). Devolve [{ foodId, vezes, ultima: { g, porcao } }].
+ */
+export function sugestoesRefeicao(diarios, refId, max = 6) {
+  const cont = new Map();
+  const ordenados = [...diarios].sort((a, b) => (a.data < b.data ? -1 : 1));
+  for (const d of ordenados) {
+    for (const it of d.refeicoes[refId] || []) {
+      if (!it.foodId) continue;
+      const c = cont.get(it.foodId) || { foodId: it.foodId, vezes: 0, data: '', ultima: null };
+      c.vezes++; c.data = d.data; c.ultima = { g: it.g, porcao: it.porcao };
+      cont.set(it.foodId, c);
+    }
+  }
+  return [...cont.values()].filter((c) => c.vezes >= 2)
+    .sort((a, b) => b.vezes - a.vezes || (a.data < b.data ? 1 : -1)).slice(0, max)
+    .map(({ data, ...c }) => c);
+}
+
+// ---------- Proteína por refeição ----------
+// Alvo por refeição ≈ 0,4 g/kg (Schoenfeld BJ, Aragon AA. J Int Soc Sports Nutr 2018;15:10),
+// distribuído em ≥ 4 refeições para maximizar a síntese proteica muscular.
+export const PROT_G_KG_REFEICAO = 0.4;
+export const alvoProteinaRefeicao = (peso) => Math.round(PROT_G_KG_REFEICAO * (peso || 0));

@@ -127,23 +127,34 @@ export function resolverConjunto(c, peso) {
  * metas = { modo: 'iguais'|'semana', base: conjunto, semana: [7 conjuntos], historico: [{desde, modo, base, semana}] }
  * Retorna o conjunto vigente para a data (usa o histórico: a meta de cada dia é a que valia nele).
  */
+/** Configuração de metas vigente na data (entrada do histórico ou as metas atuais). */
+export function metasVigentes(metas, chave) {
+  if (!metas.historico?.length) return metas;
+  const ord = metas.historico.slice().sort((a, b) => (a.desde < b.desde ? -1 : 1));
+  const vig = ord.filter((h) => h.desde <= chave);
+  return vig.length ? vig[vig.length - 1] : ord[0];
+}
+
 export function conjuntoDoDia(metas, chave) {
-  let m = metas;
-  if (metas.historico?.length) {
-    const vig = metas.historico.filter((h) => h.desde <= chave).sort((a, b) => (a.desde < b.desde ? -1 : 1));
-    m = vig.length ? vig[vig.length - 1] : metas.historico.slice().sort((a, b) => (a.desde < b.desde ? -1 : 1))[0];
-  }
+  const m = metasVigentes(metas, chave);
   if (m.modo === 'semana' && m.semana?.length === 7) return m.semana[diaSemana(chave)];
   return m.base;
 }
 
-export function metaDoDia(metas, chave, peso) {
-  return resolverConjunto(conjuntoDoDia(metas, chave), peso);
+/**
+ * Meta efetiva do dia. `treino`: dia marcado como treino → soma `treinoExtra` kcal (vigente na data),
+ * todas em carboidrato (4 kcal/g), sem mexer em proteína e gordura.
+ */
+export function metaDoDia(metas, chave, peso, { treino = false } = {}) {
+  const r = resolverConjunto(conjuntoDoDia(metas, chave), peso);
+  const extra = treino ? Number(metasVigentes(metas, chave).treinoExtra) || 0 : 0;
+  if (extra > 0) { r.kcal += extra; r.carb += extra / 4; r.kcalPlanejada += extra; r.treinoExtra = extra; }
+  return r;
 }
 
 /** Grava a configuração atual no histórico a partir de `desde` (substitui entrada do mesmo dia). */
 export function registrarHistorico(metas, desde) {
-  const snap = JSON.parse(JSON.stringify({ desde, modo: metas.modo, base: metas.base, semana: metas.semana }));
+  const snap = JSON.parse(JSON.stringify({ desde, modo: metas.modo, base: metas.base, semana: metas.semana, treinoExtra: metas.treinoExtra || 0 }));
   const hist = (metas.historico || []).filter((h) => h.desde !== desde);
   hist.push(snap);
   return { ...metas, historico: hist };
