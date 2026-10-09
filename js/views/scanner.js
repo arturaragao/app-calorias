@@ -125,7 +125,14 @@ export async function resolver(codigo, aoAlimento) {
   folhaAlimento(null, { prefill: food, titulo: 'Produto encontrado', nota, aoSalvar: aoAlimento });
 }
 
-function manual(codigo, aoAlimento, msg) {
+/** Não encontrado: com IA disponível, vai direto à foto do rótulo (salva com o código); senão, cadastro digitado. */
+async function manual(codigo, aoAlimento, msg) {
+  const { motorIA } = await import('../ia.js');
+  const motor = await motorIA({ comImagem: true }).catch(() => null);
+  if (motor === 'local' || (motor && navigator.onLine)) {
+    const { folhaRotulo } = await import('./foto-ia.js');
+    return folhaRotulo({ codigo, aoSalvar: aoAlimento });
+  }
   aviso(msg, { ms: 7000 });
   folhaAlimento(null, { prefill: { codigo, fonte: 'rótulo', nome: '' }, titulo: 'Cadastrar produto', aoSalvar: aoAlimento });
 }

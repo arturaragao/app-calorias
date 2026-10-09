@@ -17,6 +17,7 @@ import { contagemDoDia } from '../photos.js';
 import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha, vibrar, esqueleto, talvezDica } from '../ui.js';
 import { situacaoDia } from '../progress.js';
 import { microsMaisDistantes } from '../micros.js';
+import { qualidadeDia } from '../nutricao.js';
 import { idadePerfil } from './onboarding.js';
 import { estadoVazio } from '../vazio.js';
 import { talvezTour } from './tour.js';
@@ -154,7 +155,8 @@ function cartaoHeroi({ tot, restante, frac, C }) {
       <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)} <small>kcal</small></b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>`;
   const pag2 = `<div class="macros-grandes">${anelMacro('prot', 'Proteína', tot.prot, meta.prot, 112)}
       <div class="macros-dir">${anelMacro('carb', 'Carboidrato', tot.carb, meta.carb, 76)}${anelMacro('gord', 'Gordura', tot.gord, meta.gord, 76)}</div></div>`;
-  const pag3 = `${barra('fibra', 'Fibra', tot.fibra, meta.fibra)}${barra('sodio', 'Sódio (limite)', tot.sodio_mg, meta.sodio, 'mg', fmtKcal)}
+  const q = qualidadeDia(tot, meta, Object.values(dia.refeicoes).flat().filter((i) => !i.planejado), { sexo: p.sexo, idade: idadePerfil(p) || 30 });
+  const pag3 = `${q ? `<div class="q-linha"><span>Qualidade do dia <span class="mudo">(heurística)</span></span><b class="q-${q.faixa.replace('ó', 'o').replace('é', 'e')}">${q.faixa} · ${q.nota}</b></div>` : ''}${barra('fibra', 'Fibra', tot.fibra, meta.fibra)}${barra('sodio', 'Sódio (limite)', tot.sodio_mg, meta.sodio, 'mg', fmtKcal)}
     ${micros.length ? `<p class="secao" style="margin:12px 0 6px">Mais longe da referência hoje</p>
       ${micros.map((m) => barra('micro', m.nome, m.val, m.ref, m.un, (x) => fmtMicro(x))).join('')}
       ${micros[0].cobertura < 0.8 ? '<p class="mudo" style="margin:4px 0 0;font-size:var(--fs-12)">Parcial: há itens sem micronutrientes (adição rápida, rótulo).</p>' : ''}`
@@ -243,6 +245,7 @@ async function desenhar() {
     ${cartaoHeroi({ tot, restante, frac, C })}
     ${ehHoje && restante >= 50 ? `<section class="card agora-card" data-bloco="agora" aria-live="polite">${esqueleto(['', ''])}</section>` : ''}
     ${faixaEtiquetas()}
+    ${ehHoje ? '<section class="card checkin-card" data-bloco="checkin" hidden></section>' : ''}
     <section class="card agua-card" data-bloco="agua" aria-label="Água">
       <div class="gota">${ICONES.gota}</div>
       <div class="info"><b class="num">${fmtNum(mlAgua)} <span class="mudo">/ ${fmtNum(ag.metaMl)} ml</span></b>
@@ -265,6 +268,7 @@ async function desenhar() {
   tela.onkeydown = (e) => { if (e.key === 'Enter' && e.target.matches('[data-detalhe], [data-painel-ref]')) e.target.click(); };
   ligarDeslizar();
   if (ehHoje && restante >= 50) desenharAgora(restMacros);
+  if (ehHoje) import('./checkin-ui.js').then((m) => m.cartaoCheckin(tela.querySelector('.checkin-card'), desenhar)).catch(() => {});
   if (estado.config.tourVisto) setTimeout(() => (location.hash.slice(1) || 'diario').startsWith('diario') && talvezDica([
     { chave: 'heroi', el: tela.querySelector('.heroi-pontos'), texto: 'Deslize o resumo para ver macros, fibra, sódio e micronutrientes.' },
     { chave: 'mais', el: document.querySelector('.nav a.fab'), texto: 'Segure o + (ou arraste para cima) para código, foto, voz, água e peso.' },

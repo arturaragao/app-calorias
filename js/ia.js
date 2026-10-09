@@ -28,8 +28,12 @@ const REGRAS_ITENS = `Para cada alimento: "nome" curto em português; "nome_taco
 e kcal, prot, carb, gord, fibra (g) desse peso, de preferência pela TACO. Separe preparações compostas nos ingredientes principais
 quando fizer sentido (ex.: "café com leite" = café + leite). Considere óleo/gordura de preparo quando aparente.`;
 
-const PROMPT_FOTO = `Você é um nutricionista brasileiro. Na foto há uma refeição. Identifique cada alimento visível e estime o peso
-pela proporção do prato, talheres e porções caseiras brasileiras. ${REGRAS_ITENS}
+const PROMPT_FOTO = `Você é um nutricionista brasileiro. Nas fotos (até 3 ângulos da MESMA refeição) há um prato. Identifique cada alimento
+visível (sem contar duas vezes o que aparece em mais de uma foto) e estime o peso pela proporção do prato, talheres e porções caseiras
+brasileiras. ${REGRAS_ITENS}
+Para cada item, "confianca": alta, media ou baixa (quanto a foto permite identificar e pesar).
+Em "ocultos", liste ingredientes PROVÁVEIS que não aparecem bem na foto (óleo ou manteiga de preparo, molhos, açúcar no café/suco,
+queijo ralado), cada um com "motivo" curto; não repita o que já está em "itens"; se não houver, deixe vazio.
 Se não houver comida na foto, devolva itens vazio e explique em "observacao". Responda só o JSON.`;
 
 const PROMPT_TEXTO = `Você é um nutricionista brasileiro. O usuário descreveu o que comeu. Separe cada alimento e estime o peso
@@ -69,6 +73,15 @@ const ESQUEMA_ITENS = {
   },
   required: ['itens'],
 };
+const ITEM_FOTO = { type: 'OBJECT', properties: {
+  nome: S, nome_taco: S, gramas: N, kcal: N, prot: N, carb: N, gord: N, fibra: N,
+  confianca: { type: 'STRING', enum: ['alta', 'media', 'baixa'] }, motivo: S,
+}, required: ['nome', 'gramas', 'kcal', 'prot', 'carb', 'gord'] };
+const ESQUEMA_FOTO = {
+  type: 'OBJECT',
+  properties: { itens: { type: 'ARRAY', items: ITEM_FOTO }, ocultos: { type: 'ARRAY', items: ITEM_FOTO }, observacao: S },
+  required: ['itens'],
+};
 const ESQUEMA_COACH = {
   type: 'OBJECT',
   properties: { observacoes: { type: 'ARRAY', items: S }, acao: S },
@@ -86,7 +99,7 @@ const num = (v, max) => { const n = Number(v); return v !== null && v !== '' && 
 
 /** Valida e limpa a resposta do modelo: números finitos ≥ 0, limites de sanidade, nome obrigatório. */
 export function normalizarEstimativa(obj) {
-  const itens = (Array.isArray(obj?.itens) ? obj.itens : []).map((i) => ({
+  const limpar = (lista, oculto) => (Array.isArray(lista) ? lista : []).map((i) => ({
     nome: String(i?.nome || '').trim().slice(0, 50),
     nomeTaco: String(i?.nome_taco || '').trim().slice(0, 80),
     g: num(i?.gramas, 5000),
@@ -95,8 +108,14 @@ export function normalizarEstimativa(obj) {
     carb: num(i?.carb, 1000) ?? 0,
     gord: num(i?.gord, 1000) ?? 0,
     fibra: num(i?.fibra, 200),
+    confianca: ['alta', 'media', 'baixa'].includes(i?.confianca) ? i.confianca : null,
+    ...(oculto ? { oculto: true, motivo: String(i?.motivo || '').trim().slice(0, 80) } : {}),
   })).filter((i) => i.nome && i.kcal != null);
-  return { itens, obs: String(obj?.observacao || '').trim().slice(0, 300) };
+  const itens = limpar(obj?.itens, false);
+  // ingredientes ocultos prováveis: entram como sugestões desmarcadas (sem repetir nomes já listados)
+  const nomes = new Set(itens.map((i) => i.nome.toLowerCase()));
+  const ocultos = limpar(obj?.ocultos, true).filter((i) => !nomes.has(i.nome.toLowerCase())).slice(0, 5);
+  return { itens, ocultos, obs: String(obj?.observacao || '').trim().slice(0, 300) };
 }
 
 /**
@@ -188,9 +207,11 @@ async function chamarGemini(partes, esquema) {
 
 const imagem = async (blob) => ({ inline_data: { mime_type: blob.type || 'image/jpeg', data: await blobBase64(blob) } });
 
-/** Foto do prato (JPEG já comprimido) → { itens, obs }. `dica` = texto opcional do usuário. */
-export async function estimarFoto(blob, dica = '') {
-  const o = await chamar([{ blob }, { text: PROMPT_FOTO + (dica ? `\nInformação do usuário sobre o prato: ${dica}` : '') }], ESQUEMA_ITENS);
+/** Foto(s) do prato (1–3 ângulos, JPEG já comprimido) → { itens, ocultos, obs }. `dica` e `referencia` (escala) opcionais. */
+export async function estimarFoto(blobs, dica = '', referencia = '') {
+  const fotos = (Array.isArray(blobs) ? blobs : [blobs]).slice(0, 3).map((blob) => ({ blob }));
+  const extra = (referencia ? `\nReferência de escala: ${referencia}. Use-a para estimar os pesos.` : '') + (dica ? `\nInformação do usuário sobre o prato: ${dica}` : '');
+  const o = await chamar([...fotos, { text: PROMPT_FOTO + extra }], ESQUEMA_FOTO);
   return normalizarEstimativa(o);
 }
 
@@ -223,4 +244,23 @@ export function normalizarCoach(o) {
   const obs = (Array.isArray(o?.observacoes) ? o.observacoes : []).map((t) => String(t || '').trim().slice(0, 300)).filter(Boolean).slice(0, 3);
   const acao = String(o?.acao || '').trim().slice(0, 300);
   return obs.length && acao ? { observacoes: obs, acao } : null;
+}
+
+// ---------- "Pergunte ao app": a IA só traduz a pergunta em consulta; a conta é feita no aparelho ----------
+const ESQUEMA_CONSULTA = {
+  type: 'OBJECT',
+  properties: {
+    nutriente: { type: 'STRING', enum: ['kcal', 'prot', 'carb', 'gord', 'fibra', 'sodio_mg'] },
+    dias: N, fim: S, refeicao: S, agregacao: { type: 'STRING', enum: ['media', 'total', 'max', 'min'] },
+  },
+  required: ['nutriente', 'dias', 'agregacao'],
+};
+
+/** Pergunta em português → consulta (JSON). Só o texto da pergunta, as refeições e a data de hoje vão para a IA. */
+export async function perguntaParaConsulta(pergunta, refs, hoje) {
+  const txt = `Converta a pergunta de um usuário de app de dieta numa consulta JSON. Hoje é ${hoje}.
+"nutriente": kcal, prot, carb, gord, fibra ou sodio_mg. "dias": quantos dias até "fim" (inclusive). "fim": AAAA-MM-DD (padrão: hoje).
+"refeicao": um destes ids ou vazio: ${refs.map((r) => `${r.id} (${r.nome})`).join(', ')}. "agregacao": media (por dia), total, max ou min.
+Pergunta: ${pergunta}`;
+  return chamar([{ text: txt }], ESQUEMA_CONSULTA);
 }

@@ -2,6 +2,8 @@
 // Gráficos em SVG próprio; cada macro tem sempre a mesma cor (var(--prot/--carb/--gord), editáveis em Ajustes).
 
 import { estado, salvarConfig } from '../state.js';
+import { qualidadeDia } from '../nutricao.js';
+import { idadePerfil } from './onboarding.js';
 import { ic } from '../icones.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, camposFaltando, distribuicaoRefeicoes } from '../diary.js';
 import { carregarBase } from '../foods.js';
@@ -62,6 +64,8 @@ export async function detalheDia(dia, meta, { rotulo, alvoProt }) {
   const falta = camposFaltando(Object.values(dia.refeicoes).flat());
   const km = kcalMacros(tot), kmTot = km.reduce((s, x) => s + x.v, 0);
   const metaKm = MACROS.map((m) => (meta[m.k] || 0) * m.kcalG), metaKmTot = metaKm.reduce((s, v) => s + v, 0);
+  const perf = estado.perfil || {};
+  const q = qualidadeDia(tot, meta, Object.values(dia.refeicoes).flat().filter((i) => !i.planejado), { sexo: perf.sexo, idade: idadePerfil(perf) || 30 });
 
   const corpo = () => `
     <div class="det-eq num">
@@ -69,6 +73,9 @@ export async function detalheDia(dia, meta, { rotulo, alvoProt }) {
       <div><b>${fmtKcal(tot.kcal)} <small>kcal</small></b><span>Consumido</span></div>
       <div class="${restante < 0 ? 'acima' : ''}"><b>${restante < 0 ? '+' : ''}${fmtKcal(Math.abs(restante))} <small>kcal</small></b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div>
     </div>
+    ${q ? `<div class="qualidade q-${q.faixa.replace('ó', 'o').replace('é', 'e')}"><div><span class="mudo">Qualidade do dia</span><b>${q.faixa}</b></div>
+      <span class="num q-nota">${q.nota}</span>
+      <p class="mudo">${q.partes.map((x) => `${x.nome} ${x.pct}%`).join(' · ')}. Heurística do app (proteína, fibra, sódio${q.comMicros ? ' e micronutrientes' : ''} × metas), não é julgamento.</p></div>` : ''}
     <div class="det-topo">
       ${rosca(km, { centro: `<b class="num">${fmtNum(pct(tot.kcal, meta.kcal) ?? 0)}%</b><span>da meta</span>` })}
       <ul class="det-leg">${MACROS.map((m, i) => `<li><i style="background:${m.cor}"></i><span>${m.nome}</span>

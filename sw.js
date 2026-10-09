@@ -1,5 +1,5 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v22';   // manter igual a js/versao.js
+const VERSAO = 'v23';   // manter igual a js/versao.js
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',
@@ -19,6 +19,7 @@ const ARQUIVOS = [
   'js/layout.js', 'js/layout-ordem.js', 'js/inteligencia.js', 'js/voz.js', 'js/views/sugestao.js', 'js/ia-cota.js', 'js/ia-local.js', 'js/coach.js', 'js/vazio.js', 'js/views/tour.js', 'js/cores.js', 'js/views/detalhe-dia.js',
   'js/icones.js', 'icons/sprite.svg', 'js/views/acoes.js', 'js/frase.js',
   'js/views/frase-ui.js', 'js/views/cesta.js', 'js/views/copiar-dias.js', 'js/views/compartilhado.js',
+  'js/checkin.js', 'js/nutricao.js', 'js/padroes.js', 'js/perguntas.js', 'js/views/checkin-ui.js', 'js/views/dados.js', 'js/views/inteligencia-ui.js',
 ];
 
 self.addEventListener('install', (e) => {

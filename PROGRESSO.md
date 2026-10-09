@@ -1,15 +1,25 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro 2.0. Pacotes 10–12 entregues (v19–v21); aguardando OK do Artur para os próximos (13 e 14 na prioridade do roteiro).
+**Etapa atual:** roteiro 2.0. Pacotes 10–12 e 14 entregues (v19–v23); Pacote 13 em andamento (autorizado junto com o 14).
 
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
 - [x] Pacote 11 — Diário redesenhado (v20)
 - [x] Pacote 12 — Registro ultrarrápido sem gastar tokens (v21)
 - [ ] Pacote 13 — Planejamento, receitas e lista de compras
-- [ ] Pacote 14 — Inteligência prática
+- [x] Pacote 14 — Inteligência prática (v23)
 - [ ] Pacote 15 — Atalhos e extras do Android
 - [ ] Pacote 16 — Qualidade de produto profissional
+
+**Pacote 14 (v23, 2026-10-09)**
+- Check-in semanal (js/checkin.js + views/checkin-ui.js): a partir de segunda, com dados suficientes, o Diário mostra gasto estimado, tendência e ritmo real × planejado e a meta proposta; Aceitar / Ajustar (stepper) / Manter, com desfazer; histórico em Progresso › Check-ins semanais. Texto local (só números, sem julgar aderência).
+- Padrões (js/padroes.js): fins de semana × dias úteis, proteína do café < 0,4 g/kg, sódio por etiqueta, aderência × café antes das 9 h; até 2 por vez, cada um com o número e "Não mostrar este tipo".
+- Lacuna de micronutrientes (js/nutricao.js): o mais abaixo da DRI no período → alimentos da TACO mais ricos por 100 kcal (os que você já come primeiro; sem cru exceto frutas/verduras; variados); toque busca o alimento.
+- Qualidade do dia (heurística declarada): proteína, fibra, sódio e cobertura de micronutrientes × metas → nota 0–100 e faixa (baixa/média/boa/ótima) nos Detalhes do dia e na página 3 do resumo.
+- Pergunte ao app (js/perguntas.js): interpretador local de perguntas ("proteína no jantar nas últimas 2 semanas", "maior sódio do mês"); sem entender e com IA disponível, a IA só converte a pergunta em consulta JSON; a conta roda no aparelho. Perguntas prontas em chips.
+- Foto do prato 2.0: até 3 fotos/ângulos, referência de escala (prato de 26 cm / talher), confiança por item e ingredientes ocultos prováveis (óleo, molho, açúcar) como sugestões desmarcadas.
+- Código não encontrado → foto do rótulo automaticamente (salva com o código; opção de digitar).
+- Testes: 154 aprovados. Contraste: 84 telas, 0 reprovações. Conferido no Edge (Playwright) com 6 semanas simuladas: check-in (aceitar e desfazer), padrões, pergunta, lacuna e qualidade; sem erros no console.
 
 **Pacote 12 (v21, 2026-10-09)**
 - Interpretador local (js/frase.js, sem IA): números por extenso ("duzentos e cinquenta", "um e meio", "meia", "um quarto"), frações (½, 1/2, 1,5), g/kg/mL/litro, medidas caseiras (colher, xícara, concha, escumadeira, fatia, unidade, prato, lata…), separadores "e", vírgula, "+", "mais" e "com" (exceto quando o alimento tem "com" no nome, ex.: tapioca com manteiga). Gramas só de porções conhecidas, g/mL ditos ou da última quantidade; medida desconhecida → item "incerto" com as porções em chips. Teste com 46 frases reais.

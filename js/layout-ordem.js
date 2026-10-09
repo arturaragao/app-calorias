@@ -4,7 +4,7 @@
 export const BLOCOS = {
   diario: [
     ['semana', 'Faixa da semana'], ['resumo', 'Resumo do dia (anel e macros)'], ['agora', 'O que comer agora'], ['etiquetas', 'Treino e nota do dia'],
-    ['agua', 'Água'], ['refeicoes', 'Refeições'], ['copiar', 'Copiar o dia anterior'],
+    ['checkin', 'Check-in da semana'], ['agua', 'Água'], ['refeicoes', 'Refeições'], ['copiar', 'Copiar o dia anterior'],
   ],
   adicionar: [
     ['aba-recentes', 'Aba Recentes'], ['aba-favoritos', 'Aba Favoritos'], ['aba-meus', 'Aba Meus'], ['aba-receitas', 'Aba Receitas'],
@@ -13,8 +13,8 @@ export const BLOCOS = {
   ],
   registros: [['peso', 'Peso'], ['agua', 'Água'], ['medidas', 'Medidas'], ['dobras', 'Dobras'], ['fotos', 'Fotos']],
   progresso: [
-    ['kpis', 'Indicadores'], ['peso', 'Peso'], ['gasto', 'Gasto real estimado'], ['semanas', 'Calorias por semana'],
-    ['calendario', 'Calendário de aderência'], ['relatorio', 'Relatório semanal'], ['coach', 'Coach da semana (IA)'], ['macros', 'Médias diárias × meta'],
+    ['kpis', 'Indicadores'], ['padroes', 'Padrões das últimas semanas'], ['peso', 'Peso'], ['gasto', 'Gasto real estimado'], ['checkins', 'Check-ins semanais'], ['semanas', 'Calorias por semana'],
+    ['calendario', 'Calendário de aderência'], ['relatorio', 'Relatório semanal'], ['coach', 'Coach da semana (IA)'], ['pergunte', 'Pergunte ao app'], ['macros', 'Médias diárias × meta'], ['lacuna', 'Micronutriente em falta'],
     ['origem', 'De onde vêm as calorias'], ['composicao', 'Composição corporal'], ['circ', 'Circunferências'],
     ['pdf', 'Relatório em PDF'],
   ],

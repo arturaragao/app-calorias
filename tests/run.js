@@ -911,6 +911,81 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   });
 }
 
+// ---------- Pacote 14: inteligência prática ----------
+{
+  const CK = await import('../js/checkin.js');
+  const PD = await import('../js/padroes.js');
+  const NU = await import('../js/nutricao.js');
+  const PG = await import('../js/perguntas.js');
+  const hoje = '2026-10-12';                        // segunda-feira
+  const dia = (k, n) => { const d = new Date(k + 'T12:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  t('Check-in: gasto real → meta sugerida, texto sem julgamento, delta preserva dias', () => {
+    // 28 dias comendo 2300 kcal e a tendência caindo 1 kg → gasto = 2300 + 7700/28 = 2575
+    const dias = Array.from({ length: 28 }, (_, i) => ({ data: dia(hoje, -27 + i), tot: { kcal: 2300 } }));
+    const tend = Array.from({ length: 28 }, (_, i) => ({ data: dia(hoje, -27 + i), y: 85 - i / 27 }));
+    const metas = { modo: 'semana', base: { kcal: 2000, macroModo: 'pct' }, semana: Array.from({ length: 7 }, (_, i) => ({ kcal: 2000 + (i === 5 ? 300 : 0), macroModo: 'pct' })) };
+    const c = CK.calcularCheckin({ dias, tend, hoje, perfil: { objetivo: 'perder', ritmo: 0.5 }, metas, mc: { ajuste: -550, piso: 1500 } });
+    if (!c || Math.abs(c.tdee - 2575) > 1 || c.semana !== hoje) throw new Error(JSON.stringify(c));
+    if (c.metaSugerida !== Math.round((c.tdee - 550) / 10) * 10 || c.emGramas) throw new Error('meta sugerida');
+    const txt = CK.textoCheckin(c).join(' ');
+    if (!/Gasto estimado/.test(txt) || /(falhou|ruim|errou|culpa)/i.test(txt)) throw new Error(txt);
+    const m2 = CK.aplicarDeltaMetas(metas, 100);
+    if (m2.semana[5].kcal - m2.semana[0].kcal !== 300 || m2.base.kcal !== 2100 || metas.base.kcal !== 2000) throw new Error('delta');
+    if (CK.calcularCheckin({ dias: dias.slice(0, 5), tend: tend.slice(0, 5), hoje, perfil: {}, metas, mc: {} })) throw new Error('sem dados → null');
+    const h = CK.registrarCheckin(CK.registrarCheckin([], { semana: 'a', x: 1 }), { semana: 'a', x: 2 });
+    if (h.length !== 1 || h[0].x !== 2) throw new Error('histórico');
+  });
+  t('Padrões: fim de semana, proteína do café, sódio por etiqueta, café cedo', () => {
+    const base = Array.from({ length: 21 }, (_, i) => {
+      const data = dia('2026-09-21', i), sem = (new Date(data + 'T12:00').getDay() + 6) % 7;
+      const ts = new Date(`${data}T${i % 2 ? '08' : '10'}:00:00`).getTime();
+      const plantao = i % 4 === 0;
+      return { data, tags: plantao ? ['plantao'] : [], meta: { kcal: 2000, sodio: 2000 },
+        tot: { kcal: sem >= 5 ? 2600 : (i % 2 ? 2000 : 2500), sodio_mg: plantao ? 3000 : 1500 },
+        refeicoes: { cafe: [{ ts, n: { prot: 10 } }] } };
+    });
+    const ps = PD.detectarPadroes(base, { peso: 80, nomesTags: { plantao: 'Plantão' } });
+    const tipos = ps.map((p) => p.tipo);
+    for (const tp of ['fds', 'prot-cafe', 'sodio-tag', 'cafe-cedo']) if (!tipos.includes(tp)) throw new Error('faltou ' + tp + ': ' + tipos);
+    if (!ps.every((p) => /\d/.test(p.texto))) throw new Error('cada cartão precisa do número');
+    if (PD.cartoesDaSemana(ps, ['fds']).some((p) => p.tipo === 'fds') || PD.cartoesDaSemana(ps).length !== 2) throw new Error('máx. 2 e ocultos');
+  });
+  t('Qualidade do dia: faixas, sem micros redistribui, sódio acima pesa', () => {
+    const meta = { prot: 150, fibra: 30, sodio: 2000 };
+    const boa = NU.qualidadeDia({ kcal: 2000, prot: 150, fibra: 30, sodio_mg: 1500 }, meta, []);
+    if (boa.nota !== 100 || boa.faixa !== 'ótima' || boa.comMicros) throw new Error(JSON.stringify(boa));
+    const ruim = NU.qualidadeDia({ kcal: 2000, prot: 30, fibra: 3, sodio_mg: 4000 }, meta, []);
+    if (ruim.faixa !== 'baixa') throw new Error(JSON.stringify(ruim));
+    if (NU.qualidadeDia({ kcal: 0 }, meta, []) !== null) throw new Error('dia vazio');
+  });
+  t('Lacuna de micronutriente e alimentos ricos por 100 kcal (preferindo os que você come)', () => {
+    const itens = [{ g: 100, n: { kcal: 100 }, por100: { mic: { calcio_mg: 900, ferro_mg: 8, vitc_mg: 1 } } }];
+    const l = NU.maiorLacuna(itens, 1, { sexo: 'M' });
+    if (!l || l.frac > 0.2) throw new Error(JSON.stringify(l));
+    const foods = [{ id: 'a', nome: 'Acerola, crua', grupo: 'Frutas e derivados', kcal: 50, mic: { vitc_mg: 50 } }, { id: 'b', nome: 'B', kcal: 300, mic: { vitc_mg: 60 } }, { id: 'c', nome: 'C', kcal: 2, mic: { vitc_mg: 9 } }, { id: 'd', nome: 'D', kcal: 40, mic: {} }, { id: 'e', nome: 'Fígado, cru', grupo: 'Carnes', kcal: 100, mic: { vitc_mg: 500 } }];
+    const r = NU.alimentosRicos('vitc_mg', foods, new Set(['b']));
+    if (r.seus[0]?.f.id !== 'b' || r.outros[0]?.f.id !== 'a' || r.outros.some((x) => ['c', 'd', 'e'].includes(x.f.id))) throw new Error(JSON.stringify(r));
+  });
+  t('Pergunte ao app: interpretação local e execução no aparelho', () => {
+    const refs = [{ id: 'cafe', nome: 'Café da manhã' }, { id: 'jantar', nome: 'Jantar' }];
+    const c = PG.interpretarPergunta('quanto de proteína comi no jantar nas últimas 2 semanas?', hoje, refs);
+    if (c.nutriente !== 'prot' || c.refeicao !== 'jantar' || c.ini !== dia(hoje, -13) || c.agregacao !== 'media') throw new Error(JSON.stringify(c));
+    const mx = PG.interpretarPergunta('maior sódio do mês', hoje, refs);
+    if (mx.agregacao !== 'max' || mx.ini !== dia(hoje, -29)) throw new Error('max do mês');
+    if (PG.interpretarPergunta('total de calorias ontem', hoje, refs).ini !== dia(hoje, -1)) throw new Error('ontem');
+    if (PG.interpretarPergunta('como está o tempo', hoje, refs) !== null) throw new Error('sem nutriente → null');
+    const diarios = [{ data: dia(hoje, -1), refeicoes: { jantar: [{ n: { prot: 40 } }, { n: { prot: 99 }, planejado: true }] } },
+      { data: dia(hoje, -3), refeicoes: { jantar: [{ n: { prot: 20 } }], cafe: [{ n: { prot: 50 } }] } }];
+    const r = PG.executarConsulta(c, diarios);
+    if (r.total !== 60 || r.media !== 30 || r.dias !== 2) throw new Error(JSON.stringify(r));
+    if (!/30 g/.test(PG.respostaTexto(c, r, 'Jantar'))) throw new Error(PG.respostaTexto(c, r, 'Jantar'));
+    const n = PG.normalizarConsulta({ nutriente: 'veneno', dias: 3 }, hoje, refs);
+    if (n !== null) throw new Error('nutriente inválido');
+    const n2 = PG.normalizarConsulta({ nutriente: 'fibra', dias: 9999, refeicao: 'xx', agregacao: 'zz' }, hoje, refs);
+    if (n2.refeicao !== null || n2.agregacao !== 'media' || n2.ini !== dia(hoje, -365)) throw new Error(JSON.stringify(n2));
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

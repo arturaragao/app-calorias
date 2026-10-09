@@ -57,24 +57,44 @@ async function mostrarCota(p, comImagem) {
 export async function folhaFotoIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar, arquivo = null } = {}) {
   if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaFotoIA({ data, refId, aoLancar, arquivo }));
   const p = abrirFolha('Estimar por foto (IA)', `
-    <div class="grade2"><label class="btn prim">${ICONES.camera} Tirar foto<input type="file" accept="image/*" capture="environment" hidden></label>
+    <div class="grade2"><label class="btn suave">${ICONES.camera} Tirar foto<input type="file" accept="image/*" capture="environment" hidden></label>
       <label class="btn">Da galeria<input type="file" accept="image/*" hidden></label></div>
     ${BOTAO_COLAR}
+    <div class="fotos-sel" id="fotos-sel" aria-live="polite"></div>
+    <label class="campo"><span>Referência de escala (opcional)</span><select name="escala">
+      <option value="">Nenhuma</option><option value="o prato raso tem cerca de 26 cm de diâmetro">Prato raso de 26 cm</option>
+      <option value="há um garfo comum de cerca de 19 cm na foto">Garfo ou talher na foto</option></select></label>
     <label class="campo"><span>Dica (opcional)</span><input type="text" name="dica" maxlength="120" placeholder="ex.: 2 ovos mexidos com manteiga, pão francês"></label>
-    <label class="linha"><input type="checkbox" name="guardar" checked style="flex:0;width:22px;height:22px"><span>Guardar a foto na refeição</span></label>
-    <p class="mudo">A IA identifica e estima o peso; os nutrientes vêm da TACO quando houver correspondência. Confira antes de lançar.</p>`, { foco: false });
+    <label class="linha-chave"><span>Guardar a foto na refeição</span><span class="chave"><input type="checkbox" name="guardar" checked><i></i></span></label>
+    <button type="button" class="btn prim bloco" data-estimar disabled>Tire ou escolha até 3 fotos</button>
+    <p class="mudo">Até 3 ângulos do mesmo prato melhoram o peso. A IA identifica e estima; os nutrientes vêm da TACO quando houver correspondência. Ingredientes ocultos (óleo, molho, açúcar) aparecem como sugestões desmarcadas.</p>`, { foco: false });
   mostrarCota(p, true);
+  const fotos = [];   // { blob, url }
+  const desenharFotos = () => {
+    $('#fotos-sel', p).innerHTML = fotos.map((f, i) => `<span class="foto-mini"><img src="${f.url}" alt="Foto ${i + 1}">
+      <button type="button" class="ico" data-tirar-foto="${i}" aria-label="Tirar a foto ${i + 1}">${ic('x')}</button></span>`).join('');
+    const b = $('[data-estimar]', p);
+    b.disabled = !fotos.length;
+    b.textContent = fotos.length ? `Estimar com ${fotos.length} foto${fotos.length > 1 ? 's' : ''}` : 'Tire ou escolha até 3 fotos';
+    $$('input[type=file]', p).forEach((i) => { i.closest('label').classList.toggle('desab', fotos.length >= 3); i.disabled = fotos.length >= 3; });
+  };
   $$('input[type=file]', p).forEach((inp) => {
     inp.onchange = async () => {
       const arq = inp.files[0];
-      if (!arq) return;
-      const dica = $('[name=dica]', p).value.trim(), guardar = $('[name=guardar]', p).checked;
-      let blob;
-      try { blob = await comprimir(arq); } catch { return aviso('Não consegui ler essa imagem.'); }
-      const url = URL.createObjectURL(blob);
-      await processar(p, () => estimarFoto(blob, dica), { blob, url, guardar, data, refId, aoLancar, origem: 'Foto (IA)',
-        deNovo: () => folhaFotoIA({ data, refId, aoLancar }) });
+      inp.value = '';
+      if (!arq || fotos.length >= 3) return;
+      try { const blob = await comprimir(arq); fotos.push({ blob, url: URL.createObjectURL(blob) }); } catch { return aviso('Não consegui ler essa imagem.'); }
+      desenharFotos();
     };
+  });
+  p.addEventListener('click', async (e) => {
+    const t = e.target.closest('[data-tirar-foto]');
+    if (t) { const [f] = fotos.splice(Number(t.dataset.tirarFoto), 1); URL.revokeObjectURL(f.url); return desenharFotos(); }
+    if (!e.target.closest('[data-estimar]') || !fotos.length) return;
+    const dica = $('[name=dica]', p).value.trim(), guardar = $('[name=guardar]', p).checked, escala = $('[name=escala]', p).value;
+    fotos.slice(1).forEach((f) => URL.revokeObjectURL(f.url));
+    await processar(p, () => estimarFoto(fotos.map((f) => f.blob), dica, escala), { blob: fotos[0].blob, url: fotos[0].url, guardar, data, refId, aoLancar,
+      origem: 'Foto (IA)', deNovo: () => folhaFotoIA({ data, refId, aoLancar }) });
   });
   ligarColar(p);
   if (arquivo) entregarImagem(p, arquivo);
@@ -172,12 +192,14 @@ async function criarReceitaDe(sel, obs) {
 }
 
 /** Foto da tabela nutricional → revisar e salvar em "Meus alimentos". */
-export async function folhaRotulo({ aoSalvar, arquivo = null } = {}) {
-  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaRotulo({ aoSalvar, arquivo }));
+export async function folhaRotulo({ aoSalvar, arquivo = null, codigo = '' } = {}) {
+  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaRotulo({ aoSalvar, arquivo, codigo }));
   const p = abrirFolha('Ler rótulo (IA)', `
     <div class="grade2"><label class="btn prim">${ICONES.camera} Fotografar<input type="file" accept="image/*" capture="environment" hidden></label>
       <label class="btn">Da galeria<input type="file" accept="image/*" hidden></label></div>
     ${BOTAO_COLAR}
+    ${codigo ? `<p class="nota">Código ${esc(codigo)} não encontrado. Fotografe a tabela nutricional: o produto fica salvo com o código para a próxima leitura.</p>
+      <button type="button" class="btn texto bloco" data-digitar>Prefiro digitar os valores</button>` : ''}
     <p class="mudo">Fotografe de perto a <b>tabela nutricional</b>, reta e sem reflexo. Você confere os valores antes de salvar em Meus alimentos.</p>`, { foco: false });
   $$('input[type=file]', p).forEach((inp) => {
     inp.onchange = async () => {
@@ -192,7 +214,7 @@ export async function folhaRotulo({ aoSalvar, arquivo = null } = {}) {
         fecharFolha();
         const porc = food.porcoes[0];
         setTimeout(() => folhaAlimento(null, {
-          prefill: food, titulo: 'Revisar e salvar', baseG: porc?.g,
+          prefill: codigo ? { ...food, codigo } : food, titulo: 'Revisar e salvar', baseG: porc?.g,
           nota: `Valores lidos do rótulo pela IA${porc ? `, mostrados pela <b>porção de ${fmtNum(porc.g)} g</b> (${esc(porc.nome)}) como na tabela` : ' (por 100 g)'}.
             Confira com a embalagem; o app guarda por 100 g e lança pela porção.${obs ? ' ' + esc(obs) : ''}`,
           aoSalvar,
@@ -204,6 +226,8 @@ export async function folhaRotulo({ aoSalvar, arquivo = null } = {}) {
     };
   });
   ligarColar(p);
+  const dig = p.querySelector('[data-digitar]');
+  if (dig) dig.onclick = () => { fecharFolha(); setTimeout(() => folhaAlimento(null, { prefill: { codigo, fonte: 'rótulo', nome: '' }, titulo: 'Cadastrar produto', aoSalvar }), 350); };
   if (arquivo) entregarImagem(p, arquivo);
 }
 
@@ -246,13 +270,18 @@ export function nutrientesRevisao(it, food, g) {
   return { kcal: it.kcal * f, prot: it.prot * f, carb: it.carb * f, gord: it.gord * f, fibra: it.fibra != null ? it.fibra * f : null };
 }
 
-function revisar(p, { itens, obs, cat, blob, url, guardar, data, refId, aoLancar, origem, receita }) {
+function revisar(p, { itens: visiveis, ocultos = [], obs, cat, blob, url, guardar, data, refId, aoLancar, origem, receita }) {
   const refs = estado.config.refeicoes;
+  // ingredientes ocultos prováveis (óleo, molho, açúcar) entram no fim, desmarcados
+  const itens = [...visiveis, ...ocultos];
   const corresp = itens.map((it) => correspondencias(cat.indice, it));
+  const CONF = { alta: 'confiança alta', media: 'confiança média', baixa: 'confiança baixa' };
   const linha = (it, i) => {
     const c = corresp[i];
     return `<div class="ia-item" data-i="${i}">
-      <label class="linha"><input type="checkbox" data-usar checked style="flex:0;width:22px;height:22px"><b style="flex:1">${esc(it.nome)}</b></label>
+      <label class="linha"><input type="checkbox" data-usar ${it.oculto ? '' : 'checked'} style="flex:0;width:22px;height:22px"><b style="flex:1">${esc(it.nome)}</b>
+        ${it.confianca ? `<span class="selo ${it.confianca === 'alta' ? 'alta' : it.confianca === 'baixa' ? 'baixa' : ''}">${CONF[it.confianca]}</span>` : ''}</label>
+      ${it.oculto ? `<p class="mudo ia-oculto">${ic('eye-off', 'p')} Provável ingrediente oculto${it.motivo ? `: ${esc(it.motivo)}` : ''}. Marque se estava no prato.</p>` : ''}
       <div class="ia-linha2"><select name="fonte" aria-label="De onde vêm os nutrientes">
           ${c.opcoes.map((f, k) => `<option value="${esc(f.id)}" ${c.exata && k === 0 ? 'selected' : ''}>${esc(f.nome)}</option>`).join('')}
           <option value="${IA}" ${c.exata ? '' : 'selected'}>Valores estimados pela IA</option></select>

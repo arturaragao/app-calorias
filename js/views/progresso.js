@@ -14,6 +14,7 @@ import { lerDobras } from './reg-dobras.js';
 import { idadePerfil } from './onboarding.js';
 import { compartilharRelatorio } from './relatorio-img.js';
 import { tabelaMicros } from './micros-ui.js';
+import { montarInteligencia } from './inteligencia-ui.js';
 import { gerarRelatorioPDF } from './relatorio-pdf.js';
 import { carregarBase } from '../foods.js';
 import { aplicarLayout, botaoOrganizar, visivel } from '../layout.js';
@@ -83,14 +84,18 @@ export async function render(tela) {
         <div class="kpi"><b>${ritmo != null ? sinal(ritmo, f2) : '—'}</b><span>kg/semana</span><small>ritmo atual</small></div>
         <div class="kpi"><b>${seq}</b><span>${seq === 1 ? 'dia seguido' : 'dias seguidos'}</span><small>registrando</small></div>
       </div>
+      <div class="card" id="c-padroes" data-bloco="padroes" hidden></div>
       ${cardPeso(tAtual, ritmo)}
       ${cardGasto()}
+      <div class="card" id="c-checkins" data-bloco="checkins"></div>
       <div class="card" data-bloco="semanas"><h2 style="margin-bottom:4px">Calorias por semana</h2>
         <p class="mudo" style="margin:0 0 6px">Média dos dias com registro × meta (traço). Âmbar = mais de 10% acima.</p><div id="g-sem"></div></div>
       <div class="card" id="c-cal" data-bloco="calendario"></div>
       <div class="card" id="c-rel" data-bloco="relatorio"></div>
       <div class="card" id="c-coach" data-bloco="coach" hidden></div>
+      <div class="card" id="c-perg" data-bloco="pergunte"></div>
       ${cardMacros(mm)}
+      <div class="card" id="c-lacuna" data-bloco="lacuna" hidden></div>
       <div class="card" id="c-orig" data-bloco="origem"></div>
       <div class="card" data-bloco="composicao"><div class="card-tit"><h2>Composição corporal</h2>
         <select id="s-prot" style="width:auto;min-height:40px">${Object.entries(PROTOCOLOS).map(([k, p]) => `<option value="${k}" ${k === protSel ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
@@ -102,6 +107,7 @@ export async function render(tela) {
       <p class="mudo" style="text-align:center">Arraste o dedo sobre os gráficos para ver os valores.</p>
       ${botaoOrganizar('progresso')}`;
     aplicarLayout(tela, 'progresso');
+    montarInteligencia(tela, { baseAlim }).catch((e) => console.warn(e));
 
     // peso: pontos = pesagens; linha 2 = tendência nas mesmas datas
     graficoLinha($('#g-peso', tela), pP.map((p) => ({ data: p.data, y: p.kg })), {
