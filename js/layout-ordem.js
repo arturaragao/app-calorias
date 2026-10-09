@@ -8,13 +8,13 @@ export const BLOCOS = {
   ],
   adicionar: [
     ['aba-recentes', 'Aba Recentes'], ['aba-favoritos', 'Aba Favoritos'], ['aba-meus', 'Aba Meus'], ['aba-receitas', 'Aba Receitas'],
-    ['foto', 'Atalho Foto do prato'], ['texto', 'Atalho Descrever'], ['salvas', 'Atalho Refeições salvas'],
+    ['foto', 'Atalho Foto do prato'], ['texto', 'Atalho Descrever'], ['cardapio', 'Atalho Cardápio/receita'], ['salvas', 'Atalho Refeições salvas'],
     ['rotulo', 'Atalho Ler rótulo'], ['novo', 'Atalho Novo alimento'], ['receita', 'Atalho Nova receita'],
   ],
   registros: [['peso', 'Peso'], ['agua', 'Água'], ['medidas', 'Medidas'], ['dobras', 'Dobras'], ['fotos', 'Fotos']],
   progresso: [
     ['kpis', 'Indicadores'], ['peso', 'Peso'], ['gasto', 'Gasto real estimado'], ['semanas', 'Calorias por semana'],
-    ['calendario', 'Calendário de aderência'], ['relatorio', 'Relatório semanal'], ['macros', 'Médias diárias × meta'],
+    ['calendario', 'Calendário de aderência'], ['relatorio', 'Relatório semanal'], ['coach', 'Coach da semana (IA)'], ['macros', 'Médias diárias × meta'],
     ['origem', 'De onde vêm as calorias'], ['composicao', 'Composição corporal'], ['circ', 'Circunferências'],
     ['pdf', 'Relatório em PDF'],
   ],

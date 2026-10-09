@@ -678,6 +678,56 @@ t('Lançamento suspeito: azeite em excesso, kcal enorme, muito acima do usual e 
   eq(I7.percentil([1, 2, 3, 4], 0.5), 2); eq(I7.percentil([], 0.5), null);
 });
 
+// ---------- Pacote 8 ----------
+const Q8 = await import('../js/ia-cota.js');
+const memoria = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)) }; };
+t('Cota da IA: conta por dia local, zera no dia seguinte, limite editável e com faixa', () => {
+  const st = memoria();
+  eq(Q8.limiteDiario(st), Q8.LIMITE_PADRAO); eq(Q8.restantesHoje(st, '2026-10-09'), Q8.LIMITE_PADRAO);
+  Q8.registrarUso(st, '2026-10-09'); Q8.registrarUso(st, '2026-10-09');
+  eq(Q8.usoHoje(st, '2026-10-09'), 2); eq(Q8.restantesHoje(st, '2026-10-09'), Q8.LIMITE_PADRAO - 2);
+  eq(Q8.usoHoje(st, '2026-10-10'), 0);
+  Q8.registrarUso(st, '2026-10-10'); eq(Q8.usoHoje(st, '2026-10-10'), 1);
+  Q8.definirLimite(1, st); eq(Q8.restantesHoje(st, '2026-10-10'), 0);
+  Q8.definirLimite(9999, st); eq(Q8.limiteDiario(st), Q8.LIMITE_PADRAO);
+  eq(Q8.usoHoje(null, '2026-10-10'), 0);
+});
+const L8 = await import('../js/ia-local.js');
+const dispLocal8 = await L8.localDisponivel();
+t('IA do Chrome: esquema do Gemini vira JSON Schema; sem LanguageModel = indisponível', () => {
+  const js = L8.paraJsonSchema({ type: 'OBJECT', properties: { a: { type: 'NUMBER' }, l: { type: 'ARRAY', items: { type: 'STRING' } },
+    e: { type: 'STRING', enum: ['x'] }, n: { type: 'STRING', nullable: true } }, required: ['a'] });
+  eq(js.type, 'object'); eq(js.properties.a.type, 'number'); eq(js.properties.l.items.type, 'string');
+  eq(js.properties.e.enum[0], 'x'); eq(js.required[0], 'a'); eq(JSON.stringify(js.properties.n.type), '["string","null"]');
+  eq(dispLocal8, false);
+});
+const IA8 = await import('../js/ia.js');
+t('Coach: resposta limpa (até 3 observações + ação), inválida = null', () => {
+  const r = IA8.normalizarCoach({ observacoes: [' a ', '', 'b', 'c', 'd'], acao: ' faça x ' });
+  eq(r.observacoes.join('|'), 'a|b|c'); eq(r.acao, 'faça x');
+  eq(IA8.normalizarCoach({ observacoes: [], acao: 'x' }), null); eq(IA8.normalizarCoach({ observacoes: ['a'] }), null); eq(IA8.normalizarCoach(null), null);
+});
+const C8 = await import('../js/coach.js');
+t('Coach: só números agregados (sem nomes de alimentos nem notas), arredondados', () => {
+  const rel = { inicio: '2026-09-28', fim: '2026-10-04', registrados: 6, aderencia: { dentro: 4, acima: 1, abaixo: 1 },
+    medias: { consumo: { kcal: 2210.4, prot: 150.6, carb: 240.2, gord: 70.1, fibra: 25.5, sodio_mg: 2300.7 }, meta: { kcal: 2200, prot: 160, carb: 250, gord: 70 } },
+    deltaPeso: -0.34, pesoFim: 79.66 };
+  const relAnt = { registrados: 5, aderencia: { dentro: 2 }, medias: { consumo: { kcal: 2400 } } };
+  const n = C8.numerosCoach({ rel, relAnt, perfil: { objetivo: 'perder', ritmo: 0.5, nome: 'Fulano' }, pesoKg: 80,
+    tags: C8.contarEtiquetas([{ tags: ['treino'], nota: 'segredo' }, { tags: ['treino', 'festa'] }]) });
+  eq(n.media_diaria.kcal, 2210); eq(n.media_diaria.proteina_g, 151); eq(n.proteina_g_por_kg, 1.9);
+  eq(n.variacao_peso_semana_kg, -0.3); eq(n.peso_tendencia_kg, 79.7); eq(n.ritmo_planejado_kg_semana, 0.5);
+  eq(n.semana_anterior.media_kcal, 2400); eq(n.etiquetas_dias.treino, 2); eq(n.etiquetas_dias.festa, 1);
+  const txt = JSON.stringify(n);
+  if (txt.includes('segredo') || txt.includes('Fulano')) throw new Error('vazou texto pessoal');
+  eq(C8.numerosCoach({ rel: { ...rel, deltaPeso: null, pesoFim: null }, perfil: { objetivo: 'manter' } }).ritmo_planejado_kg_semana, 0);
+});
+t('Coach: cache por semana guarda as 12 mais recentes', () => {
+  let c = {};
+  for (let i = 1; i <= 14; i++) c = C8.guardarResposta(c, `2026-01-${String(i).padStart(2, '0')}`, { acao: String(i) });
+  eq(Object.keys(c).length, 12); eq(c['2026-01-14'].acao, '14'); eq(c['2026-01-01'], undefined);
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

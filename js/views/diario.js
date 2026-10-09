@@ -17,7 +17,7 @@ import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha } from '
 import { chaveData, somarDias, fmtData, fmtKcal, fmtG, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
-import { folhaFotoIA, folhaTextoIA } from './foto-ia.js';
+import { folhaFotoIA, folhaTextoIA, folhaCardapioIA } from './foto-ia.js';
 import { folhaSalvarRefeicao, folhaSalvas } from './salvas.js';
 import { pendenteToque } from '../drive.js';
 import { folhaOQueComer, diariosRecentes, contextoSuspeito } from './sugestao.js';
@@ -293,6 +293,7 @@ async function clique(e) {
       <button class="btn" data-op="rapida">${ICONES.raio} Adição rápida (kcal e macros)</button>
       <button class="btn" data-op="ia">${ICONES.camera} Estimar por foto (IA)</button>
       <button class="btn" data-op="texto">✍️ Descrever o que comeu (IA)</button>
+      <button class="btn" data-op="cardapio">📋 Foto de cardápio (IA)</button>
       <button class="btn" data-op="salvas">⭐ Lançar refeição salva</button>
       ${(dia.refeicoes[refId] || []).length ? '<button class="btn" data-op="salvar">💾 Salvar como refeição salva</button>' : ''}
       <button class="btn" data-op="copiar">${ICONES.copiar} Copiar ${esc(nomeRef)} de ontem</button>
@@ -303,6 +304,7 @@ async function clique(e) {
       if (op === 'rapida') folhaRapida(null, refId);
       if (op === 'ia') { fecharFolha(); setTimeout(() => folhaFotoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
       if (op === 'texto') { fecharFolha(); setTimeout(() => folhaTextoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
+      if (op === 'cardapio') { fecharFolha(); setTimeout(() => folhaCardapioIA({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
       if (op === 'salvas') { fecharFolha(); setTimeout(() => folhaSalvas({ data: estado.dataAtual, refId, aoLancar: desenhar }), 350); }
       if (op === 'salvar') { fecharFolha(); setTimeout(() => folhaSalvarRefeicao(dia.refeicoes[refId], nomeRef), 350); }
       if (op === 'copiar') { fecharFolha(); copiarDeOntem(refId); }

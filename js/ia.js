@@ -2,6 +2,10 @@
 // A chave fica só no localStorage deste aparelho (não vai para o backup). Sem faturamento ativado
 // no projeto do Google AI Studio, a API só usa a cota gratuita: passou do limite, ela recusa (429), não cobra.
 // A IA só IDENTIFICA e PESA; quando há correspondência na TACO, os nutrientes vêm da tabela (ver views/foto-ia.js).
+// Ordem dos motores: IA embutida do Chrome (Gemini Nano, offline, sem cota) → API do Gemini (com limite diário do app).
+
+import { localDisponivel, promptLocal } from './ia-local.js';
+import { restantesHoje, registrarUso, limiteDiario } from './ia-cota.js';
 
 const CHAVE_LS = 'geminiChave', MODELO_LS = 'geminiModelo';
 // Ordem de tentativa: o primeiro que existir para a chave é lembrado (modelos mudam de nome com o tempo).
@@ -38,6 +42,22 @@ const PROMPT_ROTULO = `Leia a TABELA NUTRICIONAL do rótulo na foto (padrão bra
 (base: "porcao"). Só se a tabela não tiver coluna da porção, use a de 100 g (base: "100g"). Valor energético em kcal; sódio em mg.
 Se um valor não aparecer, omita o campo. Não invente valores. Se não houver tabela nutricional legível, explique em "observacao".`;
 
+const PROMPT_CARDAPIO = `Você é um nutricionista brasileiro. Na foto há um CARDÁPIO (de restaurante ou de dieta) ou uma lista de pratos.
+Liste cada prato/alimento que a pessoa provavelmente vai comer e estime o peso de UMA porção usual servida no Brasil.
+Separe pratos compostos nos ingredientes principais (ex.: "PF de frango" = arroz + feijão + frango grelhado + salada). ${REGRAS_ITENS}
+Se não houver cardápio legível, devolva itens vazio e explique em "observacao". Responda só o JSON.`;
+
+const PROMPT_RECEITA = `Você é um nutricionista brasileiro. Na foto há uma RECEITA (lista de ingredientes com quantidades).
+Liste cada ingrediente com a quantidade da receita convertida em gramas (ou ml), usando medidas caseiras brasileiras quando a
+receita usar xícaras/colheres. Ignore água e sal. Em "observacao" informe quantas porções a receita rende, se estiver escrito. ${REGRAS_ITENS}
+Se não houver receita legível, devolva itens vazio e explique em "observacao". Responda só o JSON.`;
+
+const PROMPT_COACH = `Você é um nutricionista esportivo brasileiro, direto e gentil. Abaixo estão SÓ números agregados da semana de um
+usuário de um app de dieta (médias diárias, metas, aderência, peso e etiquetas). Escreva em português do Brasil:
+"observacoes": exatamente 3 observações curtas (até 25 palavras cada), baseadas nos números (cite-os), sem diagnóstico médico;
+"acao": 1 ação prática e específica para a próxima semana (até 30 palavras).
+Não invente dados que não estão abaixo. Se houver poucos dias registrados, diga isso em uma das observações.`;
+
 const N = { type: 'NUMBER' }, S = { type: 'STRING' };
 const ESQUEMA_ITENS = {
   type: 'OBJECT',
@@ -48,6 +68,11 @@ const ESQUEMA_ITENS = {
     observacao: S,
   },
   required: ['itens'],
+};
+const ESQUEMA_COACH = {
+  type: 'OBJECT',
+  properties: { observacoes: { type: 'ARRAY', items: S }, acao: S },
+  required: ['observacoes', 'acao'],
 };
 const ESQUEMA_ROTULO = {
   type: 'OBJECT',
@@ -110,11 +135,34 @@ export function mensagemErro(status, msgApi = '') {
 
 const blobBase64 = (b) => new Promise((ok, erro) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = erro; r.readAsDataURL(b); });
 
-/** Chamada genérica: partes (texto/imagem) + esquema → objeto JSON. Tenta os modelos em ordem (404 = próximo). */
+/** Motor disponível agora: 'local' (IA do Chrome), 'gemini' (chave cadastrada) ou null (esconder a função). */
+export async function motorIA({ comImagem = false } = {}) {
+  if (await localDisponivel(comImagem)) return 'local';
+  return lerChave() ? 'gemini' : null;
+}
+
+/** Texto curto sobre o motor e a cota, para mostrar nas telas de IA. */
+export async function rotuloCota({ comImagem = false } = {}) {
+  const m = await motorIA({ comImagem });
+  if (m === 'local') return 'IA do Chrome neste aparelho (offline, sem limite).';
+  if (m === 'gemini') return `Gemini: ${restantesHoje()} de ${limiteDiario()} chamadas restantes hoje.`;
+  return '';
+}
+
+/** Chamada genérica: partes [{ text } | { blob }] + esquema → objeto JSON. IA do Chrome primeiro; senão Gemini. */
 async function chamar(partes, esquema) {
+  if (await localDisponivel(partes.some((p) => p.blob))) {
+    try { return await promptLocal(partes, esquema); } catch (e) { console.warn('IA do Chrome falhou; usando o Gemini', e); }
+  }
+  return chamarGemini(await Promise.all(partes.map(async (p) => (p.blob ? imagem(p.blob) : { text: p.text }))), esquema);
+}
+
+/** API do Gemini: tenta os modelos em ordem (404 = próximo). Respeita o limite diário do app. */
+async function chamarGemini(partes, esquema) {
   const chave = lerChave();
-  if (!chave) throw new Error('Cadastre sua chave do Gemini primeiro.');
+  if (!chave) throw new Error('Cadastre sua chave do Gemini primeiro (Ajustes › IA).');
   if (!navigator.onLine) throw new Error('Sem internet: a IA precisa de conexão.');
+  if (restantesHoje() <= 0) throw new Error(`Limite diário do app atingido (${limiteDiario()} chamadas). Zera à meia-noite; dá para ajustar em Ajustes › IA.`);
   const corpo = JSON.stringify({
     contents: [{ parts: partes }],
     generationConfig: { responseMimeType: 'application/json', responseSchema: esquema, temperature: 0.2 },
@@ -129,6 +177,7 @@ async function chamar(partes, esquema) {
     const j = await r.json().catch(() => ({}));
     if (r.status === 404) continue;
     if (!r.ok) throw new Error(mensagemErro(r.status, j?.error?.message));
+    registrarUso();
     ls(MODELO_LS, modelo);
     const txt = j?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
     try { return JSON.parse(txt); } catch { throw new Error('O Gemini não devolveu uma resposta legível. Tente de novo.'); }
@@ -141,7 +190,7 @@ const imagem = async (blob) => ({ inline_data: { mime_type: blob.type || 'image/
 
 /** Foto do prato (JPEG já comprimido) → { itens, obs }. `dica` = texto opcional do usuário. */
 export async function estimarFoto(blob, dica = '') {
-  const o = await chamar([await imagem(blob), { text: PROMPT_FOTO + (dica ? `\nInformação do usuário sobre o prato: ${dica}` : '') }], ESQUEMA_ITENS);
+  const o = await chamar([{ blob }, { text: PROMPT_FOTO + (dica ? `\nInformação do usuário sobre o prato: ${dica}` : '') }], ESQUEMA_ITENS);
   return normalizarEstimativa(o);
 }
 
@@ -153,6 +202,25 @@ export async function estimarTexto(texto) {
 
 /** Foto do rótulo → { food (pré-preenchimento por 100 g) | null, obs }. */
 export async function lerRotulo(blob) {
-  const o = await chamar([await imagem(blob), { text: PROMPT_ROTULO }], ESQUEMA_ROTULO);
+  const o = await chamar([{ blob }, { text: PROMPT_ROTULO }], ESQUEMA_ROTULO);
   return { food: rotuloParaAlimento(o), obs: String(o?.observacao || '').trim() };
+}
+
+/** Foto de cardápio (porção usual de cada prato) ou receita (quantidades da receita) → { itens, obs }. */
+export async function estimarCardapio(blob, tipo = 'cardapio') {
+  const o = await chamar([{ blob }, { text: tipo === 'receita' ? PROMPT_RECEITA : PROMPT_CARDAPIO }], ESQUEMA_ITENS);
+  return normalizarEstimativa(o);
+}
+
+/** Coach semanal: números agregados (objeto) → { observacoes: [≤ 3], acao } ou null. */
+export async function coachSemanal(numeros) {
+  const o = await chamar([{ text: `${PROMPT_COACH}\n\nDados da semana (JSON):\n${JSON.stringify(numeros)}` }], ESQUEMA_COACH);
+  return normalizarCoach(o);
+}
+
+/** Limpa a resposta do coach: até 3 observações não vazias e uma ação; null se inutilizável. */
+export function normalizarCoach(o) {
+  const obs = (Array.isArray(o?.observacoes) ? o.observacoes : []).map((t) => String(t || '').trim().slice(0, 300)).filter(Boolean).slice(0, 3);
+  const acao = String(o?.acao || '').trim().slice(0, 300);
+  return obs.length && acao ? { observacoes: obs, acao } : null;
 }

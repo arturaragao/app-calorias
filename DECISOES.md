@@ -82,3 +82,8 @@
 - 2026-10-09 · Chips só em refeição vazia; "de sempre" copia o snapshot mais recente de cada alimento habitual (como Copiar).
 - 2026-10-09 · Lançamento suspeito: limiares práticos (gordura ≥ 80 g/100 g e > 60 g; > 2000 kcal; > 1500 g; > 4× a mediana de gramas do alimento com > 100 g; kcal > 400 e > 2,5× o p95 dos itens de 90 dias). Confirmação por 2º toque, sem bloquear.
 - 2026-10-09 · Ditado pela Web Speech API (gratuita; no Chrome o áudio vai ao serviço de voz do Google). Sem suporte → botão escondido, segue a dica do microfone do teclado.
+- 2026-10-09 · Limite diário do app para o Gemini: 20 chamadas/dia por aparelho (editável 1–500). A API não expõe a cota restante, então o app conta as próprias chamadas OK (localStorage `iaUso`, zera à meia-noite local). 429 do Google continua com a mensagem própria.
+- 2026-10-09 · IA do Chrome (Prompt API, `LanguageModel`) só quando availability() = "available" (não dispara download do modelo); esquema do Gemini convertido para JSON Schema (responseConstraint). Não conta no limite. Qualquer erro → Gemini.
+- 2026-10-09 · "Esconder a função" (8.3) vale para as funções novas (coach, atalho de cardápio no Adicionar). Foto/texto/rótulo seguem visíveis e pedem a chave, que é como o Artur configura a IA.
+- 2026-10-09 · Coach: uma análise por semana (chave = segunda-feira), só para semanas terminadas; envia apenas números agregados e contagem de etiquetas (texto das notas nunca sai). Guarda as 12 últimas.
+- 2026-10-09 · Receita por foto: só ingredientes ligados a um alimento da base entram (valores da tabela); estimativas da IA ficam de fora e são contadas no aviso. Porções vêm de "rende N porções/pessoas/fatias/unidades" na observação, senão 1.

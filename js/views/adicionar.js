@@ -11,7 +11,8 @@ import { buscarNome } from '../off.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaAlimento } from './alimento-form.js';
 import { abrirScanner } from './scanner.js';
-import { folhaFotoIA, folhaTextoIA, folhaRotulo } from './foto-ia.js';
+import { folhaFotoIA, folhaTextoIA, folhaRotulo, folhaCardapioIA } from './foto-ia.js';
+import { motorIA } from '../ia.js';
 import { folhaSalvas } from './salvas.js';
 import { db } from '../db.js';
 import { aplicarLayout, ordemDe, visivel } from '../layout.js';
@@ -44,6 +45,7 @@ export async function render(tela) {
     <div class="acoes-rolar" role="group" aria-label="Outras formas de adicionar">
       <button class="btn peq suave" data-bloco="foto" data-foto-ia>${ICONES.camera} Foto do prato</button>
       <button class="btn peq suave" data-bloco="texto" data-texto-ia>✍️ Descrever</button>
+      <button class="btn peq suave" data-bloco="cardapio" data-cardapio-ia>📋 Cardápio/receita</button>
       <button class="btn peq suave" data-bloco="salvas" data-salvas>⭐ Refeições salvas</button>
       <button class="btn peq suave" data-bloco="rotulo" data-rotulo>🏷️ Ler rótulo</button>
       <button class="btn peq suave" data-bloco="novo" data-novo-alim>+ Novo alimento</button>
@@ -53,6 +55,8 @@ export async function render(tela) {
     <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
     <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
   aplicarLayout(tela, 'adicionar');
+  // sem IA do Chrome nem chave do Gemini, o atalho de cardápio some (8.3)
+  motorIA({ comImagem: true }).then((m) => { const b = $('[data-cardapio-ia]', tela); if (!m && b) b.hidden = true; }).catch(() => {});
   if (!visivel('adicionar', 'aba-' + estado.abaAdicionar) && !aba) {
     estado.abaAdicionar = (ordemDe('adicionar').find((id) => id.startsWith('aba-') && visivel('adicionar', id)) || 'aba-recentes').slice(4);
     $$('[data-aba]', tela).forEach((b) => b.setAttribute('aria-pressed', b.dataset.aba === estado.abaAdicionar));
@@ -156,6 +160,7 @@ export async function render(tela) {
     const ab = e.target.closest('[data-aba]');
     if (ab) { estado.abaAdicionar = ab.dataset.aba; q.value = ''; return pesquisar(); }
     if (e.target.closest('[data-foto-ia]')) return folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-cardapio-ia]')) return folhaCardapioIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
     if (e.target.closest('[data-texto-ia]')) return folhaTextoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
     if (e.target.closest('[data-salvas]')) return folhaSalvas({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
     if (e.target.closest('[data-rotulo]')) return folhaRotulo({ aoSalvar: async (f) => { await recarregar(); abrir(f); } });

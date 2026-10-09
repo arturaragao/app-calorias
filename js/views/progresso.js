@@ -1,7 +1,7 @@
 // views/progresso.js — painel de progresso: resumo com comparação, peso com tendência e alvo, gasto real (TDEE adaptativo),
 // calorias por semana, calendário de aderência, relatório semanal, macros, origem das calorias, composição corporal e medidas.
 
-import { db } from '../db.js';
+import { db, kvGet, kvSet } from '../db.js';
 import { estado, salvarConfig, salvarMetas } from '../state.js';
 import { totalDia, ehTreino, ETIQUETAS, alvoProteinaRefeicao } from '../diary.js';
 import { metaDoDia, metaCalorica, registrarHistorico } from '../goals.js';
@@ -15,7 +15,9 @@ import { compartilharRelatorio } from './relatorio-img.js';
 import { tabelaMicros } from './micros-ui.js';
 import { gerarRelatorioPDF } from './relatorio-pdf.js';
 import { carregarBase } from '../foods.js';
-import { aplicarLayout, botaoOrganizar } from '../layout.js';
+import { aplicarLayout, botaoOrganizar, visivel } from '../layout.js';
+import { numerosCoach, contarEtiquetas, guardarResposta } from '../coach.js';
+import { coachSemanal, motorIA, rotuloCota } from '../ia.js';
 import { topo, esc, $, seg, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
 import { chaveData, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, somarDias, DIAS_CURTOS } from '../utils.js';
 
@@ -84,6 +86,7 @@ export async function render(tela) {
         <p class="mudo" style="margin:0 0 6px">Média dos dias com registro × meta (traço). Âmbar = mais de 10% acima.</p><div id="g-sem"></div></div>
       <div class="card" id="c-cal" data-bloco="calendario"></div>
       <div class="card" id="c-rel" data-bloco="relatorio"></div>
+      <div class="card" id="c-coach" data-bloco="coach" hidden></div>
       ${cardMacros(mm)}
       <div class="card" id="c-orig" data-bloco="origem"></div>
       <div class="card" data-bloco="composicao"><div class="card-tit"><h2>Composição corporal</h2>
@@ -213,11 +216,54 @@ export async function render(tela) {
         <p class="mudo" style="margin:4px 0">${r.registrados} de 7 dias registrados · P ${fmtNum(Math.round(m.pct.prot))}% · C ${fmtNum(Math.round(m.pct.carb))}% · G ${fmtNum(Math.round(m.pct.gord))}% das kcal</p>
         <button class="btn bloco" data-compartilhar style="margin-top:8px">Compartilhar resumo (imagem)</button>`
       : '<p class="mudo">Nenhum dia registrado nesta semana.</p>'}`;
+    desenharCoach(r);
     const b = $('[data-compartilhar]', tela);
     if (b) b.onclick = async () => {
       b.disabled = true;
       try { await compartilharRelatorio(r); } catch (e) { console.error(e); aviso('Não foi possível gerar a imagem: ' + e.message); }
       b.disabled = false;
+    };
+  }
+
+  // ---------- Coach semanal (IA) ----------
+  // Uma chamada por semana (resposta guardada); só números agregados saem do aparelho. Sem motor de IA → cartão escondido.
+  async function desenharCoach(r) {
+    const el = $('#c-coach', tela);
+    if (!el) return;
+    const cache = (await kvGet('coach', {})) || {};
+    const salvo = cache[r.inicio];
+    const motor = salvo ? null : await motorIA();
+    if (!salvo && !motor) { el.hidden = true; return; }
+    if (!visivel('progresso', 'coach')) return;   // escondido em "Organizar"
+    el.hidden = false;
+    const terminou = r.fim < hoje;
+    el.innerHTML = `<h2 style="margin-bottom:6px">🧭 Coach da semana (IA)</h2>
+      ${salvo ? `<ul class="coach-obs">${salvo.observacoes.map((o) => `<li>${esc(o)}</li>`).join('')}</ul>
+          <p class="nota" style="margin:8px 0 4px"><b>Ação da semana:</b> ${esc(salvo.acao)}</p>
+          <p class="mudo" style="margin:0;font-size:.76rem">Gerado em ${fmtData(salvo.data)} · ${salvo.motor === 'local' ? 'IA do Chrome' : 'Gemini'} · uma análise por semana.</p>`
+        : !r.registrados ? '<p class="mudo">Sem dias registrados nesta semana.</p>'
+        : !terminou ? '<p class="mudo">Disponível depois do domingo, com a semana completa.</p>'
+        : `<p class="mudo" style="margin-top:0">3 observações e 1 ação prática a partir dos números desta semana. Vão só médias, metas, aderência,
+            peso e etiquetas — nenhum alimento ou nota.</p>
+          <button class="btn prim bloco" data-coach>Analisar semana ${dd5(r.inicio)} a ${dd5(r.fim)}</button>
+          <p class="mudo" id="coach-st" style="margin:6px 0 0;font-size:.76rem">${esc(await rotuloCota())}</p>`}`;
+    const b = $('[data-coach]', el);
+    if (b) b.onclick = async () => {
+      b.disabled = true; b.textContent = 'Analisando…';
+      try {
+        const relAnt = P.relatorioSemana(dias, tend, somarDias(r.inicio, -7));
+        const nums = numerosCoach({ rel: r, relAnt, perfil: estado.perfil || {}, pesoKg: tendEm.get(r.fim) ?? pesoEm(r.fim),
+          tags: contarEtiquetas(P.anotacoesEntre(todosDiarios, r.inicio, r.fim)) });
+        const motorUsado = await motorIA();
+        const resp = await coachSemanal(nums);
+        if (!resp) throw new Error('A IA não devolveu uma análise utilizável. Tente de novo mais tarde.');
+        await kvSet('coach', guardarResposta(cache, r.inicio, { ...resp, data: hoje, motor: motorUsado }));
+        desenharCoach(r);
+      } catch (e) {
+        b.disabled = false; b.textContent = 'Tentar de novo';
+        const st = $('#coach-st', el);
+        if (st) st.innerHTML = `<span class="erro">${esc(e.message)}</span>`;
+      }
     };
   }
 

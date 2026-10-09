@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro novo (Pacotes 6–9). Pacotes 6 (v14) e 7 (v15) entregues; Pacote 8 em seguida (pedido do Artur: 7 e 8 juntos).
+**Etapa atual:** roteiro novo (Pacotes 6–9). Pacotes 6 (v14), 7 (v15) e 8 (v16) entregues; próximo: Pacote 9, após OK do Artur.
 
 **Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
 - [x] Pacote 1 — Progresso profissional (v10)
@@ -10,9 +10,16 @@
 - [x] Pacote 5 (v13) — telas organizáveis, cores editáveis, Detalhes do dia novo, painel da refeição, mL, ícone novo
 - [x] Pacote 6 (v14) — correções e robustez
 - [x] Pacote 7 (v15) — inteligência sem custo (o que comer agora, chips de 1 toque, lançamento suspeito, ditado por voz)
-- [ ] Pacote 8 — IA gratuita (coach semanal, foto de cardápio/receita, Gemini Nano, limite diário visível)
+- [x] Pacote 8 (v16) — IA gratuita (coach semanal, foto de cardápio/receita, Gemini Nano, limite diário visível)
 - [ ] Pacote 9 — acabamento (contraste AA, deslizar dias, animações, tour, Drive quando vier o ID OAuth)
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 8 (v16, 2026-10-09)**
+- Motores de IA (js/ia.js): IA embutida do Chrome (Prompt API/Gemini Nano, js/ia-local.js) primeiro, se já estiver "available" (offline, sem cota; falhou → Gemini); senão Gemini com a chave; senão a função some (coach e atalho de cardápio) ou pede a chave (foto/texto/rótulo, como antes).
+- Limite diário do app (js/ia-cota.js): padrão 20 chamadas ao Gemini por dia (editável em Ajustes › IA, 1–500), contado só em respostas OK; "Gemini: N de L chamadas restantes hoje" no topo das folhas de IA, no coach e em Ajustes. Esgotado → mensagem clara, nada trava.
+- Coach da semana (js/coach.js + bloco "coach" no Progresso, segue a semana do relatório): só números agregados (médias × metas, g/kg, aderência, tendência/variação de peso, objetivo/ritmo, semana anterior, contagem de etiquetas; nada de alimentos, notas ou nome) → 3 observações + 1 ação; resposta guardada no kv "coach" (12 semanas), uma chamada por semana, só depois do domingo.
+- Foto de cardápio/receita (folhaCardapioIA; atalho "📋 Cardápio/receita" no Adicionar e no menu ⋯ da refeição): cardápio → revisão igual à foto do prato (TACO/IA, gramas editáveis) → lança; receita → cria receita com os ingredientes ligados à TACO/Meus alimentos (porções lidas de "rende N porções") e abre o editor.
+- Testes: 130 aprovados. Conferido no navegador (375 px) com Gemini simulado: coach (payload só agregado, cota contada), receita por foto, limite esgotado; sem erros no console.
 
 **Pacote 7 (v15, 2026-10-09)**
 - "🍽 O que comer agora" (bloco novo do Diário, só hoje e com ≥ 50 kcal restantes): alvo = parte do restante para a próxima refeição vazia (parcela distRef entre as vazias) ou "Restante do dia"; 3 combinações (gulosa, 1–3 alimentos, porções entre 0,5× e 2× a sua quantidade típica, passo 5 g) com os alimentos frequentes da refeição (30 dias) + favoritos; botão Lançar com desfazer. Lógica pura em js/inteligencia.js; folha em views/sugestao.js.

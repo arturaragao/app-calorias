@@ -7,10 +7,12 @@ import { db } from '../db.js';
 import { metaDoDia } from '../goals.js';
 import { ehTreino } from '../diary.js';
 import { aplicarTema } from '../app.js';
-import { uid, chaveData, fmtNum, fmtKcal } from '../utils.js';
+import { uid, chaveData, fmtNum, fmtKcal, lerNumero } from '../utils.js';
 import { exportar, apagarTudo } from '../backup.js';
 import { cartaoDrive, ligarCartaoDrive, confirmarEImportar } from './drive-ui.js';
-import { lerChave, salvarChave, chaveValida } from '../ia.js';
+import { lerChave, salvarChave, chaveValida, rotuloCota } from '../ia.js';
+import { limiteDiario, definirLimite, LIMITE_PADRAO } from '../ia-cota.js';
+import { localDisponivel } from '../ia-local.js';
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
 import { CORES_PADRAO, NOMES_CORES, PALETAS, aplicarCores } from '../cores.js';
@@ -73,13 +75,17 @@ export async function render(tela) {
         <label class="btn">Importar backup<input type="file" accept=".json,application/json" id="bk-arq" hidden></label></div>
       <p class="mudo">Guarde o arquivo fora do celular (Drive, e-mail para você). Importar substitui os dados atuais.</p>
     </div>
-    <div class="card" id="ia"><h2 style="margin-bottom:6px">IA (Gemini): foto, texto e rótulo</h2>
+    <div class="card" id="ia"><h2 style="margin-bottom:6px">IA: foto, texto, rótulo, cardápio e coach</h2>
       <p class="mudo" style="margin-top:0">Usa a cota gratuita da API do Gemini com a sua chave. Crie em
         <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> e <b>não ative faturamento</b>
         no projeto: assim, passou do limite, ela só recusa — nunca cobra. A chave fica só neste aparelho.</p>
       <form id="f-ia" class="linha"><input type="password" name="chave" placeholder="${lerChave() ? 'Chave salva ✓ (cole outra para trocar)' : 'Cole a chave (AIza…)'}" autocomplete="off" style="flex:1">
         <button class="btn prim">Salvar</button></form>
-      ${lerChave() ? '<button class="btn peq suave" data-ia-remover style="margin-top:8px">Remover chave</button>' : ''}</div>
+      ${lerChave() ? '<button class="btn peq suave" data-ia-remover style="margin-top:8px">Remover chave</button>' : ''}
+      <p class="mudo" id="ia-status" style="margin:10px 0 6px"></p>
+      <label class="campo"><span>Limite diário de chamadas ao Gemini (do app; padrão ${LIMITE_PADRAO})</span>
+        <input type="text" inputmode="numeric" name="ia-limite" value="${limiteDiario()}" style="max-width:120px"></label>
+      <p class="mudo" style="margin:0;font-size:.76rem">O Google não informa a cota restante; este limite do app evita esbarrar nela. Se o Chrome tiver a IA embutida (Gemini Nano) pronta, ela é usada primeiro: offline e sem contar no limite.</p></div>
     <div class="card"><h2 style="margin-bottom:6px">Exportar diário (planilha)</h2>
       <p class="mudo" style="margin-top:0">Arquivo CSV que abre no Excel ou no Planilhas Google (separador “;”, vírgula decimal).</p>
       <div class="grade2"><button class="btn" data-csv="itens">Item por item</button><button class="btn" data-csv="totais">Totais por dia</button></div></div>
@@ -117,7 +123,18 @@ export async function render(tela) {
   tela.oninput = (e) => {
     if (e.target.dataset.cor) aplicarCores({ ...cores(), [e.target.dataset.cor]: e.target.value });
   };
+  // status da IA: motor disponível e chamadas restantes
+  Promise.all([localDisponivel(), rotuloCota()]).then(([local, cota]) => {
+    const el = $('#ia-status', tela);
+    if (el) el.textContent = (local ? 'IA do Chrome disponível neste aparelho (usada primeiro). ' : 'IA do Chrome não disponível neste aparelho. ') + (lerChave() ? cota.replace(/^IA do Chrome.*$/, '') : 'Sem chave do Gemini.');
+  }).catch(() => {});
+
   tela.onchange = (e) => {
+    if (e.target.name === 'ia-limite') {
+      const n = lerNumero(e.target.value);
+      if (!(n >= 1 && n <= 500)) { e.target.value = limiteDiario(); return aviso('Use um número de 1 a 500.'); }
+      definirLimite(n); aviso('Limite diário: ' + Math.round(n) + ' chamadas'); return;
+    }
     if (e.target.dataset.cor) salvarCores({ ...cores(), [e.target.dataset.cor]: e.target.value });
   };
 
