@@ -27,7 +27,7 @@ export async function render(tela) {
   const texto = [r.titulo, r.texto, r.url].filter(Boolean).join(' ').trim();
   if (r.imagens.length) {
     const url = URL.createObjectURL(r.imagens[0]);
-    const p = abrirFolha('Imagem recebida', `<img class="ia-foto" src="${url}" alt="Imagem compartilhada">
+    const p = abrirFolha('Imagem recebida', `<img class="ia-foto" decoding="async" src="${url}" alt="Imagem compartilhada">
       <p class="mudo" style="margin-top:0">O que é esta imagem?</p>
       <div class="menu-lista">
         <button class="btn" data-o="prato">${ic('camera')} Foto do prato</button>

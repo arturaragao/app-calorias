@@ -98,10 +98,10 @@ export async function render(tela) {
       <div class="card" id="c-lacuna" data-bloco="lacuna" hidden></div>
       <div class="card" id="c-orig" data-bloco="origem"></div>
       <div class="card" data-bloco="composicao"><div class="card-tit"><h2>Composição corporal</h2>
-        <select id="s-prot" style="width:auto;min-height:40px">${Object.entries(PROTOCOLOS).map(([k, p]) => `<option value="${k}" ${k === protSel ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
+        <select id="s-prot" style="width:auto;min-height:44px">${Object.entries(PROTOCOLOS).map(([k, p]) => `<option value="${k}" ${k === protSel ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
         <div id="comp-resumo"></div><div id="g-dobra"></div><div id="g-comp" style="margin-top:10px"></div></div>
       <div class="card" data-bloco="circ"><div class="card-tit"><h2>Circunferências</h2>
-        <select id="s-circ" style="width:auto;min-height:40px">${defsCirc.map((d) => `<option value="${d.id}" ${d.id === circSel ? 'selected' : ''}>${esc(d.nome)}</option>`).join('')}</select></div>
+        <select id="s-circ" style="width:auto;min-height:44px">${defsCirc.map((d) => `<option value="${d.id}" ${d.id === circSel ? 'selected' : ''}>${esc(d.nome)}</option>`).join('')}</select></div>
         <div id="circ-resumo"></div><div id="g-circ"></div></div>
       <button class="btn bloco suave" data-bloco="pdf" data-pdf style="margin-bottom:12px">${ic('file-text')} Relatório em PDF (para nutricionista)</button>
       <p class="mudo" style="text-align:center">Arraste o dedo sobre os gráficos para ver os valores.</p>

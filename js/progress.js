@@ -272,3 +272,14 @@ export function origemCalorias(diarios, nomesRef = {}) {
     topProt: [...alims].sort((a, b) => b.prot - a.prot).slice(0, 10),
   };
 }
+
+// ---------- Onboarding: projeção até o peso-alvo ----------
+
+/** Semanas e data para ir de `peso` a `alvo` no ritmo (kg/semana). null se não faz sentido. */
+export function projecaoInicial(peso, alvo, objetivo, ritmo, hoje) {
+  if (!(alvo > 0) || !(ritmo > 0) || objetivo === 'manter') return null;
+  const dif = alvo - peso;
+  if ((objetivo === 'perder' && dif >= 0) || (objetivo === 'ganhar' && dif <= 0)) return null;
+  const semanas = Math.abs(dif) / ritmo;
+  return semanas > 156 ? null : { semanas, data: somarDias(hoje, Math.round(semanas * 7)) };
+}

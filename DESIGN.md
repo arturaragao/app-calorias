@@ -46,6 +46,7 @@ Referência de todas as telas. Inspiração: Material 3 Expressive (sem copiar o
 | Barra de seleção | `.cesta-barra` | Fixa acima do "+", com Cancelar e Lançar N. |
 | Item planejado | `.item-wrap.planejado` + `.ico.confirmar` | Listrado e em itálico até o ✓. |
 | Dia do planejador | `.plano-dia` > `.pd-cab` + `.pd-barra` + `.pd-ref` | Barra azul/verde/âmbar como a aderência; planejados em itálico. |
+| Onboarding | `.bv` > `.bv-prog` + `.bv-corpo` (`.bv-op` opções, `.bv-num` número grande) + `.bv-nav` | Uma pergunta por tela; resultado com `.bv-meta`, `.bv-calc` e gráfico `svg.proj`. |
 | Item de compra | `.compra` (checkbox + nome + quantidade) | Marcado = riscado. |
 | Prato sugerido | `.rest-prato` (`.melhor`) | O melhor ganha borda e o botão preenchido. |
 
@@ -90,7 +91,7 @@ Referência de todas as telas. Inspiração: Material 3 Expressive (sem copiar o
 ## Regras de uso
 
 1. Uma ação preenchida por tela/folha; o resto tonal, contorno ou texto.
-2. Toques ≥ 48 px (ícones), ≥ 40 px (chips e botões pequenos).
+2. Toques ≥ 48 px; chips e botões pequenos ≥ 40 px visíveis com área invisível até 48 px (::before). Conferir com `node scripts/auditar_a11y.mjs`.
 3. Texto de ajuda permanente é sinal de interface confusa: prefira rótulo melhor, estado vazio ou dica única.
 4. Nada de cor viva/neon; cor dos macros só em barras, pontos e roscas.
 5. Novos componentes entram aqui antes de entrar nas telas.

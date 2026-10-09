@@ -170,7 +170,7 @@ async function desenharFoto() {
   const el = $('#rec-foto', tela);
   if (!el) return;
   const blob = fotoPendente || (rec.id ? (await fotosDe('receita', rec.id).catch(() => []))[0]?.blob : null);
-  el.innerHTML = blob ? `<img src="${URL.createObjectURL(blob)}" alt="Foto da receita">` : '';
+  el.innerHTML = blob ? `<img decoding="async" src="${URL.createObjectURL(blob)}" alt="Foto da receita">` : '';
 }
 
 /** Ingredientes vindos de texto (interpretador local, sem IA) ou de link (Gemini) entram na lista para conferir. */

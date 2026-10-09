@@ -71,7 +71,7 @@ export async function folhaFotoIA({ data = estado.dataAtual, refId = estado.refe
   mostrarCota(p, true);
   const fotos = [];   // { blob, url }
   const desenharFotos = () => {
-    $('#fotos-sel', p).innerHTML = fotos.map((f, i) => `<span class="foto-mini"><img src="${f.url}" alt="Foto ${i + 1}">
+    $('#fotos-sel', p).innerHTML = fotos.map((f, i) => `<span class="foto-mini"><img decoding="async" src="${f.url}" alt="Foto ${i + 1}">
       <button type="button" class="ico" data-tirar-foto="${i}" aria-label="Tirar a foto ${i + 1}">${ic('x')}</button></span>`).join('');
     const b = $('[data-estimar]', p);
     b.disabled = !fotos.length;
@@ -251,7 +251,7 @@ function folhaChave(depois) {
 // ---------- Estimar e revisar ----------
 
 async function processar(p, chamada, ctx) {
-  p.innerHTML = p.innerHTML.split('</h2>')[0] + `</h2>${ctx.url ? `<img src="${ctx.url}" alt="" class="ia-foto">` : ''}
+  p.innerHTML = p.innerHTML.split('</h2>')[0] + `</h2>${ctx.url ? `<img src="${ctx.url}" alt="" class="ia-foto" decoding="async">` : ''}
     <p class="mudo" id="ia-st" role="status">Estimando com a IA…</p>`;
   try {
     const [r, cat] = await Promise.all([chamada(), catalogo()]);
@@ -288,7 +288,7 @@ function revisar(p, { itens: visiveis, ocultos = [], obs, cat, blob, url, guarda
         <label class="ia-g"><input type="text" inputmode="decimal" name="g" value="${fmtNum(Math.round(it.g || 100))}" aria-label="Gramas"><span>g</span></label></div>
       <div class="mudo num ia-n"></div></div>`;
   };
-  p.innerHTML = p.innerHTML.split('</h2>')[0] + `</h2>${url ? `<img src="${url}" alt="" class="ia-foto">` : ''}
+  p.innerHTML = p.innerHTML.split('</h2>')[0] + `</h2>${url ? `<img src="${url}" alt="" class="ia-foto" decoding="async">` : ''}
     ${obs ? `<p class="nota">${esc(obs)}</p>` : ''}
     ${itens.length ? itens.map(linha).join('') : '<p class="erro">Nenhum alimento reconhecido. Tente de novo ou use a Adição rápida.</p>'}
     <p class="num" id="ia-tot" style="font-weight:600"></p>

@@ -4,32 +4,33 @@ import { estado, lerDia, gravarDia, pesoAtual, datasComRegistro } from '../state
 import { ic } from '../icones.js';
 import { db } from '../db.js';
 import { totalAgua, AGUA_PADRAO } from './reg-agua.js';
-import { detalheDia, painelRefeicao } from './detalhe-dia.js';
 import { aplicarLayout, botaoOrganizar } from '../layout.js';
 import { metaDoDia } from '../goals.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem,
   criarItemRapido, adicionarItem, copiarPara, criarItem, lancarSalva, ETIQUETAS, ehTreino, alvoProteinaRefeicao, linhaDoTempo, confirmarPlanejado } from '../diary.js';
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
-import { abrirScanner } from './scanner.js';
-import { diasDesdeUltima } from './reg-dobras.js';
 import { diasSemBackup } from '../backup.js';
 import { contagemDoDia } from '../photos.js';
 import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha, vibrar, esqueleto, talvezDica } from '../ui.js';
 import { situacaoDia } from '../progress.js';
 import { microsMaisDistantes } from '../micros.js';
 import { qualidadeDia } from '../nutricao.js';
-import { idadePerfil } from './onboarding.js';
 import { estadoVazio } from '../vazio.js';
-import { talvezTour } from './tour.js';
-import { chaveData, somarDias, fmtData, fmtKcal, fmtG, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
-import { folhaQuantidade } from './quantidade.js';
-import { folhaFotos } from './fotos.js';
-import { folhaFotoIA, folhaTextoIA, folhaCardapioIA } from './foto-ia.js';
-import { folhaSalvarRefeicao, folhaSalvas } from './salvas.js';
+import { chaveData, somarDias, fmtData, fmtKcal, fmtG, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana, idadeEm } from '../utils.js';
 import { pendenteToque } from '../drive.js';
 import { folhaOQueComer, diariosRecentes, contextoSuspeito, primeiraSugestao, lancarCombo, refeicaoPeloHorario } from './sugestao.js';
 import { refeicaoDeSempre, avaliarSuspeito } from '../inteligencia.js';
-import { enviarAgora } from './drive-ui.js';
+
+// Carregados só quando usados (abrir o Diário fica mais leve: orçamento de JS inicial do Pacote 16)
+const sob = (mod, nome) => async (...a) => (await import(mod))[nome](...a);
+const detalheDia = sob('./detalhe-dia.js', 'detalheDia'), painelRefeicao = sob('./detalhe-dia.js', 'painelRefeicao');
+const abrirScanner = sob('./scanner.js', 'abrirScanner'), folhaQuantidade = sob('./quantidade.js', 'folhaQuantidade');
+const folhaFotos = sob('./fotos.js', 'folhaFotos'), enviarAgora = sob('./drive-ui.js', 'enviarAgora');
+const folhaFotoIA = sob('./foto-ia.js', 'folhaFotoIA'), folhaCardapioIA = sob('./foto-ia.js', 'folhaCardapioIA');
+const folhaSalvarRefeicao = sob('./salvas.js', 'folhaSalvarRefeicao'), folhaSalvas = sob('./salvas.js', 'folhaSalvas');
+const talvezTour = () => { if (!estado.config.tourVisto) import('./tour.js').then((m) => m.talvezTour()); };
+const diasDesdeUltima = () => import('./reg-dobras.js').then((m) => m.diasDesdeUltima());
+const idadePerfil = (p) => (p.nascimento ? idadeEm(p.nascimento) : p.idade);
 
 let tela, dia, meta, fotosCont = {}, ignorarClique = false, alvoProtRef = 0, chips = {}, agoraRestante = null, anelAntes = null;
 let idsAntes = null, novos = new Set();

@@ -19,7 +19,7 @@ export async function folhaFotos(data, refId, nomeRef, aoMudar) {
     const fotos = await fotosDe(data, refId);
     p.querySelector('#lst').innerHTML = fotos.length ? fotos.map((f, i) => {
       const u = URL.createObjectURL(f.blob); urls.push(u);
-      return `<div class="card" style="padding:8px"><img src="${u}" alt="Foto ${i + 1} de ${esc(nomeRef)}" style="width:100%;border-radius:10px;display:block">
+      return `<div class="card" style="padding:8px"><img decoding="async" loading="lazy" src="${u}" alt="Foto ${i + 1} de ${esc(nomeRef)}" style="width:100%;border-radius:10px;display:block">
         <div class="linha" style="margin-top:8px"><input type="text" data-obs="${i}" value="${esc(f.obs)}" placeholder="Observação (ex.: prato cheio, 2 conchas de feijão)" maxlength="200">
         <button class="ico" data-rem="${i}" aria-label="Apagar foto ${i + 1}" style="flex:0 0 44px">${ICONES.lixo}</button></div></div>`;
     }).join('') : '<p class="mudo">Nenhuma foto nesta refeição.</p>';

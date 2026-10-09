@@ -2,7 +2,7 @@
 // Guardadas na store "photos" com chave "corpo|AAAA-MM-DD" -> { fotos: [{ id, blob, pose, ts }] } (entram no backup com fotos).
 
 import { db } from '../db.js';
-import { comprimir } from '../photos.js';
+import { comprimir, urlMiniatura } from '../photos.js';
 import { lerPesos } from './reg-peso.js';
 import { $, $$, esc, aviso, abrirFolha, fecharFolha, ICONES, vibrar, confirmar } from '../ui.js';
 import { chaveData, fmtData, fmtNum, uid } from '../utils.js';
@@ -55,8 +55,8 @@ export async function render(el) {
         <select id="c-pose" style="width:auto;min-height:40px">${POSES.map(([v, r]) => `<option value="${v}" ${v === pose ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="grade2"><label class="campo"><span>Antes</span><select id="c-a">${opts(a)}</select></label>
         <label class="campo"><span>Depois</span><select id="c-b">${opts(b)}</select></label></div>
-      <div class="antes-depois" id="ad"><img src="${url(foto(a).blob)}" alt="Antes, ${fmtData(a)}">
-        <img src="${url(foto(b).blob)}" alt="Depois, ${fmtData(b)}" class="depois" style="clip-path:inset(0 0 0 50%)">
+      <div class="antes-depois" id="ad"><img decoding="async" src="${url(foto(a).blob)}" alt="Antes, ${fmtData(a)}">
+        <img decoding="async" src="${url(foto(b).blob)}" alt="Depois, ${fmtData(b)}" class="depois" style="clip-path:inset(0 0 0 50%)">
         <div class="divisa" style="left:50%"></div><span class="rot-a">${dd(a)}</span><span class="rot-b">${dd(b)}</span></div>
       <input type="range" id="c-r" min="0" max="100" value="50" aria-label="Arraste para comparar" style="width:100%">
       ${pa != null && pb != null ? `<p class="mudo" style="margin:4px 0 0">Peso: ${fmtNum(pa)} → ${fmtNum(pb)} kg (${pb - pa > 0 ? '+' : pb - pa < 0 ? '−' : ''}${fmtNum(Math.abs(Math.round((pb - pa) * 10) / 10))} kg)</p>` : ''}`;
@@ -74,8 +74,14 @@ export async function render(el) {
   $('#lista', el).innerHTML = regs.length ? regs.map((r) => `<div class="card"><div class="card-tit"><h2>${fmtData(r.data)}</h2>
       ${pesoEm(r.data) != null ? `<span class="mudo num">${fmtNum(pesoEm(r.data))} kg</span>` : ''}</div>
       <div class="fotos-corpo">${r.fotos.map((f) => `<button data-ver="${r.data}|${f.id}" aria-label="${nomePose(f.pose)} em ${fmtData(r.data)}">
-        <img src="${url(f.blob)}" alt=""><span>${nomePose(f.pose)}</span></button>`).join('')}</div></div>`).join('')
+        <img decoding="async" loading="lazy" data-mini="${r.data}|${f.id}" alt=""><span>${nomePose(f.pose)}</span></button>`).join('')}</div></div>`).join('')
     : '<p class="mudo" style="text-align:center;margin:18px 0">Nenhuma foto ainda.</p>';
+  // grade com miniaturas (leves); a foto inteira só ao abrir
+  for (const img of el.querySelectorAll('img[data-mini]')) {
+    const [d, id] = img.dataset.mini.split('|');
+    const f = regs.find((r) => r.data === d)?.fotos.find((x) => x.id === id);
+    if (f) urlMiniatura(f.blob).then((u) => { img.src = u; });
+  }
   desenharComp();
 
   el.onclick = async (e) => {
@@ -84,7 +90,7 @@ export async function render(el) {
     if (v) {
       const [data, id] = v.dataset.ver.split('|');
       const r = regs.find((x) => x.data === data), f = r.fotos.find((x) => x.id === id);
-      const p = abrirFolha(`${nomePose(f.pose)} · ${fmtData(data)}`, `<img src="${url(f.blob)}" alt="" style="width:100%;border-radius:12px">
+      const p = abrirFolha(`${nomePose(f.pose)} · ${fmtData(data)}`, `<img decoding="async" src="${url(f.blob)}" alt="" style="width:100%;border-radius:12px">
         <button class="btn perigo bloco" data-apagar style="margin-top:10px">Apagar foto</button>`);
       $('[data-apagar]', p).onclick = async () => {
         if (!(await confirmar('Apagar esta foto?', { titulo: 'Apagar foto', ok: 'Apagar', perigo: true }))) return;

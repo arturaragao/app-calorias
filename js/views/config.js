@@ -9,7 +9,7 @@ import { db } from '../db.js';
 import { metaDoDia } from '../goals.js';
 import { ehTreino } from '../diary.js';
 import { aplicarTema } from '../app.js';
-import { uid, chaveData, fmtNum, fmtKcal, lerNumero } from '../utils.js';
+import { uid, chaveData, fmtNum, fmtKcal, lerNumero, fmtData } from '../utils.js';
 import { exportar, apagarTudo } from '../backup.js';
 import { cartaoDrive, ligarCartaoDrive, confirmarEImportar } from './drive-ui.js';
 import { lerChave, salvarChave, chaveValida, rotuloCota } from '../ia.js';
@@ -86,6 +86,9 @@ export async function render(tela) {
         <label class="btn">Importar backup<input type="file" accept=".json,application/json" id="bk-arq" hidden></label></div>
       <p class="mudo">Guarde o arquivo fora do celular (Drive, e-mail para você). Importar substitui os dados atuais.</p>
     </div>
+    <div class="card" id="c-copias"><h2 style="margin-bottom:6px">${ic('history')} Cópias automáticas (neste aparelho)</h2>
+      <p class="mudo" style="margin-top:0">Uma por dia, ao abrir o app (as últimas 7, sem fotos). Servem para voltar atrás se algo der errado; não substituem o backup fora do celular.</p>
+      <ul class="lista" id="copias"><li class="mudo" style="padding:8px 0">…</li></ul></div>
     <div class="card" id="ia"><h2 style="margin-bottom:6px">IA: foto, texto, rótulo, cardápio e coach</h2>
       <p class="mudo" style="margin-top:0">Usa a cota gratuita da API do Gemini com a sua chave. Crie em
         <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> e <b>não ative faturamento</b>
@@ -112,12 +115,13 @@ export async function render(tela) {
       ficam em branco e marcados como “dados parciais”.</p>
       <p class="mudo">Produtos industrializados: <b>Open Food Facts</b> (openfoodfacts.org), base colaborativa sob licença
       Open Database License (ODbL). Confira sempre com o rótulo.</p>
-      <p class="mudo">Ícones: <b>Lucide</b> (lucide.dev), licença ISC. Fonte: Roboto do sistema.</p>
+      <p class="mudo"><b>Licenças</b>: tabela TACO (NEPA/UNICAMP, uso com citação da fonte) · dados do Open Food Facts (ODbL; produtos salvos continuam sob ODbL) · ícones <b>Lucide</b> (lucide.dev, licença ISC) · fonte: Roboto do próprio sistema (o app não distribui fontes). Tudo feito para uso pessoal, sem anúncios e sem coleta de dados.</p>
       <p class="mudo">Porções caseiras são aproximadas e editáveis. TMB por Mifflin-St Jeor (Am J Clin Nutr 1990;51:241-7).
       Os dados ficam só neste aparelho (e no seu Google Drive, se conectar). Na estimativa por foto, a imagem vai ao Gemini (Google);
       na cota gratuita o Google pode usá-la para melhorar seus produtos.</p></div>`;
   desenharRefs(tela);
   ligarAtalhos($('#c-atalhos', tela));
+  desenharCopias(tela);
   infoBackup(tela);
 
   $('#bk-arq', tela).onchange = async (e) => {
@@ -263,4 +267,22 @@ function desenharRefs(tela) {
     <button class="ico" data-cima aria-label="Subir ${esc(r.nome)}" ${i === 0 ? 'disabled' : ''}>${ICONES.cima}</button>
     <button class="ico" data-baixo aria-label="Descer ${esc(r.nome)}" ${i === refs.length - 1 ? 'disabled' : ''}>${ICONES.baixo}</button>
     <button class="ico" data-remover aria-label="Remover ${esc(r.nome)}">${ICONES.lixo}</button></li>`).join('');
+}
+
+/** Lista as cópias automáticas diárias e restaura uma (substitui os dados atuais, com confirmação). */
+async function desenharCopias(tela) {
+  const el = $('#copias', tela);
+  if (!el) return;
+  const { listarCopias, lerCopia } = await import('../instantaneos.js');
+  const l = await listarCopias().catch(() => []);
+  el.innerHTML = l.length ? l.map((c) => `<li><button type="button" data-copia="${c.data}"><span><span class="nome">${fmtData(c.data)}${c.data === chaveData() ? ' (hoje, ao abrir)' : ''}</span>
+    <span class="mudo">${new Date(c.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${Math.max(1, Math.round(c.tamanho / 1024))} KB</span></span>
+    <span class="btn texto peq">Restaurar</span></button></li>`).join('')
+    : '<li class="mudo" style="padding:8px 0">A primeira cópia é feita na próxima abertura do app.</li>';
+  el.onclick = async (e) => {
+    const b = e.target.closest('[data-copia]');
+    if (!b) return;
+    const obj = await lerCopia(b.dataset.copia);
+    if (obj) await confirmarEImportar(obj, ` da cópia automática de ${fmtData(b.dataset.copia)}`);
+  };
 }

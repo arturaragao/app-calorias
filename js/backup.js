@@ -41,7 +41,8 @@ const dataURLParaBlob = (u) => fetch(u).then((r) => r.blob());
 
 // ---------- Banco ----------
 
-export async function exportar(incluirFotos) {
+/** Monta o objeto de backup (sem marcar "último backup"; usado também pelas cópias automáticas diárias). */
+export async function montarBackup(incluirFotos) {
   const stores = {};
   for (const s of STORES) {
     if (s === 'photos' && !incluirFotos) continue;
@@ -51,8 +52,11 @@ export async function exportar(incluirFotos) {
     }
     stores[s] = linhas;
   }
-  const obj = { app: APP_ID, schemaVersion: SCHEMA_VERSION, exportadoEm: new Date().toISOString(), comFotos: !!incluirFotos, stores };
-  const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+  return { app: APP_ID, schemaVersion: SCHEMA_VERSION, exportadoEm: new Date().toISOString(), comFotos: !!incluirFotos, stores };
+}
+
+export async function exportar(incluirFotos) {
+  const blob = new Blob([JSON.stringify(await montarBackup(incluirFotos))], { type: 'application/json' });
   const meta = (await kvGet('meta', {})) || {};
   await kvSet('meta', { ...meta, ultimoBackup: Date.now() });
   return blob;

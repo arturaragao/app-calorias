@@ -12,6 +12,8 @@ export function idadePerfil(p) {
 }
 
 export async function render(tela) {
+  // primeiro uso: onboarding 2.0 (uma pergunta por tela); este formulário fica para editar o perfil
+  if (!estado.perfil) return (await import('./boas-vindas.js')).render(tela);
   const p = estado.perfil || { sexo: 'M', altura: '', peso: '', atividade: 'moderado', objetivo: 'manter', ritmo: 0.5 };
   const primeiro = !estado.perfil;
   topo(primeiro ? '<h1>Bem-vindo</h1>' : '<a class="ico" href="#config" aria-label="Voltar">' + ic('chevron-left') + '</a><h1>Perfil</h1><span style="width:48px"></span>');

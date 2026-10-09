@@ -149,6 +149,9 @@ async function iniciar() {
   window.addEventListener('offline', () => aviso('Sem internet: tudo funciona, exceto a consulta ao Open Food Facts.', { ms: 5000 }));
   await navegar();
   registrarSW();
+  // cópia automática local do dia (Ajustes › Cópias automáticas), quando o celular estiver ocioso
+  (window.requestIdleCallback || ((f) => setTimeout(f, 4000)))(() => import('./instantaneos.js')
+    .then((m) => m.talvezCopiaDoDia({ temDados: !!estado.perfil })).catch((e) => console.warn('cópia do dia', e)));
   // backup no Drive: envia em silêncio se houver token válido e novidades (ao abrir e ao sair do app)
   setTimeout(() => tentarAuto().catch(() => {}), 3000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tentarAuto().catch(() => {}); });

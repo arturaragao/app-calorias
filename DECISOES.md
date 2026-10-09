@@ -129,3 +129,8 @@
 - 2026-10-09 · Modos e Rotinas da Samsung: não há documentação oficial de "abrir site" (só relatos da comunidade); o app oferece os endereços para copiar. Alternativa garantida: atalho do ícone.
 - 2026-10-09 · Web NFC (developer.chrome.com/docs/capabilities/nfc): Chrome Android 89+, HTTPS, gesto do usuário e página visível; grava registro "url". Abrir a partir da etiqueta com o app fechado é tratado pelo Android (não documentado para web apps) — por isso "experimental".
 - 2026-10-09 · Jejum: derivado dos `ts` dos itens (só do próprio dia e não planejados); noites só entre dias seguidos; configuração em `config.jejum` {ativo, meta}.
+- 2026-10-09 · Alvos de toque: botões principais ≥ 48 px; chips, botões pequenos e segmentos ≥ 40 px visíveis + 4 px de área invisível em cima e embaixo (::before) = 48 px; calendário com células de ~45 px (7 colunas a 390 px). Auditoria exige ≥ 44 px efetivos.
+- 2026-10-09 · Orçamento de JS inicial medido como gzip (o GitHub Pages entrega comprimido): 92 KB. Diário carrega sob demanda quantidade, detalhes, leitor, fotos, IA, refeições salvas, tour e dobras.
+- 2026-10-09 · Web Worker para a busca: não usado — consulta ≤ 1,5 ms e índice 0,5 ms (limite do roteiro: 50 ms).
+- 2026-10-09 · Cópia automática diária: banco IndexedDB próprio ("calorias-instantaneos"), feita no 1º momento ocioso do dia após abrir o app (estado de antes das mudanças do dia), sem fotos, 7 dias; `montarBackup` não altera "último backup".
+- 2026-10-09 · Onboarding 2.0: valores padrão moderado / perder 0,5 kg; peso-alvo opcional vira config.alvo (início = peso informado); projeção linear pelo ritmo, só se a direção bate e ≤ 3 anos.

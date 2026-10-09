@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro 2.0. Pacotes 10–15 entregues (v19–v26); Pacote 16 em andamento.
+**Etapa atual:** roteiro 2.0 concluído (Pacotes 10–16, v19–v27). Pendente só o backup no Drive (ID OAuth do Artur).
 
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
@@ -9,7 +9,28 @@
 - [x] Pacote 13 — Planejamento, receitas e lista de compras (v24)
 - [x] Pacote 14 — Inteligência prática (v23)
 - [x] Pacote 15 — Atalhos e extras do Android (v26)
-- [ ] Pacote 16 — Qualidade de produto profissional
+- [x] Pacote 16 — Qualidade de produto profissional (v27)
+
+**Pacote 16 (v27, 2026-10-09)**
+- Onboarding 2.0 (views/boas-vindas.js): uma pergunta por tela com barra de progresso e explicação de cada cálculo (Mifflin-St Jeor, fator de atividade, 7700 kcal/kg); tela final com meta, TMB/TDEE/ajuste, macros iniciais e gráfico de projeção até o peso-alvo (que vira o alvo do Progresso). "Restaurar backup" na 1ª tela. O formulário antigo ficou para editar o perfil.
+- Acessibilidade: auditoria (scripts/auditar_a11y.mjs) em 7 telas + 5 folhas — 426 controles, 0 sem nome para o TalkBack, 0 alvos < 44 px (compactos com área de toque ampliada a 48 px, estilo Material 3); escala de fonte (P10) e reduzir movimento mantidos.
+- Desempenho (scripts/medir_desempenho.mjs): Diário pronto em ~450 ms com CPU 4× mais lenta; JS inicial 92 KB gzip (orçamento 120; antes 132) com carregamento sob demanda no Diário; busca ≤ 1,5 ms/consulta e índice 0,5 ms (Web Worker desnecessário: limite do roteiro era 50 ms); imagens com decoding="async"/lazy e miniaturas na grade de fotos corporais.
+- Testes de fluxo (scripts/fluxos.mjs, Edge via playwright-core): onboarding → lançar → editar → apagar/desfazer → exportar backup → restaurar → restaurar cópia automática: 7/7. Testes visuais: scripts/capturas.mjs + comparar_capturas.mjs agora lista % de pixels alterados e mudança de altura por tela/tema.
+- Integridade: cópia automática local por dia (js/instantaneos.js, banco IndexedDB separado, últimas 7, sem fotos, não conta como backup); Ajustes › Cópias automáticas lista e restaura com confirmação.
+- Sobre/licenças: TACO, Open Food Facts (ODbL), Lucide (ISC), fonte do sistema.
+- Testes: 165 aprovados. Contraste AA: 84 telas, 0 reprovações.
+
+**Limitações (fim do roteiro 2.0)**
+- Sem Health Connect/balança (fora de escopo por decisão do Artur); backup no Drive aguarda o ID OAuth.
+- Interpretador e busca dependem de nomes da TACO: pratos prontos (pizza, lasanha, salgados) quase não existem na tabela — viram "não reconhecido" (Buscar/IA) ou Meus alimentos/rótulo.
+- Fator cru/cozido e nota de saúde são aproximações declaradas; check-in e padrões precisam de 2–4 semanas de registros e pesagens.
+- Compartilhar para o app, atalhos e NFC dependem do WebAPK renovado (até ~1 dia) e do Android; "Falar" usa o serviço de voz do Google (internet). Correção do "Falar" (v22) não foi reproduzida em emulador: aguarda confirmação no S23+.
+- Restaurante, receita por link e foto do prato precisam de IA (Chrome Nano ou Gemini na cota gratuita).
+
+**3 próximas ideias**
+1. Lembrete opcional e local (sem servidor) de pesagem/registro via Periodic Background Sync ou notificação agendada, desligado por padrão.
+2. Base de pratos brasileiros prontos (PF, feijoada, lasanha, coxinha) montada como receitas-padrão a partir de ingredientes TACO, marcadas como estimativa — aumentaria o acerto do interpretador e da busca.
+3. Exportar para o nutricionista um relatório semanal automático (PDF/imagem) com check-ins, padrões e qualidade do dia, compartilhado com 1 toque.
 
 **Pacote 15 (v26, 2026-10-09)**
 - Atalhos do ícone revistos: Falar (novo), Foto do prato, Código, Peso; depois Água +250 mL e Adicionar (o Android mostra ~4; extras podem não aparecer). Ícones novos (microfone e gota) no gerador.
@@ -203,3 +224,4 @@
 - Ícone novo: usar ic('nome-lucide') e rodar `node scripts/gerar_sprite.mjs` (requer `npm i`). Capturas: `node scripts/capturas.mjs <rótulo>`; contraste: `node scripts/auditar_contraste.mjs`.
 - Mudou arquivo publicado → incrementar `VERSAO` em `sw.js` **e** em `js/versao.js`; arquivo JS novo → incluir em `ARQUIVOS` (testes conferem os dois).
 - Publicar: `git add -A; git commit; git push` com `$env:GCM_INTERACTIVE='always'`.
+- Verificações (requer `npm i`): `node tests/run.js` · `node scripts/fluxos.mjs` · `node scripts/auditar_a11y.mjs` · `node scripts/auditar_contraste.mjs` · `node scripts/medir_desempenho.mjs` · `node scripts/capturas.mjs <rótulo>` + `node scripts/comparar_capturas.mjs <antes> <depois>`.

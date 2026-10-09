@@ -49,3 +49,22 @@ export async function adicionarFoto(data, refId, arquivo) {
   await gravarFotos(data, refId, fotos);
   return blob.size;
 }
+
+// ---------- Miniaturas (grades de fotos) ----------
+const minis = new WeakMap();
+/** URL de uma miniatura JPEG (lado maior `max` px) do blob; gerada uma vez por blob e guardada em memória. */
+export async function urlMiniatura(blob, max = 360) {
+  if (minis.has(blob)) return minis.get(blob);
+  let url;
+  try {
+    const img = await createImageBitmap(blob);
+    const { w, h } = dimensoes(img.width, img.height, max);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    img.close?.();
+    url = URL.createObjectURL(await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.75)));
+  } catch { url = URL.createObjectURL(blob); }
+  minis.set(blob, url);
+  return url;
+}

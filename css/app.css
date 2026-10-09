@@ -905,3 +905,64 @@ label.btn.desab { opacity: 1; color: color-mix(in srgb, var(--txt) 40%, transpar
 .jejum-tempo b { font-size: var(--fs-28); font-weight: var(--fw-b); letter-spacing: -.02em; margin-right: 6px; }
 .jejum-hist { margin: 8px 0 0; font-size: var(--fs-13); }
 .jejum-hist .ok { color: var(--acento); font-weight: var(--fw-sb); }
+
+/* ---------- Pacote 16: onboarding 2.0 ---------- */
+.bv { display: flex; flex-direction: column; min-height: calc(100dvh - 120px); padding-top: var(--e2); }
+.bv-prog { height: 6px; border-radius: 3px; background: var(--anel-fundo); overflow: hidden; margin-bottom: var(--e5); }
+.bv-prog i { display: block; height: 100%; background: var(--acento); border-radius: 3px; transition: width var(--dur-l) var(--curva-enfase); }
+.bv-corpo { flex: 1; }
+.bv-corpo > h2 { font-size: var(--fs-28); font-weight: var(--fw-b); letter-spacing: -.02em; margin-bottom: var(--e2); }
+.bv-corpo > p.mudo { font-size: var(--fs-16); margin: 0 0 var(--e5); }
+.bv-hero { text-align: center; padding: var(--e8) var(--e2) var(--e5); }
+.bv-hero .i { width: 56px; height: 56px; color: var(--acento); stroke-width: 1.5; }
+.bv-hero h2 { font-size: var(--fs-28); margin: var(--e3) 0 var(--e2); }
+.bv-opcoes { display: flex; gap: var(--e2); flex-wrap: wrap; }
+.bv-opcoes.col { flex-direction: column; }
+.bv-op { flex: 1 1 140px; min-height: 64px; border: 1px solid var(--borda); background-color: var(--sup); color: var(--txt); border-radius: var(--r-m); font: inherit;
+  font-size: var(--fs-16); font-weight: var(--fw-m); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: var(--e2); padding: 0 var(--e4); text-align: left; }
+.bv-op[aria-pressed=true] { border-color: var(--acento); background-color: var(--acento-suave); box-shadow: inset 0 0 0 1px var(--acento); }
+.bv-num { display: flex; align-items: baseline; gap: var(--e2); }
+.bv-num input { font-size: var(--fs-40); font-weight: var(--fw-b); min-height: 72px; text-align: center; }
+.bv-num span { font-size: var(--fs-20); color: var(--txt2); }
+.bv-nav { display: flex; justify-content: space-between; align-items: center; gap: var(--e3); padding: var(--e4) 0 var(--e2); }
+.bv-nav .btn.prim { min-width: 160px; }
+.bv-meta { text-align: center; margin: var(--e2) 0 var(--e4); }
+.bv-meta b { display: block; font-size: var(--fs-40); font-weight: var(--fw-b); letter-spacing: -.02em; color: var(--acento); }
+.bv-calc { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e2); margin-bottom: var(--e3); }
+.bv-calc > div { background: var(--sup2); border-radius: var(--r-s); padding: var(--e2); text-align: center; }
+.bv-calc b { display: block; font-size: var(--fs-16); }
+.bv-calc span { font-size: var(--fs-12); color: var(--txt2); }
+.bv-proj { padding: var(--e3); }
+.proj { width: 100%; height: auto; display: block; }
+.proj text { font-size: 12px; fill: var(--txt); font-weight: 600; }
+.proj text.eixo { fill: var(--txt2); font-weight: 400; font-size: 11px; }
+
+/* ---------- Pacote 16: alvos de toque (meta 48 px) ----------
+   Controles compactos ficam com ≥ 40 px visíveis e ganham 4 px de área de toque invisível em cima e embaixo (::before),
+   como os chips do Material 3; o resto cresce de verdade. Auditoria: node scripts/auditar_a11y.mjs */
+.chip-tog, .btn.peq, .seg button, .pd-txt, .rv-nome, .ref-kcal, .aviso button, .padrao .btn.texto { position: relative; }
+.chip-tog::before, .btn.peq::before, .seg button::before, .pd-txt::before, .rv-nome::before, .ref-kcal::before, .aviso button::before, .padrao .btn.texto::before {
+  content: ''; position: absolute; inset: -4px -2px; }
+.chip-tog, .rv-chips .chip-tog, .chips-ref .chip-tog, .ref-mini .chip-tog, #c-perg .chip-tog { min-height: 40px; }
+.seg button, .seg-modo button { min-height: 40px; }
+.padrao .btn.texto { min-height: 40px; }
+.pd-txt { min-height: 44px; }
+.rv-nome { min-height: 44px; }
+.ref-tit h2[data-painel-ref] { min-height: 44px; }
+.heroi-pontos button { width: 48px; height: 44px; }
+.heroi-pontos { gap: 0; padding: 0; }
+.tit-sel select { min-height: 40px; background-position: calc(100% - 15px) 18px, calc(100% - 10px) 18px; }
+.paletas button { width: 44px; height: 44px; }
+.cor-linha input[type=color] { height: 44px; }
+input[type=password], input[type=email], input[type=url], input[type=tel] {
+  width: 100%; min-height: 52px; border: 1px solid var(--borda); background: var(--sup); border-radius: var(--r-s); padding: 0 14px; }
+label.linha:has(> input[type=checkbox]) { min-height: 48px; }
+.organizar { min-height: 48px; }
+.tit-sel select { min-height: 44px; background-position: calc(100% - 15px) 20px, calc(100% - 10px) 20px; }
+.cal { gap: 2px; }
+#s-prot, #s-circ { min-height: 44px; }
+.pd-ref .ico, .fr-item .ico { width: 44px; height: 44px; flex-basis: 44px; }
+.passo-mini .ico { width: 44px; height: 44px; flex-basis: 44px; }
+.bv { padding-top: var(--e5); }
+.bv-prog { height: 8px; border-radius: 4px; position: relative; z-index: 1; }
+.bv-opcoes.col .bv-op { flex: none; }

@@ -1093,6 +1093,30 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   });
 }
 
+// ---------- Pacote 16: onboarding e integridade ----------
+{
+  const PR = await import('../js/progress.js');
+  const IS = await import('../js/instantaneos.js');
+  t('Onboarding: projeção até o peso-alvo (direção, ritmo e limite de 3 anos)', () => {
+    const p = PR.projecaoInicial(84, 78, 'perder', 0.5, '2026-10-09');
+    if (!p || p.semanas !== 12 || p.data !== '2027-01-01') throw new Error(JSON.stringify(p));
+    if (PR.projecaoInicial(84, 90, 'perder', 0.5, '2026-10-09')) throw new Error('alvo acima ao perder');
+    if (PR.projecaoInicial(84, 78, 'manter', 0.5, '2026-10-09')) throw new Error('manter não projeta');
+    if (PR.projecaoInicial(150, 60, 'perder', 0.25, '2026-10-09')) throw new Error('> 156 semanas');
+  });
+  t('Cópias automáticas: ficam as 7 mais recentes', () => {
+    const datas = Array.from({ length: 10 }, (_, i) => `2026-10-${String(i + 1).padStart(2, '0')}`);
+    const fora = IS.sobrando(datas);
+    if (fora.length !== 3 || fora.includes('2026-10-10') || !fora.includes('2026-10-01')) throw new Error(fora.join());
+    if (IS.sobrando(datas.slice(0, 3)).length) throw new Error('com poucas, não apaga');
+  });
+  const BK = readFileSync(new URL('../js/backup.js', import.meta.url), 'utf8');
+  t('Cópia automática não marca "último backup" (só a exportação marca)', () => {
+    const corpo = BK.slice(BK.indexOf('export async function montarBackup'), BK.indexOf('export async function exportar'));
+    if (/ultimoBackup/.test(corpo)) throw new Error('montarBackup não pode mexer no lembrete de backup');
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));
