@@ -143,11 +143,19 @@ export function resolverAlimento(nome, ctx, medida = null) {
   const opc = { limite: 12, sinonimos: ctx.sinonimos, bonus: ctx.bonus, escolha, comNota: true };
   // numa refeição descrita, o mais provável é o alimento pronto: "cru"/"pó" só se foi dito; sem kcal na fonte vai para o fim
   const disse = new Set(n.split(' '));
+  // receita: o hábito de comer o pronto (ex.: ovo cozido) vale para o cru do mesmo alimento (ovo de galinha cru)
+  const PREP = /^(cru|crua|crus|cruas|cozid[oa]s?|grelhad[oa]s?|assad[oa]s?|frit[oa]s?|refogad[oa]s?|\d+minutos)$/;
+  const base = (nome) => normalizar(nome).split(' ').filter((p) => !PREP.test(p)).join(' ');
+  const habitoBase = new Map();
+  if (ctx.preferirCru && ctx.bonus) for (const [id, b] of ctx.bonus) { const f = ctx.porId?.(id); if (f) habitoBase.set(base(f.nome), Math.max(b, habitoBase.get(base(f.nome)) || 0)); }
   const ajustar = (lista) => lista.map((x) => {
     const pal = normalizar(x.f.nome).split(' ');
     let s = x.s;
+    if (ctx.preferirCru && !ctx.bonus?.has(x.f.id)) s -= habitoBase.get(base(x.f.nome)) || 0;
     if (x.f.kcal == null) s += 0.6;
-    if (pal.some((p) => /^(cru|crua|crus|cruas|po)$/.test(p) && !disse.has(p))) s += 0.35;
+    // refeição: o provável é o pronto; receita (ctx.preferirCru): o provável é o ingrediente cru
+    if (!ctx.preferirCru && pal.some((p) => /^(cru|crua|crus|cruas|po)$/.test(p) && !disse.has(p))) s += 0.35;
+    if (ctx.preferirCru && pal.some((p) => /^(cozid[oa]s?|grelhad[oa]s?|assad[oa]s?|frit[oa]s?|refogad[oa]s?)/.test(p) && !disse.has(p))) s += 0.35;
     const lata = medida && ['lata', 'pote'].includes(medida.nome);   // lata/pote = produto em conserva
     if (pal.some((p) => /^(doce|calda|barra|conserva|extrato|suco|mistura|industrializad[oa])$/.test(p) && !disse.has(p) && !(lata && p === 'conserva'))) s += 0.5;
     if (lata && pal.some((p) => /^(cru|crua)$/.test(p))) s += 0.3;

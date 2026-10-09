@@ -4,7 +4,7 @@
 export const BLOCOS = {
   diario: [
     ['semana', 'Faixa da semana'], ['resumo', 'Resumo do dia (anel e macros)'], ['agora', 'O que comer agora'], ['etiquetas', 'Treino e nota do dia'],
-    ['checkin', 'Check-in da semana'], ['agua', 'Água'], ['refeicoes', 'Refeições'], ['copiar', 'Copiar o dia anterior'],
+    ['checkin', 'Check-in da semana'], ['agua', 'Água'], ['refeicoes', 'Refeições'], ['copiar', 'Copiar o dia anterior'], ['plano', 'Planejar a semana'],
   ],
   adicionar: [
     ['aba-recentes', 'Aba Recentes'], ['aba-favoritos', 'Aba Favoritos'], ['aba-meus', 'Aba Meus'], ['aba-receitas', 'Aba Receitas'],

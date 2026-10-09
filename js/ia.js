@@ -264,3 +264,50 @@ export async function perguntaParaConsulta(pergunta, refs, hoje) {
 Pergunta: ${pergunta}`;
   return chamar([{ text: txt }], ESQUEMA_CONSULTA);
 }
+
+// ---------- Restaurante: pratos INTEIROS do cardápio (para escolher o melhor para o que falta no dia) ----------
+const PROMPT_RESTAURANTE = `Você é um nutricionista brasileiro. Na foto há um CARDÁPIO de restaurante. Liste cada PRATO como um item só
+(não separe em ingredientes), com o nome do cardápio em "nome", o peso de UMA porção usual servida no Brasil em "gramas" e kcal, prot,
+carb, gord e fibra dessa porção (estimativa, de preferência por valores da TACO). Ignore bebidas alcoólicas e sobremesas só se não houver
+pratos principais. Se não houver cardápio legível, devolva itens vazio e explique em "observacao". Responda só o JSON.`;
+
+/** Foto de cardápio → pratos inteiros com a estimativa por porção ({ itens, obs }). */
+export async function estimarRestaurante(blob) {
+  const o = await chamar([{ blob }, { text: PROMPT_RESTAURANTE }], ESQUEMA_ITENS);
+  return normalizarEstimativa(o);
+}
+
+// ---------- Receita por link (só Gemini: a ferramenta url_context lê a página) ----------
+/** Extrai o 1º objeto JSON de um texto (a ferramenta de URL não aceita esquema de resposta). */
+export function jsonDoTexto(txt) {
+  const i = String(txt || '').indexOf('{'), j = String(txt || '').lastIndexOf('}');
+  if (i < 0 || j <= i) return null;
+  try { return JSON.parse(txt.slice(i, j + 1)); } catch { return null; }
+}
+
+/** Link de receita → { nome, porcoes, itens (como normalizarEstimativa), obs }. Sem chave: erro pedindo para colar o texto. */
+export async function lerReceitaLink(url) {
+  const chave = lerChave();
+  if (!chave) throw new Error('Para ler um link é preciso a chave do Gemini (Ajustes › IA). Sem ela, cole o texto da receita.');
+  if (!navigator.onLine) throw new Error('Sem internet: cole o texto da receita.');
+  if (restantesHoje() <= 0) throw new Error(`Limite diário do app atingido (${limiteDiario()} chamadas).`);
+  const pedido = `${PROMPT_RECEITA.replace('Na foto há uma RECEITA', 'Na página do link há uma RECEITA')}
+Responda SÓ um JSON: {"nome": "...", "porcoes": número, "itens": [{"nome","nome_taco","gramas","kcal","prot","carb","gord"}], "observacao": "..."}.
+Link: ${url}`;
+  const corpo = JSON.stringify({ contents: [{ parts: [{ text: pedido }] }], tools: [{ url_context: {} }], generationConfig: { temperature: 0.2 } });
+  for (const modelo of MODELOS) {
+    let r;
+    try { r = await fetch(URL_API(modelo), { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chave }, body: corpo }); }
+    catch { throw new Error('Não foi possível falar com o Gemini (rede).'); }
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 404 || r.status === 400) continue;            // modelo sem a ferramenta de URL: tenta o próximo
+    if (!r.ok) throw new Error(mensagemErro(r.status, j?.error?.message));
+    registrarUso();
+    const o = jsonDoTexto(j?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join(''));
+    if (!o) throw new Error('Não consegui ler a receita desse link. Cole o texto da receita.');
+    const n = normalizarEstimativa(o);
+    const porcoes = Math.round(Number(o.porcoes));
+    return { nome: String(o.nome || '').trim().slice(0, 80), porcoes: porcoes > 0 && porcoes <= 100 ? porcoes : null, ...n };
+  }
+  throw new Error('Nenhum modelo do Gemini leu o link. Cole o texto da receita.');
+}

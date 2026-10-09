@@ -118,3 +118,9 @@
 - 2026-10-09 · Qualidade do dia: pesos proteína 30%, fibra 25%, sódio 20%, micronutrientes 25% (só com ≥ 50% das kcal com dados; senão redistribui). Faixas < 40 / 40–69 / 70–84 / ≥ 85. Heurística do app, dita na tela.
 - 2026-10-09 · Pergunte ao app: local primeiro; IA recebe só a pergunta, os nomes das refeições e a data de hoje; resposta validada (nutriente da lista, 1–366 dias, refeição existente) e calculada no aparelho. Planejados não contam.
 - 2026-10-09 · Foto 2.0: até 3 imagens na mesma chamada (Gemini e IA do Chrome aceitam várias imagens); ocultos limitados a 5, sem repetir itens; confiança alta/média/baixa só exibida.
+- 2026-10-09 · Fator de cocção = kcal/100 g cru ÷ kcal/100 g pronto do par da TACO (supõe energia conservada; só água muda). Aproximação declarada na tela (≈); sem par = sem conversão; fritos fora. Ex.: arroz 2,8; frango grelhado 0,73; feijão 4,3 (o cozido da TACO inclui caldo).
+- 2026-10-09 · Montar a semana: parcela da refeição = distRef (fração); refeição salva aceita se ±25% das kcal do alvo; variedade padrão 2 repetições/refeição/semana; nada sobrescreve refeição com itens.
+- 2026-10-09 · Lista de compras: só itens planejados de hoje em diante da semana aberta; comprados em kv `compras` (por semana); adição rápida não entra.
+- 2026-10-09 · Receita por link: Gemini com `tools: [{url_context: {}}]` (sem esquema de resposta, JSON extraído do texto); 404/400 tenta o próximo modelo; falhou → pedir o texto colado. IA do Chrome não lê páginas.
+- 2026-10-09 · Restaurante: pratos inteiros (sem separar ingredientes), alvo = restante do dia × parcela da refeição; ranking local por erroCombinacao; lançamento como Adição rápida com fonte "Restaurante (estimativa IA)".
+- 2026-10-09 · Importar receita de texto: interpretador com `preferirCru` (preparos +0,35) e o hábito de um alimento pronto transferido para o cru do mesmo nome.

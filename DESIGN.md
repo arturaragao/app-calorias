@@ -45,6 +45,9 @@ Referência de todas as telas. Inspiração: Material 3 Expressive (sem copiar o
 | Item interpretado | `.fr-item` (`.incerto`, `.nao`) + `.fr-chips` | Dúvida em âmbar com chips; não reconhecido tracejado. |
 | Barra de seleção | `.cesta-barra` | Fixa acima do "+", com Cancelar e Lançar N. |
 | Item planejado | `.item-wrap.planejado` + `.ico.confirmar` | Listrado e em itálico até o ✓. |
+| Dia do planejador | `.plano-dia` > `.pd-cab` + `.pd-barra` + `.pd-ref` | Barra azul/verde/âmbar como a aderência; planejados em itálico. |
+| Item de compra | `.compra` (checkbox + nome + quantidade) | Marcado = riscado. |
+| Prato sugerido | `.rest-prato` (`.melhor`) | O melhor ganha borda e o botão preenchido. |
 
 ## Ícones
 

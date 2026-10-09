@@ -32,7 +32,8 @@ export async function render(tela) {
       <div class="menu-lista">
         <button class="btn" data-o="prato">${ic('camera')} Foto do prato</button>
         <button class="btn" data-o="pedido">${ic('receipt')} Print de pedido (iFood, restaurante)</button>
-        <button class="btn" data-o="cardapio">${ic('clipboard-list')} Cardápio</button>
+        <button class="btn" data-o="restaurante">${ic('utensils-crossed')} Cardápio de restaurante (melhor escolha)</button>
+        <button class="btn" data-o="cardapio">${ic('clipboard-list')} Cardápio (lançar pratos)</button>
         <button class="btn" data-o="rotulo">${ic('tag')} Rótulo (tabela nutricional)</button>
         <button class="btn" data-o="receita">${ic('chef-hat')} Receita</button></div>`, { foco: false });
     p.onclick = async (e) => {
@@ -43,6 +44,7 @@ export async function render(tela) {
       fecharFolha();
       setTimeout(() => {
         if (o === 'prato') ia.folhaFotoIA({ refId, aoLancar, arquivo });
+        else if (o === 'restaurante') import('./restaurante.js').then((m) => m.folhaRestaurante({ refId, aoLancar, arquivo }));
         else if (o === 'rotulo') ia.folhaRotulo({ arquivo, aoSalvar: () => aviso('Salvo em Meus alimentos.') });
         else ia.folhaCardapioIA({ refId, aoLancar, arquivo, tipoIni: o === 'receita' ? 'receita' : 'cardapio' });
       }, 350);

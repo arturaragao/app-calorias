@@ -1,15 +1,23 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro 2.0. Pacotes 10–12 e 14 entregues (v19–v23); Pacote 13 em andamento (autorizado junto com o 14).
+**Etapa atual:** roteiro 2.0. Pacotes 10–14 entregues (v19–v24); faltam 15 e 16, aguardando OK do Artur.
 
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
 - [x] Pacote 11 — Diário redesenhado (v20)
 - [x] Pacote 12 — Registro ultrarrápido sem gastar tokens (v21)
-- [ ] Pacote 13 — Planejamento, receitas e lista de compras
+- [x] Pacote 13 — Planejamento, receitas e lista de compras (v24)
 - [x] Pacote 14 — Inteligência prática (v23)
 - [ ] Pacote 15 — Atalhos e extras do Android
 - [ ] Pacote 16 — Qualidade de produto profissional
+
+**Pacote 13 (v24, 2026-10-09)**
+- Planejar semana (#plano; Diário › "Planejar a semana" e "+" › Planejar/Lista de compras): grade seg→dom × refeições, totais planejado+comido × meta do dia (dia da semana e treino), "+" por refeição com refeições salvas, receitas ou busca (entra como planejado), toque abre o dia no Diário, limpar planejados com desfazer.
+- Montar a semana sem IA (js/planejamento.js › montarSemana): só refeições vazias, a partir de hoje/amanhã; refeição salva que cabe no alvo (±25%) primeiro, senão combinações dos alimentos habituais (otimizador do inteligencia.js) batendo kcal e proteína da parcela da refeição; variedade = no máximo N repetições por refeição.
+- Lista de compras: soma o planejado da semana (a partir de hoje), receitas viram ingredientes proporcionais, pronto → cru pelo par cru/cozido da TACO (≈), agrupada pelos grupos da TACO, marcar comprados (guardado) e compartilhar/copiar como texto (WhatsApp).
+- Receitas 2.0: importar de texto colado (interpretador local; prefere o ingrediente cru e marca "confira" no ambíguo; lê nome e "rende N porções") ou de link (Gemini com a ferramenta de URL; sem chave pede o texto); peso pronto estimado pelo par cru/cozido com botão "Usar"; Escalar (×0,5/1,5/2/3) e Duplicar; foto da receita.
+- Comer fora (views/restaurante.js; "+" › Restaurante e imagem compartilhada): foto do cardápio → IA lista pratos inteiros (estimativa) → o app ranqueia no aparelho pelo que falta para a refeição e lança como Adição rápida marcada "Restaurante (estimativa IA)".
+- Testes: 158 aprovados. Contraste: 84 telas, 0 reprovações. Conferido no Edge (Playwright, Gemini simulado): montar semana (14 refeições), lista de compras, restaurante e importação de receita; sem erros no console.
 
 **Pacote 14 (v23, 2026-10-09)**
 - Check-in semanal (js/checkin.js + views/checkin-ui.js): a partir de segunda, com dados suficientes, o Diário mostra gasto estimado, tendência e ritmo real × planejado e a meta proposta; Aceitar / Ajustar (stepper) / Manter, com desfazer; histórico em Progresso › Check-ins semanais. Texto local (só números, sem julgar aderência).

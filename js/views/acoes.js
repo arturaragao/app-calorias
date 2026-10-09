@@ -11,6 +11,9 @@ export const ACOES = [
   ['rapida', 'Adição rápida', 'zap', '#diario?acao=rapida'],
   ['agua', 'Água', 'droplet', '#diario?acao=agua'],
   ['peso', 'Peso', 'scale', '#registros?aba=peso'],
+  ['plano', 'Planejar semana', 'calendar-days', '#plano'],
+  ['compras', 'Lista de compras', 'shopping-cart', '#plano?compras=1'],
+  ['restaurante', 'Restaurante', 'utensils-crossed', '#adicionar?restaurante=1'],
 ];
 
 export function folhaAcoes() {

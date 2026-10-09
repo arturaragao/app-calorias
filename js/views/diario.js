@@ -259,6 +259,7 @@ async function desenhar() {
         <button type="button" data-modo="tempo" aria-pressed="${modoVista() === 'tempo'}">${ic('clock', 'p')} Linha do tempo</button></div>`}
       ${modoVista() === 'tempo' && !diaSemItens ? linhaDoTempoHtml(refs) : blocoRefeicoes(refs)}</div>
     ${diaSemItens ? `<button class="btn bloco suave" data-bloco="copiar" data-copiar-dia>${ICONES.copiar} Copiar o dia anterior</button>` : ""}
+    <a class="btn bloco suave" data-bloco="plano" href="#plano">${ic('calendar-days')} Planejar a semana</a>
     ${botaoOrganizar('diario')}`;
   aplicarLayout(tela, 'diario');
   ligarHeroi();

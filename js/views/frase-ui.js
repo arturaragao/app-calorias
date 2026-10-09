@@ -21,6 +21,7 @@ export async function contextoFrase(refId = estado.refeicaoAlvo) {
   const diarios = await diariosRecentes(60).catch(() => []);
   return {
     indice: cat.indice,
+    porId: (id) => cat.porId.get(id),
     porcoesDe: (f) => porcoesDe(f, cat.porcoes, estado.config.porcoesUsuario),
     densidade: (f) => densidadeDe(f, cat.porcoes),
     sinonimos: cat.porcoes?.sinonimos,

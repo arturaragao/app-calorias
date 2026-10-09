@@ -178,6 +178,10 @@ export async function render(tela) {
     history.replaceState(null, '', '#adicionar');
     folhaFrase({ ditarJa: true, refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
   }
+  if (params.get('restaurante')) {                         // "+" › Restaurante
+    history.replaceState(null, '', '#adicionar');
+    import('./restaurante.js').then((m) => m.folhaRestaurante({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } }));
+  }
   if (params.get('foto')) {
     history.replaceState(null, '', '#adicionar');           // atalho do ícone: abre a foto do prato direto
     folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });

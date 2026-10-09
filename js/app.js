@@ -20,8 +20,9 @@ const ROTAS = {
   receita: () => import('./views/receita.js'),
   importar: () => import('./views/importar.js'),
   compartilhado: () => import('./views/compartilhado.js'),
+  plano: () => import('./views/plano.js'),
 };
-const ABA_DA_ROTA = { metas: 'config', perfil: 'config', importar: 'config', receita: 'adicionar', compartilhado: 'diario' };
+const ABA_DA_ROTA = { metas: 'config', perfil: 'config', importar: 'config', receita: 'adicionar', compartilhado: 'diario', plano: 'diario' };
 
 // ---------- Tema ----------
 export function aplicarTema(tema) {

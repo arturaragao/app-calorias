@@ -906,6 +906,13 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
     const it = d.refeicoes.almoco[0];
     if (n !== 1 || !it.planejado || it.ts !== undefined || it.id === 'x' || D12.totalDia(d).kcal !== 0) throw new Error(JSON.stringify(it));
   });
+  t('Receita: ingrediente cru preferido e o hábito do pronto passa para o cru', () => {
+    const porId = (id) => foods12.find((f) => f.id === id);
+    const r = FR12.interpretar('2 ovos', { ...ctx12, escolhas: {}, porId, preferirCru: true, bonus: new Map([['taco-488', 0.8]]) })[0];
+    if (r.food.id !== foods12.find((f) => f.nome === 'Ovo, de galinha, inteiro, cru').id) throw new Error(r.food.nome);
+    const r2 = FR12.interpretar('2 ovos', { ...ctx12, escolhas: {}, porId, bonus: new Map([['taco-488', 0.8]]) })[0];
+    if (r2.food.id !== 'taco-488') throw new Error('na refeição, o hábito (cozido) vale: ' + r2.food.nome);
+  });
   t('pareceFrase: só com número ou separador', () => {
     if (!FR12.pareceFrase('2 ovos') || !FR12.pareceFrase('arroz e feijão') || FR12.pareceFrase('arroz') || FR12.pareceFrase('feijão carioca')) throw new Error();
   });
@@ -983,6 +990,51 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
     if (n !== null) throw new Error('nutriente inválido');
     const n2 = PG.normalizarConsulta({ nutriente: 'fibra', dias: 9999, refeicao: 'xx', agregacao: 'zz' }, hoje, refs);
     if (n2.refeicao !== null || n2.agregacao !== 'media' || n2.ini !== dia(hoje, -365)) throw new Error(JSON.stringify(n2));
+  });
+}
+
+// ---------- Pacote 13: planejamento ----------
+{
+  const PL = await import('../js/planejamento.js');
+  const foods13 = JSON.parse(readFileSync(new URL('../foods.json', import.meta.url), 'utf8'));
+  const by = (id) => foods13.find((f) => f.id === id);
+  const pares = PL.paresCoccao(foods13);
+  t('Fator de cocção pelo par cru/pronto da TACO (energia conservada)', () => {
+    const r = PL.rendimento(by('taco-3'), pares);                                    // arroz tipo 1 cozido
+    if (!r || r.cru.id !== 'taco-4' || Math.abs(r.fator - by('taco-4').kcal / by('taco-3').kcal) > 1e-9) throw new Error(JSON.stringify(r));
+    if (PL.rendimento(by('taco-182'), pares)) throw new Error('banana não tem par');
+    const p = PL.pesoProntoEstimado([{ foodId: 'taco-4', g: 100 }, { foodId: 'taco-182', g: 50 }], by, pares);
+    if (p.comPar !== 1 || Math.abs(p.g - Math.round(100 * r.fator + 50)) > 1) throw new Error(JSON.stringify(p));
+  });
+  t('Lista de compras: soma, pronto → cru (≈), receita → ingredientes, agrupada', () => {
+    const rec = { id: 'r-x', nome: 'Bolo', ingredientes: [{ foodId: 'taco-182', nome: 'Banana', g: 200 }, { foodId: 'taco-7', nome: 'Aveia', g: 100 }], pesoFinal: null };
+    const l = PL.listaCompras([{ foodId: 'taco-3', g: 280 }, { foodId: 'taco-3', g: 280 }, { foodId: 'taco-182', g: 100 }, { foodId: 'r-x', g: 150 }, { foodId: null, g: 0 }],
+      { porId: by, pares, receitas: new Map([['r-x', rec]]) });
+    const itens = l.flatMap((g) => g.itens);
+    const arroz = itens.find((i) => i.id === 'taco-4'), banana = itens.find((i) => i.id === 'taco-182'), aveia = itens.find((i) => i.id === 'taco-7');
+    if (!arroz?.aprox || Math.abs(arroz.g - Math.round(560 / (by('taco-4').kcal / by('taco-3').kcal))) > 1) throw new Error('arroz ' + JSON.stringify(arroz));
+    if (banana.g !== 200 || aveia.g !== 50) throw new Error(`banana ${banana.g} aveia ${aveia.g}`);
+    if (l.map((g) => g.grupo).join() !== [...l.map((g) => g.grupo)].sort((a, b) => a.localeCompare(b, 'pt-BR')).join()) throw new Error('ordem');
+    const txt = PL.textoCompras(l, new Set(['taco-182']));
+    if (!txt.includes('[x] Banana') || !txt.includes('≈') || !txt.startsWith('*Lista de compras*')) throw new Error(txt);
+  });
+  t('Montar a semana: respeita ocupadas, alvo e variedade (máx. repetições)', () => {
+    const refs = [{ id: 'almoco', nome: 'Almoço' }, { id: 'jantar', nome: 'Jantar' }];
+    const datas = ['2026-10-12', '2026-10-13', '2026-10-14'];
+    const cands = [by('taco-3'), by('taco-561'), by('taco-410'), by('taco-377'), by('taco-88')].map((f) => ({ food: f, gTipico: 120, gMin: 60, gMax: 240 }));
+    const alvos = () => ({ kcal: 600, prot: 40, carb: 70, gord: 15 });
+    const plano = PL.montarSemana({ datas, refs, alvos, candidatos: () => cands, ocupadas: new Set(['2026-10-12|almoco']), maxRepeticoes: 1 });
+    if (plano.some((x) => x.data === '2026-10-12' && x.refId === 'almoco')) throw new Error('não pode preencher refeição ocupada');
+    if (plano.length < 4) throw new Error('planejou pouco: ' + plano.length);
+    const chaves = plano.filter((x) => x.refId === 'jantar').map((x) => x.itens.map((i) => i.foodId).sort().join('+'));
+    if (new Set(chaves).size !== chaves.length) throw new Error('repetiu além do permitido');
+    for (const x of plano) {
+      const kcal = x.itens.reduce((s, i) => s + (i.food.kcal * i.g) / 100, 0);
+      if (kcal < 300 || kcal > 900) throw new Error('fora do alvo: ' + kcal);
+    }
+    const salva = { nome: 'PF', itens: [{ foodId: 'a', n: { kcal: 610 } }] };
+    const p2 = PL.montarSemana({ datas: datas.slice(0, 1), refs: refs.slice(0, 1), alvos, candidatos: () => cands, salvas: [salva] });
+    if (p2[0]?.origem !== 'salva') throw new Error('refeição salva que cabe no alvo vem primeiro');
   });
 }
 
