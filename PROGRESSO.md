@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro 2.0. Pacotes 10–14 entregues (v19–v24); faltam 15 e 16, aguardando OK do Artur.
+**Etapa atual:** roteiro 2.0. Pacotes 10–15 entregues (v19–v26); Pacote 16 em andamento.
 
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
@@ -8,8 +8,16 @@
 - [x] Pacote 12 — Registro ultrarrápido sem gastar tokens (v21)
 - [x] Pacote 13 — Planejamento, receitas e lista de compras (v24)
 - [x] Pacote 14 — Inteligência prática (v23)
-- [ ] Pacote 15 — Atalhos e extras do Android
+- [x] Pacote 15 — Atalhos e extras do Android (v26)
 - [ ] Pacote 16 — Qualidade de produto profissional
+
+**Pacote 15 (v26, 2026-10-09)**
+- Atalhos do ícone revistos: Falar (novo), Foto do prato, Código, Peso; depois Água +250 mL e Adicionar (o Android mostra ~4; extras podem não aparecer). Ícones novos (microfone e gota) no gerador.
+- Endereços para Modos e Rotinas da Samsung / atalhos: Ajustes › Atalhos, rotinas e jejum lista e copia #adicionar?falar=1, #diario?acao=agua&ml=250|500, peso, foto, código, adição rápida, restaurante, planejar e lista de compras.
+- Etiqueta NFC (experimental, só aparece com Web NFC): grava na etiqueta o endereço escolhido (ex.: Água +500 mL).
+- Jejum intermitente (opcional, desligado por padrão): bloco no Diário com o tempo desde o último lançamento com horário, meta (12–20 h), hora em que a meta fecha e as últimas 7 noites; sem notificações (js/jejum.js).
+- Drive: segue pendente do ID OAuth (passo a passo no README). Fora de escopo por decisão do Artur: balança Bluetooth e dados de saúde.
+- Testes: 162 aprovados. Conferido no Edge: cartão de atalhos, água por endereço (+500 mL com desfazer) e bloco de jejum; sem erros.
 
 **Ajuste v25 (pedido do Artur): "O que comer agora" saudável**
 - Nota de saúde por alimento (inteligencia.saudeAlimento, heurística declarada): grupo da TACO + proteína e fibra por 100 kcal − sódio alto, gordura dominante, fritura e embutidos; doces, refrigerantes, salgadinhos e álcool = guloseima.

@@ -252,7 +252,8 @@ async function desenhar() {
         <div class="trilho"><div class="enche" style="width:${Math.min(100, (mlAgua / ag.metaMl) * 100)}%"></div></div></div>
       <button class="btn peq suave" data-agua aria-label="Adicionar 1 copo de ${ag.copoMl} ml">+ ${fmtNum(ag.copoMl)} ml</button>
     </section>
-    ${diaSemItens ? estadoVazio('prato', ehHoje ? 'Nada lançado hoje ainda' : 'Nada lançado neste dia', 'Toque em “+ Adicionar alimento” numa refeição ou deslize para os lados para trocar o dia.') : ''}
+    ${ehHoje && estado.config.jejum?.ativo ? '<section class="card jejum-card" data-bloco="jejum" aria-live="polite"></section>' : ''}
+    ${diaSemItens ? estadoVazio('prato', ehHoje ? 'Nada lançado hoje ainda' : 'Nada lançado neste dia', 'Toque no + de uma refeição (ou segure o + central) para lançar; deslize para os lados para trocar o dia.') : ''}
     <div data-bloco="refeicoes">
       ${diaSemItens ? '' : `<div class="seg seg-modo" role="group" aria-label="Modo de visualização">
         <button type="button" data-modo="ref" aria-pressed="${modoVista() === 'ref'}">${ic('utensils', 'p')} Por refeição</button>
@@ -269,6 +270,7 @@ async function desenhar() {
   tela.onkeydown = (e) => { if (e.key === 'Enter' && e.target.matches('[data-detalhe], [data-painel-ref]')) e.target.click(); };
   ligarDeslizar();
   if (ehHoje && restante >= 50) desenharAgora(restMacros);
+  if (ehHoje && estado.config.jejum?.ativo) desenharJejum();
   if (ehHoje) import('./checkin-ui.js').then((m) => m.cartaoCheckin(tela.querySelector('.checkin-card'), desenhar)).catch(() => {});
   if (estado.config.tourVisto) setTimeout(() => (location.hash.slice(1) || 'diario').startsWith('diario') && talvezDica([
     { chave: 'heroi', el: tela.querySelector('.heroi-pontos'), texto: 'Deslize o resumo para ver macros, fibra, sódio e micronutrientes.' },
@@ -277,6 +279,32 @@ async function desenhar() {
     { chave: 'painel', el: tela.querySelector('[data-painel-ref]'), texto: 'Toque no nome da refeição para ver o painel dela.' },
     { chave: 'trocar-dia', el: tela.querySelector('.semana'), texto: 'Deslize para os lados (fora dos itens) para trocar o dia.' },
   ]), 700);
+}
+
+// ---------- Jejum intermitente (opcional, Ajustes › Atalhos, rotinas e jejum) ----------
+
+let relogioJejum = null;
+async function desenharJejum() {
+  const el = tela.querySelector('.jejum-card');
+  if (!el) return;
+  const { jejumAtual, historicoJejum, fmtDuracao } = await import('../jejum.js');
+  const diarios = await diariosRecentes(10);
+  const meta = estado.config.jejum?.meta || 16;
+  const hist = historicoJejum(diarios, 7);
+  const pintar = () => {
+    if (!el.isConnected) { clearInterval(relogioJejum); return; }
+    const j = jejumAtual(diarios);
+    if (!j) { el.innerHTML = `<h2>${ic('hourglass')} Jejum</h2><p class="mudo" style="margin:4px 0 0">Começa a contar a partir do próximo lançamento (os itens novos guardam o horário).</p>`; return; }
+    const frac = Math.min(1, j.horas / meta), fim = new Date(j.desde + meta * 3600000);
+    el.innerHTML = `<div class="card-tit"><h2>${ic('hourglass')} Jejum</h2><span class="mudo num">meta ${meta} h</span></div>
+      <p class="jejum-tempo num"><b>${fmtDuracao(j.horas)}</b> <span class="mudo">${j.horas >= meta ? 'meta cumprida' : `até ${String(fim.getHours()).padStart(2, '0')}:${String(fim.getMinutes()).padStart(2, '0')}`}</span></p>
+      <div class="trilho-m"><i style="width:${frac * 100}%;background:var(--acento)"></i></div>
+      ${hist.length ? `<p class="mudo num jejum-hist">Últimas noites: ${hist.map((h) => `<span class="${h.horas >= meta ? 'ok' : ''}">${Math.round(h.horas * 10) / 10} h</span>`).join(' · ')}
+        (${hist.filter((h) => h.horas >= meta).length} de ${hist.length} na meta)</p>` : ''}`;
+  };
+  pintar();
+  clearInterval(relogioJejum);
+  relogioJejum = setInterval(pintar, 60000);
 }
 
 // ---------- "O que comer agora": primeira sugestão já visível ----------

@@ -11,12 +11,12 @@
   "theme_color": "#0a110d",
   "shortcuts": [
     {
-      "name": "Adicionar alimento",
-      "short_name": "Adicionar",
-      "url": "./#adicionar",
+      "name": "Falar o que comeu",
+      "short_name": "Falar",
+      "url": "./#adicionar?falar=1",
       "icons": [
         {
-          "src": "icons/atalho-adicionar.png",
+          "src": "icons/atalho-falar.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -53,6 +53,30 @@
       "icons": [
         {
           "src": "icons/atalho-peso.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Água +250 mL",
+      "short_name": "Água",
+      "url": "./#diario?acao=agua&ml=250",
+      "icons": [
+        {
+          "src": "icons/atalho-agua.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Adicionar alimento",
+      "short_name": "Adicionar",
+      "url": "./#adicionar",
+      "icons": [
+        {
+          "src": "icons/atalho-adicionar.png",
           "sizes": "192x192",
           "type": "image/png"
         }

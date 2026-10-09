@@ -1,5 +1,5 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v25';   // manter igual a js/versao.js
+const VERSAO = 'v26';   // manter igual a js/versao.js
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',
@@ -13,14 +13,14 @@ const ARQUIVOS = [
   'js/views/alimento-form.js', 'js/views/receita.js', 'js/views/fotos.js', 'js/views/importar.js',
   'js/ia.js', 'js/drive.js', 'js/views/foto-ia.js', 'js/views/drive-ui.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
-  'icons/atalho-adicionar.png', 'icons/atalho-codigo.png', 'icons/atalho-peso.png', 'icons/atalho-foto.png',
+  'icons/atalho-adicionar.png', 'icons/atalho-codigo.png', 'icons/atalho-peso.png', 'icons/atalho-foto.png', 'icons/atalho-falar.png', 'icons/atalho-agua.png',
   'js/views/relatorio-img.js', 'js/views/salvas.js',
   'js/micros.js', 'js/exportar.js', 'js/views/micros-ui.js', 'js/views/reg-fotos.js', 'js/views/relatorio-pdf.js',
   'js/layout.js', 'js/layout-ordem.js', 'js/inteligencia.js', 'js/voz.js', 'js/views/sugestao.js', 'js/ia-cota.js', 'js/ia-local.js', 'js/coach.js', 'js/vazio.js', 'js/views/tour.js', 'js/cores.js', 'js/views/detalhe-dia.js',
   'js/icones.js', 'icons/sprite.svg', 'js/views/acoes.js', 'js/frase.js',
   'js/views/frase-ui.js', 'js/views/cesta.js', 'js/views/copiar-dias.js', 'js/views/compartilhado.js',
   'js/checkin.js', 'js/nutricao.js', 'js/padroes.js', 'js/perguntas.js', 'js/views/checkin-ui.js', 'js/views/dados.js', 'js/views/inteligencia-ui.js',
-  'js/planejamento.js', 'js/views/plano.js', 'js/views/restaurante.js',
+  'js/planejamento.js', 'js/views/plano.js', 'js/views/restaurante.js', 'js/jejum.js', 'js/views/atalhos-ui.js',
 ];
 
 self.addEventListener('install', (e) => {

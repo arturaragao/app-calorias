@@ -2,7 +2,7 @@
 // Uso: node scripts/gerar_icones.mjs
 //
 // icons/icon-192.png, icon-512.png, icon-maskable-512.png — anel clássico refinado (arco verde ~74% + ponto claro na ponta)
-// icons/atalho-adicionar.png, atalho-codigo.png, atalho-peso.png, atalho-foto.png (192 px)
+// icons/atalho-adicionar.png, atalho-codigo.png, atalho-peso.png, atalho-foto.png, atalho-falar.png, atalho-agua.png (192 px)
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
@@ -112,6 +112,17 @@ const ATALHOS = {
     [(x, y) => Math.hypot(x - 0.5, y - 0.47) <= 0.15 && y <= 0.47, ESCURO],
     [(x, y) => { const ax = 0.5, ay = 0.47, bx = 0.58, by = 0.37; const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)));
       return Math.hypot(x - (ax + t * (bx - ax)), y - (ay + t * (by - ay))) <= 0.02; }, VERDE],
+  ],
+  // microfone: cápsula, arco do suporte e haste
+  'atalho-falar.png': [
+    [ret(0.405, 0.2, 0.595, 0.58, 0.095), BRANCO],
+    [(x, y) => { const d = Math.hypot(x - 0.5, y - 0.44); return d >= 0.175 && d <= 0.215 && y >= 0.44; }, VERDE],
+    [ret(0.48, 0.65, 0.52, 0.76, 0.01), VERDE], [ret(0.39, 0.74, 0.61, 0.78, 0.02), VERDE],
+  ],
+  // gota d'água: círculo embaixo + ponta (triângulo) em cima
+  'atalho-agua.png': [
+    [(x, y) => Math.hypot(x - 0.5, y - 0.58) <= 0.2 || (y >= 0.2 && y <= 0.58 && Math.abs(x - 0.5) <= (y - 0.2) * 0.53), BRANCO],
+    [(x, y) => Math.hypot(x - 0.44, y - 0.62) <= 0.11 && Math.hypot(x - 0.47, y - 0.59) > 0.11, VERDE],
   ],
   'atalho-foto.png': [
     [ret(0.37, 0.25, 0.63, 0.36, 0.03), BRANCO], [ret(0.18, 0.31, 0.82, 0.76, 0.08), BRANCO],

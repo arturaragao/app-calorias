@@ -2,6 +2,7 @@
 
 import { estado, salvarConfig } from '../state.js';
 import { ic } from '../icones.js';
+import { cardAtalhos, ligarAtalhos } from './atalhos-ui.js';
 import { topo, esc, $, $$, seg, aviso, ICONES, abrirFolha, fecharFolha, entregarArquivo, confirmar, ESCALAS_FONTE, aplicarEscalaFonte } from '../ui.js';
 import { csvItens, csvTotais } from '../exportar.js';
 import { db } from '../db.js';
@@ -101,6 +102,7 @@ export async function render(tela) {
       <div class="grade2"><button class="btn" data-csv="itens">Item por item</button><button class="btn" data-csv="totais">Totais por dia</button></div></div>
     <div class="card"><h2 style="margin-bottom:6px">Armazenamento</h2><p class="mudo" id="arm" style="margin-top:0">…</p>
       <button class="btn perigo bloco" data-apagar-tudo>Apagar todos os dados</button></div>
+    ${cardAtalhos()}
     <div class="card"><h2 style="margin-bottom:6px">Toque e ajuda</h2>
       <label class="linha-chave"><span>Vibração leve<small>Ao lançar, apagar e trocar de dia</small></span><span class="chave"><input type="checkbox" id="vibrar" ${vibrarLigado() ? 'checked' : ''}><i></i></span></label>
       <button class="btn bloco suave" data-tour style="margin-top:10px">Rever o tour do app</button></div>
@@ -115,6 +117,7 @@ export async function render(tela) {
       Os dados ficam só neste aparelho (e no seu Google Drive, se conectar). Na estimativa por foto, a imagem vai ao Gemini (Google);
       na cota gratuita o Google pode usá-la para melhorar seus produtos.</p></div>`;
   desenharRefs(tela);
+  ligarAtalhos($('#c-atalhos', tela));
   infoBackup(tela);
 
   $('#bk-arq', tela).onchange = async (e) => {

@@ -894,3 +894,14 @@ label.btn.desab { opacity: 1; color: color-mix(in srgb, var(--txt) 40%, transpar
 .sug-combo .chip .i { color: var(--acento); }
 .sug-combo.agrado { border-style: dashed; }
 .sug-combo.agrado .chip .i { color: var(--alerta); }
+
+/* ---------- Pacote 15: atalhos e jejum ---------- */
+#c-atalhos h2, .jejum-card h2 { display: flex; align-items: center; gap: var(--e2); font-size: var(--fs-16); }
+#c-atalhos h2 .i, .jejum-card h2 .i { color: var(--acento); }
+.atalhos-url button { min-height: 52px; }
+.atalhos-url .url { display: block; font-size: var(--fs-12); word-break: break-all; }
+.atalhos-url .i { flex: none; color: var(--txt2); }
+.jejum-tempo { margin: 2px 0 6px; font-size: var(--fs-14); }
+.jejum-tempo b { font-size: var(--fs-28); font-weight: var(--fw-b); letter-spacing: -.02em; margin-right: 6px; }
+.jejum-hist { margin: 8px 0 0; font-size: var(--fs-13); }
+.jejum-hist .ok { color: var(--acento); font-weight: var(--fw-sb); }

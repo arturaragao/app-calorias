@@ -1066,6 +1066,33 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   });
 }
 
+// ---------- Pacote 15: jejum e atalhos ----------
+{
+  const JJ = await import('../js/jejum.js');
+  const ts = (k, h, m = 0) => new Date(`${k}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`).getTime();
+  const diarios = [
+    { data: '2026-10-07', refeicoes: { jantar: [{ ts: ts('2026-10-07', 20) }] } },
+    { data: '2026-10-08', refeicoes: { cafe: [{ ts: ts('2026-10-08', 10) }], jantar: [{ ts: ts('2026-10-08', 21, 30) }, { planejado: true, ts: ts('2026-10-08', 23) }] } },
+    { data: '2026-10-09', refeicoes: { cafe: [{ ts: ts('2026-10-09', 9, 30) }, { n: {} }] } },
+  ];
+  t('Jejum: atual desde o último lançamento com horário; noites entre dias seguidos; planejado não conta', () => {
+    const j = JJ.jejumAtual(diarios, ts('2026-10-09', 13, 30));
+    if (j.desde !== ts('2026-10-09', 9, 30) || Math.abs(j.horas - 4) > 1e-9) throw new Error(JSON.stringify(j));
+    const h = JJ.historicoJejum(diarios);
+    if (h.length !== 2 || Math.abs(h[0].horas - 12) > 1e-9 || Math.abs(h[1].horas - 14) > 1e-9) throw new Error(JSON.stringify(h));
+    if (JJ.fmtDuracao(13.34) !== '13 h 20 min' || JJ.jejumAtual([], 1) !== null) throw new Error('formato/vazio');
+  });
+  t('Manifest: atalhos apontam para endereços que o app trata e têm ícone', () => {
+    const m = JSON.parse(readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
+    if (m.shortcuts.length < 4 || m.shortcuts[0].short_name !== 'Falar') throw new Error('Falar primeiro');
+    for (const s of m.shortcuts) {
+      if (!/^\.\/#(adicionar|diario|registros|plano)/.test(s.url)) throw new Error(s.url);
+      readFileSync(new URL('../' + s.icons[0].src, import.meta.url));
+    }
+    if (m.share_target?.method !== 'POST' || !m.share_target.params.files?.length) throw new Error('share_target');
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));
