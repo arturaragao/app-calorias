@@ -112,3 +112,4 @@
 - 2026-10-09 · Bônus de busca = 0,45·frequência (log, 20 usos) + 0,25·recência (60 dias) + 0,2·fração na refeição do horário; sinônimos ficam em porcoes.json (dados de nome, não de nutrientes).
 - 2026-10-09 · Planejado = `item.planejado`; `somar` ignora; `temConsumo` (calendário/dias seguidos) ignora; hábitos ("de sempre", frequentes) ignoram. Cópias não levam `ts` nem `planejado` (exceto se pedido).
 - 2026-10-09 · Copiar para vários dias: até 62 datas, todos os dias da semana marcados por padrão; datas futuras saem como planejadas por padrão.
+- 2026-10-09 · (v22, relato do Artur: "Falar" deixava a página fora do enquadro) viewport com `interactive-widget=resizes-content` (o teclado redimensiona em vez de deslocar a tela), folha com `92dvh` e sem rolagem lateral, `overflow-x: clip` na página e campos de texto com ≥ 16 px (sem zoom ao focar com o texto em 85%). Não reproduzido na emulação; aguardando confirmação no S23+.

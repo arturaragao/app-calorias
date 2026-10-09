@@ -329,7 +329,7 @@ a.nota { display: block; text-decoration: none; }
 @keyframes escurecer { from { background: rgb(0 0 0 / 0); } }
 .folha .painel {
   background: var(--sup); width: 100%; max-width: 720px; margin: 0 auto; border-radius: var(--r-l) var(--r-l) 0 0; position: relative;
-  max-height: 92vh; overflow-y: auto; padding: var(--e6) var(--e5) calc(var(--e5) + env(safe-area-inset-bottom)); box-shadow: var(--elev-3);
+  max-height: 92vh; max-height: 92dvh; overflow-y: auto; overflow-x: hidden; padding: var(--e6) var(--e5) calc(var(--e5) + env(safe-area-inset-bottom)); box-shadow: var(--elev-3);
   animation: subir var(--dur-l) var(--curva-enfase); overscroll-behavior: contain;
 }
 .folha .painel::before { content: ''; position: absolute; top: 8px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: var(--borda); }
@@ -817,3 +817,10 @@ input[type=range] { accent-color: var(--acento); }
 .item-wrap.planejado .nome, .item-wrap.planejado .kcal { color: var(--txt2); }
 .item-wrap.planejado .nome { font-style: italic; }
 .item .confirmar { color: var(--acento); }
+
+/* ---------- Correção v22: teclado/ditado no celular ---------- */
+/* nada pode empurrar a página para os lados; campos com ≥ 16 px (o Chrome do Android não dá zoom ao focar,
+   mesmo com o texto do app em 85%) */
+html, body { overflow-x: clip; }
+input, select, textarea { font-size: max(16px, 1rem); }
+.qtd-visor input { font-size: var(--fs-40); }
