@@ -33,6 +33,12 @@ export function aplicarTema(tema) {
 }
 
 // ---------- Roteamento ----------
+// Cada tela define seus handlers em #tela (onclick etc.); zera todos antes de trocar de tela,
+// senão o handler da tela anterior continua ativo numa tela que não define o seu.
+const HANDLERS_TELA = ['onclick', 'oninput', 'onchange', 'onkeydown', 'onsubmit',
+  'onpointerdown', 'onpointermove', 'onpointerup', 'onpointercancel'];
+function limparHandlers(tela) { for (const h of HANDLERS_TELA) tela[h] = null; }
+
 export async function navegar() {
   fecharFolha(true);
   let rota = location.hash.slice(1).split('?')[0] || 'diario';
@@ -46,6 +52,7 @@ export async function navegar() {
   const tela = $('#tela');
   try {
     const mod = await ROTAS[rota]();
+    limparHandlers(tela);
     tela.innerHTML = '';
     await mod.render(tela, rota);
     window.scrollTo(0, 0);

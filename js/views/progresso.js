@@ -38,11 +38,11 @@ export async function render(tela) {
     return kg;
   };
   // dias com algum item lançado (objetos do diário guardados para a "origem das calorias")
-  const brutos = (await db.getAll('diary')).map(([, d]) => d).filter((d) => Object.values(d.refeicoes).some((l) => l.length));
+  const todosDiarios = (await db.getAll('diary')).map(([, d]) => d);   // uma leitura só do banco
+  const brutos = todosDiarios.filter((d) => Object.values(d.refeicoes).some((l) => l.length));
   const dias = brutos.map((d) => ({ data: d.data, tot: totalDia(d), meta: metaDoDia(estado.metas, d.data, pesoEm(d.data), { treino: ehTreino(d) }) }))
     .sort((a, b) => (a.data < b.data ? -1 : 1));
   const porData = new Map(dias.map((d) => [d.data, d]));
-  const todosDiarios = (await db.getAll('diary')).map(([, d]) => d);
   const anotEm = new Map(todosDiarios.filter((d) => d.tags?.length || d.nota).map((d) => [d.data, d]));
   const rotTag = (t) => ETIQUETAS.find(([id]) => id === t)?.[1] || t;
   const tend = P.tendenciaPeso(pesos);

@@ -66,14 +66,37 @@ export function correspondencias(indice, { nomeTaco = '', nome = '' }, max = 3) 
 export function porcoesDe(food, tabela, doUsuario = {}) {
   if (doUsuario[food.id]) return doUsuario[food.id].map((p) => ({ ...p, usuario: true }));
   if (food.porcoes?.length) return food.porcoes;
-  const palavras = normalizar(food.nome).split(' ');
-  const tem = (c) => normalizar(c).split(' ').every((t) => palavras.some((p) => p.startsWith(t)));
-  for (const r of tabela?.regras || []) {
-    if (r.chaves.every(tem) && !(r.exceto || []).some(tem)) return r.porcoes.map((p) => ({ ...p, aprox: true }));
-  }
+  const r = regraDe(food, tabela?.regras);
+  if (r) return r.porcoes.map((p) => ({ ...p, aprox: true }));
   const g = tabela?.grupos?.[food.grupo];
   if (g) return g.map((p) => ({ ...p, aprox: true }));
   return (tabela?.padrao || []).map((p) => ({ ...p, aprox: true }));
+}
+
+/** 1ª regra cujas chaves aparecem todas (início de palavra) no nome e nenhuma das "exceto". */
+function regraDe(food, regras = []) {
+  const palavras = normalizar(food.nome).split(' ');
+  const tem = (c) => normalizar(c).split(' ').every((t) => palavras.some((p) => p.startsWith(t)));
+  return regras.find((r) => r.chaves.every(tem) && !(r.exceto || []).some(tem)) || null;
+}
+
+// ---------- Líquidos e densidade (mL → g) ----------
+
+/** Bebidas e líquidos comuns (grupo "Bebidas" da TACO ou nome típico), para abrir já em mL. */
+export function ehLiquido(food) {
+  const n = normalizar(food.nome), g = normalizar(food.grupo);
+  if (/bebida/.test(g)) return true;
+  return /^(leite|suco|refrigerante|cafe|cha|agua|bebida|iogurte|caldo|sopa|vinho|cerveja|kefir|isotonico|achocolatado)\b/.test(n)
+    && !/\b(po|condensado|creme|em po|solido)\b/.test(n);
+}
+
+/**
+ * Densidade (g/mL) para converter mL em gramas. Ordem: campo `densidade` do alimento →
+ * regra em porcoes.json › densidades (valores com fonte citada no próprio arquivo) → 1 g/mL.
+ */
+export function densidadeDe(food, tabela) {
+  if (food.densidade > 0) return food.densidade;
+  return regraDe(food, tabela?.densidades?.regras)?.g_ml || 1;
 }
 
 // ---------- Carregamento ----------

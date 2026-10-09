@@ -565,6 +565,51 @@ t('Gramas sem casas decimais só na exibição', () => {
   eq(U5.fmtG(38.2), '38'); eq(U5.fmtG(38.6), '39'); eq(U5.fmtG(null), '—');
 });
 
+// ---------- Pacote 6 ----------
+const L6 = await import('../js/layout-ordem.js');
+t('Layout: sem ordem salva = padrão; ids desconhecidos e repetidos saem', () => {
+  eq(L6.mesclarOrdem(['a', 'b', 'c']).join(), 'a,b,c');
+  eq(L6.mesclarOrdem(['a', 'b', 'c'], ['c', 'x', 'a', 'c', 'b']).join(), 'c,a,b');
+});
+t('Layout: bloco novo (versão futura) entra na posição padrão', () => {
+  eq(L6.mesclarOrdem(['a', 'novo', 'b', 'c'], ['c', 'b', 'a']).join(), 'c,novo,b,a');
+  eq(L6.mesclarOrdem(['a', 'b', 'fim'], ['b', 'a']).join(), 'b,a,fim');
+});
+t('Layout: ordenar elementos pela ordem (desconhecidos no fim, estável, sem mutar)', () => {
+  const els = [{ b: 'agua' }, { b: '?' }, { b: 'semana' }, { b: 'resumo' }];
+  const r = L6.ordenarPorOrdem(els, ['semana', 'resumo', 'agua'], (e) => e.b);
+  eq(r.map((e) => e.b).join(), 'semana,resumo,agua,?'); eq(els[0].b, 'agua');
+  eq(L6.ordenarPorOrdem(['x', 'y', 'b', 'a'], ['a', 'b']).join(), 'a,b,x,y');
+});
+t('Layout: blocos padrão sem ids repetidos em cada tela', () => {
+  for (const [tela, l] of Object.entries(L6.BLOCOS)) eq(new Set(l.map(([id]) => id)).size, l.length, tela);
+});
+const F6 = await import('../js/foods.js');
+t('ehLiquido: bebidas sim; pó, condensado e sólidos não', () => {
+  eq(F6.ehLiquido({ nome: 'Leite, de vaca, integral', grupo: 'Leite e derivados' }), true);
+  eq(F6.ehLiquido({ nome: 'Suco de laranja', grupo: '' }), true);
+  eq(F6.ehLiquido({ nome: 'Café, infusão 10%', grupo: '' }), true);
+  eq(F6.ehLiquido({ nome: 'Qualquer', grupo: 'Bebidas (alcoólicas e não alcoólicas)' }), true);
+  eq(F6.ehLiquido({ nome: 'Leite, de vaca, integral, pó', grupo: '' }), false);
+  eq(F6.ehLiquido({ nome: 'Leite, condensado', grupo: '' }), false);
+  eq(F6.ehLiquido({ nome: 'Arroz, tipo 1, cozido', grupo: 'Cereais' }), false);
+  eq(F6.ehLiquido({ nome: 'Chocolate, ao leite', grupo: '' }), false);
+});
+t('Densidade mL→g: porcoes.json (leite 1,03, óleo/azeite 0,92, mel 1,42), campo próprio e padrão 1', () => {
+  const tab = JSON.parse(readFileSync(new URL('../porcoes.json', import.meta.url), 'utf8'));
+  if (!tab.densidades?.fonte) throw new Error('densidades sem fonte citada');
+  aprox(F6.densidadeDe({ nome: 'Leite, de vaca, integral' }, tab), 1.03);
+  aprox(F6.densidadeDe({ nome: 'Óleo, de soja' }, tab), 0.92);
+  aprox(F6.densidadeDe({ nome: 'Azeite, de oliva, extra virgem' }, tab), 0.92);
+  aprox(F6.densidadeDe({ nome: 'Mel, de abelha' }, tab), 1.42);
+  aprox(F6.densidadeDe({ nome: 'Melancia, crua' }, tab), 1);
+  aprox(F6.densidadeDe({ nome: 'Leite, de vaca, integral, pó' }, tab), 1);
+  aprox(F6.densidadeDe({ nome: 'Leite, condensado' }, tab), 1);
+  aprox(F6.densidadeDe({ nome: 'Suco de uva' }, tab), 1);
+  aprox(F6.densidadeDe({ nome: 'Meu leite', densidade: 1.035 }, tab), 1.035);
+  aprox(F6.densidadeDe({ nome: 'Leite' }, {}), 1);
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

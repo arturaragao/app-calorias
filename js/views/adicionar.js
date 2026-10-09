@@ -63,7 +63,9 @@ export async function render(tela) {
     const u = estado.config.ultimaQtd[f.id];
     return `<li><button data-id="${esc(f.id)}">
       <span><span class="nome">${ehFavorito(f.id) ? '★ ' : ''}${esc(f.nome)}</span><span class="mudo">${esc(rotuloFonte(f))}${u ? ` · última: ${esc(rotuloQtd(u))}` : ''}</span></span>
-      <span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span></button>
+      ${f.kcal == null /* sem kcal na fonte (ex.: leite integral/UHT na TACO): avisa em vez de mostrar 0 */
+        ? `<span class="mudo" style="white-space:nowrap;font-size:.78rem">⚠ sem dados na ${esc(f.fonte || 'fonte')}</span>`
+        : `<span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span>`}</button>
       ${u ? `<button class="rapido" data-rapido="${esc(f.id)}" aria-label="Adicionar ${esc(rotuloQtd(u))} de ${esc(f.nome)} com um toque">+</button>` : ''}</li>`;
   };
   const desenharSugestoes = (buscando) => {

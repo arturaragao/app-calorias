@@ -2,12 +2,12 @@
 // Usada ao adicionar um alimento e ao editar um item do diário.
 
 import { estado, salvarConfig } from '../state.js';
-import { carregarBase, porcoesDe, rotuloFonte } from '../foods.js';
+import { carregarBase, porcoesDe, rotuloFonte, ehLiquido, densidadeDe } from '../foods.js';
 import { nutrientesPorGramas } from '../diary.js';
 import { abrirFolha, fecharFolha, esc, aviso } from '../ui.js';
 import { ehFavorito, alternarFavorito, catalogo } from '../custom.js';
 import { folhaAlimento } from './alimento-form.js';
-import { fmtKcal, fmtMacro, fmtNum, lerNumero, normalizar } from '../utils.js';
+import { fmtKcal, fmtMacro, fmtNum, lerNumero } from '../utils.js';
 
 /**
  * food: objeto com valores por 100 g (alimento da base ou snapshot por100 do item).
@@ -19,9 +19,10 @@ export async function folhaQuantidade(food, opcoes) {
   // "1 grama" sempre disponível como porção: quantidade conta gramas, de 1 em 1
   const lista = [...porcoes, { nome: 'grama', g: 1, umG: true }];
   const ultima = estado.config.ultimaQtd[food.id];
+  const dens = densidadeDe(food, tabela);   // g/mL (1 se não houver valor com fonte)
   // porção própria do produto (rótulo/receita) vira o padrão quando não há última quantidade
   const porcaoPropria = !ultima && !opcoes.g && food.porcoes?.length && !porcoes[0]?.aprox;
-  // mL (líquidos): densidade ≈ 1 g/mL; vem em mL se o item já era em mL, se a última vez foi em mL ou se é bebida
+  // mL (líquidos): g = mL × densidade; vem em mL se o item já era em mL, se a última vez foi em mL ou se é bebida
   const ref = opcoes.porcao || (!opcoes.g ? ultima?.porcao : null);
   let modo = ref?.ml ? 'ml' : opcoes.porcao || porcaoPropria ? 'porcao' : (ultima?.porcao && !opcoes.g ? 'porcao'
     : !ultima && !opcoes.g && ehLiquido(food) ? 'ml' : 'g');
@@ -38,7 +39,9 @@ export async function folhaQuantidade(food, opcoes) {
       ${String(food.id).startsWith('c-') ? '<button type="button" class="btn peq" data-editar-alim>Editar alimento</button>'
         : String(food.id).startsWith('r-') ? '<button type="button" class="btn peq" data-editar-rec>Editar receita</button>'
         : '<button type="button" class="btn peq" data-duplicar>Duplicar e editar</button>'}</div>`}
-    ${falta.length ? '<p class="nota alerta">Alguns nutrientes não constam na fonte (contam como 0).</p>' : ''}
+    ${falta.includes('kcal') ? `<div class="nota alerta"><p style="margin:0 0 8px"><b>Sem dados na ${esc(food.fonte || 'fonte')}</b>: a tabela não traz calorias nem macros deste alimento (lançaria 0 kcal). Use o rótulo da embalagem ou busque no Open Food Facts (🌐 abaixo da busca).</p>
+      <button type="button" class="btn peq" data-criar-rotulo>Criar pelo rótulo</button></div>`
+      : falta.length ? '<p class="nota alerta">Alguns nutrientes não constam na fonte (contam como 0).</p>' : ''}
     <div class="seg" role="group"><button type="button" data-modo="g" aria-pressed="${modo === 'g'}">Gramas</button>
       <button type="button" data-modo="ml" aria-pressed="${modo === 'ml'}">mL</button>
       <button type="button" data-modo="porcao" aria-pressed="${modo === 'porcao'}">Porção</button></div>
@@ -49,7 +52,7 @@ export async function folhaQuantidade(food, opcoes) {
       <button type="button" class="btn" data-d="1" aria-label="Mais 1">+1</button>
       <button type="button" class="btn" data-d="10" aria-label="Mais 10">+10</button><span class="mudo" id="un">${modo === 'ml' ? 'mL' : 'g'}</span>
     </div>
-    <p class="mudo" id="nota-ml" style="margin:4px 0 0;font-size:.76rem">mL convertido como 1 mL ≈ 1 g (aproximação para bebidas).</p>
+    <p class="mudo" id="nota-ml" style="margin:4px 0 0;font-size:.76rem">${dens === 1 ? 'mL convertido como 1 mL ≈ 1 g (aproximação).' : `1 mL ≈ ${fmtNum(dens)} g (densidade aproximada, FAO/INFOODS).`}</p>
     <div id="m-p">
       <select name="porcao" aria-label="Porção">${lista.map((p, i) =>
         `<option value="${i}" ${porcaoIni && p.nome === porcaoIni.nome ? 'selected' : ''}>${p.umG ? '1 grama (contar de 1 em 1 g)' : `${esc(p.nome)} (${fmtNum(p.g)} g)`}</option>`).join('')}</select>
@@ -70,7 +73,7 @@ export async function folhaQuantidade(food, opcoes) {
     if (modo === 'g') return { g: lerNumero(painel.querySelector('[name=g]').value), porcao: null };
     if (modo === 'ml') {
       const ml = lerNumero(painel.querySelector('[name=g]').value);
-      return { g: ml * ML_G, porcao: { nome: 'mL', g: ML_G, qtd: ml, ml: true } };
+      return { g: ml * dens, porcao: { nome: 'mL', g: dens, qtd: ml, ml: true } };
     }
     const p = lista[Number(painel.querySelector('[name=porcao]').value)];
     const qtd = lerNumero(painel.querySelector('[name=qtd]').value);
@@ -86,14 +89,14 @@ export async function folhaQuantidade(food, opcoes) {
     painel.querySelector('#erro').textContent = erro;
     if (erro) return;
     const { n } = nutrientesPorGramas(food, q.g);
-    painel.querySelector('#calc').innerHTML = `<tr><th>${modo === 'ml' ? `${fmtNum(Math.round(q.porcao.qtd))} mL` : `${fmtNum(Math.round(q.g))} g`}</th><th>kcal</th><th>P</th><th>C</th><th>G</th></tr>
+    painel.querySelector('#calc').innerHTML = `<tr><th>${modo === 'ml' ? `${fmtNum(Math.round(q.porcao.qtd))} mL${dens !== 1 ? ` (${fmtNum(Math.round(q.g))} g)` : ''}` : `${fmtNum(Math.round(q.g))} g`}</th><th>kcal</th><th>P</th><th>C</th><th>G</th></tr>
       <tr><td></td><td><b>${fmtKcal(n.kcal)}</b></td><td>${fmtMacro(n.prot)}</td><td>${fmtMacro(n.carb)}</td><td>${fmtMacro(n.gord)}</td></tr>`;
   };
   painel.addEventListener('click', async (e) => {
     const t = e.target.closest('button');
     if (!t) return;
     if (t.dataset.modo) {
-      // gramas ↔ mL: mantém o número (1 mL ≈ 1 g)
+      // gramas ↔ mL: mantém o número digitado
       modo = t.dataset.modo;
       painel.querySelectorAll('[data-modo]').forEach((b) => b.setAttribute('aria-pressed', b === t));
     } else if (t.dataset.d || t.dataset.q) {
@@ -115,6 +118,10 @@ export async function folhaQuantidade(food, opcoes) {
       return 'duplicar' in t.dataset
         ? folhaAlimento(null, { duplicarDe: atual, aoSalvar: reabrir })
         : folhaAlimento(atual, { aoSalvar: reabrir, aoApagar: opcoes.aoMudarCatalogo });
+    } else if ('criarRotulo' in t.dataset) {
+      // só o nome vem da base; os valores são digitados do rótulo (nada é inventado)
+      return folhaAlimento(null, { prefill: { nome: food.nome, fonte: 'rótulo' },
+        aoSalvar: (novo) => folhaQuantidade(novo, { ...opcoes, g: undefined, porcao: null }) });
     } else if ('editarRec' in t.dataset) {
       fecharFolha();
       location.hash = '#receita?id=' + encodeURIComponent(food.id);
@@ -137,17 +144,6 @@ export async function folhaQuantidade(food, opcoes) {
   painel.addEventListener('input', atualizar);
   painel.addEventListener('change', atualizar);
   atualizar();
-}
-
-/** Densidade assumida para mL → g (aproximação; leite ≈ 1,03, sucos ≈ 1,04, óleos ≈ 0,92). */
-export const ML_G = 1;
-
-/** Bebidas e líquidos comuns (grupo "Bebidas" da TACO ou nome típico), para abrir já em mL. */
-export function ehLiquido(food) {
-  const n = normalizar(food.nome), g = normalizar(food.grupo);
-  if (/bebida/.test(g)) return true;
-  return /^(leite|suco|refrigerante|cafe|cha|agua|bebida|iogurte|caldo|sopa|vinho|cerveja|kefir|isotonico|achocolatado)\b/.test(n)
-    && !/\b(po|condensado|creme|em po|solido)\b/.test(n);
 }
 
 /** Edita as porções deste alimento (ficam salvas por alimento, substituindo as sugeridas). */

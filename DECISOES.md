@@ -74,3 +74,6 @@
 - 2026-10-09 · mL: densidade 1 g/mL (aproximação declarada na tela); item guarda `porcao {nome:"mL", g:1, qtd, ml:true}`. Abre em mL se o item/última vez era mL ou se o alimento é bebida (grupo "Bebidas" ou nome típico).
 - 2026-10-09 · Campos numéricos (`inputmode=decimal|numeric`) selecionam o valor ao receber foco (listener global em app.js).
 - 2026-10-09 · Exibição no Diário/Detalhes: gramas e macros inteiros (fmtG); cálculo e registro seguem com precisão total.
+- 2026-10-09 · Densidade mL→g: `food.densidade` > regra em porcoes.json › densidades (FAO/INFOODS Density Database v2.0, 2012: leite 1,03; azeite/óleo 0,92; mel 1,42) > 1 g/mL. Leite em pó/condensado/coco/achocolatado/fermentado e melancia/melão/melado ficam em 1. Item em mL guarda `porcao.g` = densidade usada.
+- 2026-10-09 · Alimento sem kcal na fonte: busca mostra "sem dados na <fonte>" no lugar das kcal; "Criar pelo rótulo" abre Novo alimento só com o nome (fonte "rótulo").
+- 2026-10-09 · Lógica pura do layout (BLOCOS, mesclarOrdem, ordenarPorOrdem) em js/layout-ordem.js; layout.js reexporta. Ordem salva ignora ids repetidos.

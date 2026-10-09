@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** 6 concluída + melhorias avulsas. Próximos passos só sob pedido do Artur.
+**Etapa atual:** roteiro novo (Pacotes 6–9). Pacote 6 entregue (v14); próximo: Pacote 7, após OK do Artur.
 
 **Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
 - [x] Pacote 1 — Progresso profissional (v10)
@@ -8,7 +8,18 @@
 - [x] Pacote 3 — IA (v11): foto ligada à TACO (IA só identifica e pesa), foto do rótulo → Meus alimentos, lançar por texto livre
 - [x] Pacote 4 (v12) — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
 - [x] Pacote 5 (v13) — telas organizáveis, cores editáveis, Detalhes do dia novo, painel da refeição, mL, ícone novo
+- [x] Pacote 6 (v14) — correções e robustez
+- [ ] Pacote 7 — inteligência sem custo (o que comer agora, chips de 1 toque, lançamento suspeito, ditado por voz)
+- [ ] Pacote 8 — IA gratuita (coach semanal, foto de cardápio/receita, Gemini Nano, limite diário visível)
+- [ ] Pacote 9 — acabamento (contraste AA, deslizar dias, animações, tour, Drive quando vier o ID OAuth)
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 6 (v14, 2026-10-09)**
+- navegar() zera onclick/oninput/onchange/onkeydown/onsubmit/onpointer* de #tela antes de cada tela (handler da tela anterior não vaza mais para Registros etc.).
+- Alimento sem kcal na fonte (leite integral taco-458 e desnatado UHT taco-457): "⚠ sem dados na TACO" na busca; na quantidade, aviso + "Criar pelo rótulo" (só o nome é aproveitado). Nada inventado.
+- Densidade mL→g: campo `densidade` do alimento ou porcoes.json › densidades (leite 1,03; azeite/óleo 0,92; mel 1,42; FAO/INFOODS v2.0); senão 1 g/mL. Quantidade mostra "200 mL (206 g)".
+- progresso.js: uma leitura só do diário. Lógica pura do layout em js/layout-ordem.js; ehLiquido/densidadeDe em foods.js.
+- Testes: 119 aprovados. Conferido no navegador (375 px), sem erros no console.
 
 **Pacote 5 (v13, 2026-10-09)**
 - Telas organizáveis (js/layout.js): Diário, Adicionar (abas e atalhos), Registros (abas) e Progresso têm blocos `data-bloco`; "⇅ Organizar" no fim de cada tela e em Ajustes › Organizar telas: segurar e arrastar (ou ▲▼) e chave para esconder sem apagar. PDF do Progresso agora é o último bloco por padrão.
@@ -92,7 +103,7 @@
 - Atalhos do ícone: o Android só atualiza ícones/atalhos do app instalado quando renova o WebAPK (pode levar até 1 dia); reinstalar resolve na hora.
 
 ## Bugs conhecidos
-- Limitação da fonte: na TACO, "Leite, de vaca, integral" (taco-458) e "desnatado, UHT" (taco-457) não têm kcal/macros (NA) → lançam 0 kcal. Usar rótulo/Open Food Facts (Meus alimentos).
+- Limitação da fonte: na TACO, "Leite, de vaca, integral" (taco-458) e "desnatado, UHT" (taco-457) não têm kcal/macros (NA). O app agora avisa e oferece criar pelo rótulo/Open Food Facts.
 
 ## Manutenção
 - Mudou arquivo publicado → incrementar `VERSAO` em `sw.js` **e** em `js/versao.js`; arquivo JS novo → incluir em `ARQUIVOS` (testes conferem os dois).

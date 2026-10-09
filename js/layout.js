@@ -5,47 +5,24 @@
 
 import { estado, salvarConfig } from './state.js';
 import { abrirFolha, esc, aviso } from './ui.js';
+import { BLOCOS, NOME_TELA, mesclarOrdem, ordenarPorOrdem } from './layout-ordem.js';
 
-export const BLOCOS = {
-  diario: [
-    ['semana', 'Faixa da semana'], ['resumo', 'Resumo do dia (anel e macros)'], ['etiquetas', 'Treino e nota do dia'],
-    ['agua', 'Água'], ['refeicoes', 'Refeições'], ['copiar', 'Copiar o dia anterior'],
-  ],
-  adicionar: [
-    ['aba-recentes', 'Aba Recentes'], ['aba-favoritos', 'Aba Favoritos'], ['aba-meus', 'Aba Meus'], ['aba-receitas', 'Aba Receitas'],
-    ['foto', 'Atalho Foto do prato'], ['texto', 'Atalho Descrever'], ['salvas', 'Atalho Refeições salvas'],
-    ['rotulo', 'Atalho Ler rótulo'], ['novo', 'Atalho Novo alimento'], ['receita', 'Atalho Nova receita'],
-  ],
-  registros: [['peso', 'Peso'], ['agua', 'Água'], ['medidas', 'Medidas'], ['dobras', 'Dobras'], ['fotos', 'Fotos']],
-  progresso: [
-    ['kpis', 'Indicadores'], ['peso', 'Peso'], ['gasto', 'Gasto real estimado'], ['semanas', 'Calorias por semana'],
-    ['calendario', 'Calendário de aderência'], ['relatorio', 'Relatório semanal'], ['macros', 'Médias diárias × meta'],
-    ['origem', 'De onde vêm as calorias'], ['composicao', 'Composição corporal'], ['circ', 'Circunferências'],
-    ['pdf', 'Relatório em PDF'],
-  ],
-};
-export const NOME_TELA = { diario: 'Diário', adicionar: 'Adicionar', registros: 'Registros', progresso: 'Progresso' };
+export { BLOCOS, NOME_TELA };
 
 /** Ordem atual (ids conhecidos; blocos novos de versões futuras entram na posição padrão). */
-export function ordemDe(tela) {
-  const padrao = BLOCOS[tela].map(([id]) => id);
-  const salva = (estado.config.layout?.[tela]?.ordem || []).filter((id) => padrao.includes(id));
-  padrao.forEach((id, i) => { if (!salva.includes(id)) salva.splice(Math.min(i, salva.length), 0, id); });
-  return salva;
-}
+export const ordemDe = (tela) => mesclarOrdem(BLOCOS[tela].map(([id]) => id), estado.config.layout?.[tela]?.ordem);
 export const ocultos = (tela) => new Set(estado.config.layout?.[tela]?.ocultos || []);
 export const visivel = (tela, id) => !ocultos(tela).has(id);
 
 /** Reordena e esconde os [data-bloco] dentro de `raiz`, por contêiner. */
 export function aplicarLayout(raiz, tela) {
   const ordem = ordemDe(tela), esc = ocultos(tela);
-  const pos = new Map(ordem.map((id, i) => [id, i]));
   const pais = new Set([...raiz.querySelectorAll('[data-bloco]')].map((el) => el.parentElement));
   for (const pai of pais) {
     // os blocos trocam de "vaga" entre si; o que não é bloco (avisos etc.) fica onde está
     const els = [...pai.children].filter((el) => el.dataset.bloco);
     const vagas = els.map((el) => { const m = document.createComment(''); el.replaceWith(m); return m; });
-    els.sort((a, b) => (pos.get(a.dataset.bloco) ?? 99) - (pos.get(b.dataset.bloco) ?? 99))
+    ordenarPorOrdem(els, ordem, (el) => el.dataset.bloco)
       .forEach((el, i) => { el.hidden = esc.has(el.dataset.bloco); vagas[i].replaceWith(el); });
   }
 }

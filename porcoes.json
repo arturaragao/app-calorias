@@ -82,5 +82,14 @@
     "Nozes e sementes": [{"nome": "colher de sopa", "g": 15}],
     "Alimentos preparados": [{"nome": "porção média", "g": 150}]
   },
-  "padrao": [{"nome": "colher de sopa", "g": 20}]
+  "padrao": [{"nome": "colher de sopa", "g": 20}],
+  "densidades": {
+    "fonte": "FAO/INFOODS Density Database v2.0 (Charrondière UR et al., FAO, 2012). Valores aproximados (dependem de temperatura e teor de gordura); sem regra = 1 g/mL.",
+    "regras": [
+      {"chaves": ["leite"], "exceto": ["po", "condensado", "coco", "doce", "achocolatado", "fermentado"], "g_ml": 1.03},
+      {"chaves": ["azeite"], "g_ml": 0.92},
+      {"chaves": ["oleo"], "g_ml": 0.92},
+      {"chaves": ["mel"], "exceto": ["melancia", "melao", "melado"], "g_ml": 1.42}
+    ]
+  }
 }
