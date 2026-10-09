@@ -10,9 +10,10 @@
   "background_color": "#0a110d",
   "theme_color": "#0a110d",
   "shortcuts": [
-    { "name": "Adicionar alimento", "short_name": "Adicionar", "url": "./#adicionar", "icons": [{ "src": "icons/atalho-adicionar.png", "sizes": "192x192", "type": "image/png" }] },
-    { "name": "Ler código de barras", "short_name": "Código", "url": "./#adicionar?scan=1", "icons": [{ "src": "icons/atalho-codigo.png", "sizes": "192x192", "type": "image/png" }] },
-    { "name": "Registrar peso", "short_name": "Peso", "url": "./#registros?aba=peso", "icons": [{ "src": "icons/atalho-peso.png", "sizes": "192x192", "type": "image/png" }] }
+    {"name": "Adicionar alimento", "short_name": "Adicionar", "url": "./#adicionar", "icons": [{"src": "icons/atalho-adicionar.png", "sizes": "192x192", "type": "image/png"}]},
+    {"name": "Foto do prato (estimar calorias)", "short_name": "Foto do prato", "url": "./#adicionar?foto=1", "icons": [{"src": "icons/atalho-foto.png", "sizes": "192x192", "type": "image/png"}]},
+    {"name": "Ler código de barras", "short_name": "Código", "url": "./#adicionar?scan=1", "icons": [{"src": "icons/atalho-codigo.png", "sizes": "192x192", "type": "image/png"}]},
+    {"name": "Registrar peso", "short_name": "Peso", "url": "./#registros?aba=peso", "icons": [{"src": "icons/atalho-peso.png", "sizes": "192x192", "type": "image/png"}]}
   ],
   "id": "./",
   "categories": ["health", "fitness", "food"],

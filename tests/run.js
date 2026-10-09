@@ -395,6 +395,59 @@ t('Drive: corpo multipart com metadados e conteúdo', () => {
   eq(partes.join(''), ['--B', 'Content-Type: application/json; charset=UTF-8', '', '{"name":"a.json"}', '--B', 'Content-Type: application/json', '', '{"x":1}', '--B--'].join('\r\n'));
 });
 
+// ---------- Progresso: tendência, gasto real, projeção, relatório, calendário, origem ----------
+t('Tendência de peso (EMA 0,1 com interpolação)', () => {
+  const tr = P.tendenciaPeso([{ data: '2026-01-01', kg: 80 }, { data: '2026-01-03', kg: 82 }]);
+  eq(tr.length, 3); aprox(tr[0].y, 80); aprox(tr[1].y, 80.1); aprox(tr[2].y, 80.29);
+  eq(tr[1].real, false); eq(tr[2].real, true); eq(P.tendenciaPeso([]).length, 0);
+});
+t('Inclinação e ritmo semanal', () => {
+  const pts = Array.from({ length: 10 }, (_, i) => ({ data: somarDias('2026-01-01', i), y: 80 - 0.1 * i }));
+  aprox(P.inclinacao(pts), -0.1); aprox(P.ritmoSemanal(pts, '2026-01-10'), -0.7);
+  eq(P.ritmoSemanal(pts.slice(0, 5), '2026-01-05'), null);
+});
+const tendSint = Array.from({ length: 28 }, (_, k) => ({ data: somarDias('2026-02-01', k), y: 80 - 0.05 * k }));
+const diasSint = tendSint.map((p) => ({ data: p.data, tot: { kcal: 2000, prot: 150 }, meta: { kcal: 2000 } }));
+t('Gasto real (TDEE adaptativo): consumo − Δtendência × 7700 / dias', () => {
+  const r = P.tdeeAdaptativo(diasSint, tendSint, '2026-02-28');
+  aprox(r.deltaKg, -1.35, 1e-9); aprox(r.tdee, 2000 + (1.35 * 7700) / 28, 1e-6); eq(r.confianca, 'alta'); eq(r.registrados, 28);
+  eq(P.tdeeAdaptativo(diasSint.slice(0, 9), tendSint, '2026-02-28'), null, 'poucos dias registrados');
+  eq(P.tdeeAdaptativo(diasSint, tendSint.slice(0, 10), '2026-02-10'), null, 'tendência curta');
+  eq(P.metaSugerida(2371.25, -550, 1500), 1820); eq(P.metaSugerida(1700, -550, 1500), 1500, 'piso');
+});
+t('Projeção do peso-alvo e fração do caminho', () => {
+  const p = P.projecao(80, 75, -0.5, '2026-01-01');
+  aprox(p.semanas, 10); eq(p.data, '2026-03-12');
+  eq(P.projecao(80, 75, 0.3, '2026-01-01'), null, 'direção errada');
+  eq(P.projecao(75.02, 75, -0.5, '2026-01-01').atingido, true);
+  aprox(P.fracaoAlvo(85, 80, 75), 0.5); eq(P.fracaoAlvo(85, 86, 75), 0); eq(P.fracaoAlvo(85, 70, 75), 1);
+});
+t('Comparação com o período anterior', () => {
+  const c = P.compararPeriodos(diasSint, 14, '2026-02-28');
+  eq(c.n[0], 14); eq(c.n[1], 14); aprox(c.kcal[0], 2000);
+});
+t('Relatório semanal', () => {
+  const ds = [dd('2026-02-02', 2000), dd('2026-02-03', 2600), dd('2026-02-04', 1900), dd('2026-02-10', 1000)];
+  const r = P.relatorioSemana(ds, tendSint, '2026-02-02');
+  eq(r.registrados, 3); eq(r.melhor.data, '2026-02-02'); eq(r.pior.data, '2026-02-03'); eq(r.aderencia.dentro, 2);
+  aprox(r.deltaPeso, -0.05 * 7, 1e-9);
+});
+t('Calendário: grade do mês começa na segunda e situação do dia', () => {
+  const g = P.gradeMes(2026, 10);                       // 01/10/2026 é quinta-feira
+  eq(g.length, 35); eq(g[2], null); eq(g[3], '2026-10-01'); eq(g[33], '2026-10-31');
+  eq(P.situacaoDia(dd('x', 2050)), 'meta'); eq(P.situacaoDia(dd('x', 2300)), 'acima'); eq(P.situacaoDia(dd('x', 1700)), 'abaixo'); eq(P.situacaoDia(null), null);
+});
+t('De onde vêm as calorias (por refeição e por alimento)', () => {
+  const it = (foodId, nome, kcal, prot) => ({ foodId, nome, n: { kcal, prot } });
+  const ds = [
+    { data: '1', nomes: { almoco: 'Almoço', cafe: 'Café' }, refeicoes: { almoco: [it('taco-3', 'Arroz', 300, 6), it(null, 'Feijão (≈100 g)', 100, 5)], cafe: [it('x', 'Pão', 100, 4)] } },
+    { data: '2', nomes: { almoco: 'Almoço' }, refeicoes: { almoco: [it('taco-3', 'Arroz', 300, 6), it(null, 'Feijão (≈150 g)', 100, 5)] } },
+  ];
+  const o = P.origemCalorias(ds);
+  eq(o.porRefeicao[0].id, 'almoco'); aprox(o.porRefeicao[0].kcal, 400); aprox(o.porRefeicao[0].pct, 800 / 900 * 100);
+  eq(o.topKcal[0].nome, 'Arroz'); eq(o.topKcal[0].vezes, 2); eq(o.topKcal[1].nome, 'Feijão'); eq(o.topKcal[1].vezes, 2);
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

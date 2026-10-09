@@ -7,7 +7,7 @@ App pessoal (PWA) para registrar alimentação, metas, peso, água e composiçã
 ## Instalar no celular (Android/Chrome)
 1. Abra o endereço no Chrome.
 2. Menu ⋮ → **Adicionar à tela inicial** → **Instalar**.
-3. Segure o ícone para ver os atalhos: *Adicionar alimento*, *Ler código de barras*, *Registrar peso*.
+3. Segure o ícone para ver os atalhos: *Adicionar alimento*, *Foto do prato*, *Ler código de barras*, *Registrar peso*.
 
 As atualizações chegam sozinhas: ao abrir o app, ele baixa a versão nova e mostra "App atualizado".
 
@@ -36,6 +36,13 @@ No menu **⋯** de uma refeição → **Estimar por foto (IA)**, ou **Por foto**
 - **Custo zero:** não ative faturamento no projeto. Sem faturamento a API usa só a cota gratuita; passou do limite (por minuto ou por dia), ela recusa e o app avisa — nunca cobra.
 - Na cota gratuita o Google pode usar as imagens enviadas para melhorar os produtos dele.
 - É uma estimativa (erro típico de 20–30% nas porções): confira os pesos.
+
+## Progresso
+- **Tendência de peso:** linha que ignora as oscilações de água e sal; mostra o ritmo real (kg/semana) × o planejado.
+- **Peso-alvo:** barra de progresso e data estimada para chegar lá no ritmo atual.
+- **Gasto real estimado:** com 2–4 semanas de pesagens e alimentação registradas, calcula quanto você realmente gasta (consumo − variação da tendência × 7700 kcal/kg) e sugere a meta; um toque aplica.
+- **Calendário** de aderência, **relatório semanal** (compartilhável como imagem), **de onde vêm as calorias**, **composição corporal** (massa magra × gorda).
+- Arraste o dedo sobre os gráficos para ver os valores.
 
 ## Base de alimentos
 - **TACO 4ª ed.** (NEPA/UNICAMP, 2011): 597 alimentos, valores por 100 g.

@@ -311,3 +311,50 @@ a.nota { display: block; text-decoration: none; }
 .ia-item .linha { gap: 8px; margin-bottom: 6px; }
 button.nota { display: block; width: 100%; text-align: left; border: 0; font: inherit; font-size: .84rem; cursor: pointer; }
 .ia-item input[name=nome] { min-width: 0; width: 100%; }
+
+/* ---------- Progresso (painel completo) ---------- */
+.grafico .alvo { stroke: var(--prot); stroke-width: 1.5; stroke-dasharray: 2 3; }
+.grafico .alvo-t { fill: var(--prot); font-weight: 600; }
+.grafico .cursor { stroke: var(--txt2); stroke-width: 1; stroke-dasharray: 2 2; }
+.grafico .barra-b { fill: var(--carb); }
+.grafico rect.sel { opacity: .7; }
+.legenda .sq { width: 10px; height: 10px; border-radius: 2px; display: inline-block; vertical-align: -1px; }
+.legenda .sq.a { background: var(--acento); }
+.legenda .sq.b { background: var(--carb); }
+.kpi small { display: block; font-size: .7rem; margin-top: 2px; color: var(--txt2); }
+.destaque { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; margin: 2px 0; }
+.sub-num { display: flex; gap: 6px 14px; flex-wrap: wrap; margin: 8px 0 0; font-size: .84rem; color: var(--txt2); }
+.sub-num b { color: var(--txt); }
+.progresso-alvo { height: 10px; border-radius: 6px; background: var(--sup2); overflow: hidden; margin: 10px 0 4px; }
+.progresso-alvo > div { height: 100%; background: linear-gradient(90deg, var(--acento), var(--prot)); border-radius: 6px; }
+.selo { display: inline-block; font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--sup2); color: var(--txt2); }
+.selo.alta { color: var(--acento); }
+.selo.baixa { color: var(--alerta); }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal .cab { font-size: .7rem; color: var(--txt2); padding-bottom: 2px; }
+.cal button { aspect-ratio: 1; border: 0; border-radius: 8px; font: inherit; font-size: .8rem; background: var(--sup2); color: var(--txt2); padding: 0; cursor: pointer; min-height: 0; }
+.cal button.meta { background: var(--acento); color: var(--bg); font-weight: 600; }
+.cal button.acima { background: var(--alerta); color: var(--bg); font-weight: 600; }
+.cal button.abaixo { background: var(--agua); color: var(--bg); font-weight: 600; }
+.cal button.hoje { outline: 2px solid var(--txt); outline-offset: 1px; }
+.cal button:disabled { opacity: .35; cursor: default; }
+.cal-leg { display: flex; gap: 12px; flex-wrap: wrap; font-size: .76rem; color: var(--txt2); margin-top: 8px; }
+.cal-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 4px; vertical-align: -1px; }
+.nav-mes { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.nav-mes h2 { margin: 0; }
+.dist { margin: 8px 0; }
+.dist .rot { display: flex; justify-content: space-between; gap: 8px; font-size: .86rem; margin-bottom: 3px; }
+.dist .trilho { height: 8px; border-radius: 5px; background: var(--sup2); overflow: hidden; }
+.dist .enche { height: 100%; background: var(--acento); border-radius: 5px; }
+.dist.p .enche { background: var(--prot); }
+.dist.c .enche { background: var(--carb); }
+.dist.g .enche { background: var(--gord); }
+.top-lista { list-style: none; margin: 0; padding: 0; counter-reset: top; }
+.top-lista li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--borda); font-size: .88rem; counter-increment: top; }
+.top-lista li::before { content: counter(top); color: var(--txt2); width: 18px; flex: none; }
+.top-lista li span:first-of-type { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-lista li:last-child { border-bottom: 0; }
+.rel-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.rel-grade > div { background: var(--sup2); border-radius: 12px; padding: 10px; }
+.rel-grade b { display: block; font-size: 1.15rem; }
+.rel-grade span { font-size: .74rem; color: var(--txt2); }

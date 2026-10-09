@@ -2,6 +2,19 @@
 
 **Etapa atual:** 6 concluída + melhorias avulsas. Próximos passos só sob pedido do Artur.
 
+**Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
+- [x] Pacote 1 — Progresso profissional (v10)
+- [ ] Pacote 2 — Registrar mais rápido: refeições salvas, sugestões pelo horário, dia de treino × descanso, notas/etiquetas do dia, proteína por refeição
+- [ ] Pacote 3 — IA: foto ligada à TACO (IA só identifica e pesa), foto do rótulo → Meus alimentos, lançar por texto livre
+- [ ] Pacote 4 — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
+- [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 1 (v10)**
+- Progresso: 6 indicadores com comparação com o período anterior; peso com tendência (EMA 0,1, Hacker's Diet), ritmo real × planejado, peso-alvo com barra e projeção de data; gasto real (TDEE adaptativo, 28 dias, confiança) com meta sugerida e botão "Aplicar" (com desfazer); calendário mensal de aderência (toque abre o dia); relatório semanal navegável + imagem para compartilhar (relatorio-img.js); médias × meta em barras + g/kg de proteína; de onde vêm as calorias (por refeição, top 10 kcal/proteína); composição corporal (massa magra × gorda empilhadas + resumo); circunferências com diferença no período.
+- Gráficos: arrastar o dedo mostra valores (cursor), linha do alvo, gráfico empilhado.
+- Atalho do ícone "Foto do prato" (#adicionar?foto=1, icons/atalho-foto.png).
+- Testes: 99 aprovados. Testado no navegador com 6 semanas de dados simulados.
+
 **Melhorias (2026-10-08, v8)**
 - Backup no Google Drive (js/drive.js, views/drive-ui.js): GIS token client, escopo drive.file, arquivo único sobrescrito; envio automático com token válido (ao abrir/sair) e aviso "☁️ tocar para enviar" no Diário após 20 h com novidades; restaurar em Ajustes e na tela de boas-vindas. **Depende do Artur:** criar o ID do cliente OAuth (README) e mandar para fixar em `CLIENT_ID_PADRAO`.
 - Estimativa por foto (js/ia.js, views/foto-ia.js): Gemini (cota gratuita, chave do Artur no localStorage), JSON com esquema, revisão editável, lança cada alimento como Adição rápida (fonte "Foto (IA)"), guarda a foto na refeição, desfazer. Entradas: menu ⋯ da refeição e botão "Por foto" no Adicionar.

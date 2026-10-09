@@ -48,3 +48,11 @@
 - 2026-10-08 · Drive sem servidor: Google Identity Services (token ~1 h, sem renovação em segundo plano). Envio silencioso enquanto há token; vencido e com backup > 20 h com novidades → aviso de 1 toque no Diário. Escopo drive.file; um arquivo `app-calorias-backup.json` sobrescrito (o Drive guarda versões).
 - 2026-10-08 · "Novidade" para o backup = `localStorage.alteradoEm`, marcado em todo put/del do banco (db.js). Estado do Drive e token ficam no localStorage (por aparelho).
 - 2026-10-08 · Backup no Drive sem fotos por padrão (opção "Incluir fotos"); > 4,5 MB usa upload resumable.
+- 2026-10-08 · Tendência de peso: EMA α = 0,1 dia a dia com interpolação linear entre pesagens (Walker, The Hacker's Diet). A tendência "atrasa" alguns dias em relação ao peso cru — é o esperado.
+- 2026-10-08 · Gasto real: janela de 28 dias; exige ≥ 14 dias de tendência e ≥ max(10, 50%) dos dias registrados; gasto = média kcal dos dias registrados − Δtendência × 7700 / dias. Confiança alta ≥ 85% de cobertura e ≥ 21 dias.
+- 2026-10-08 · Meta sugerida = gasto real + ajuste do perfil (objetivo/ritmo), arredondada a 10 kcal, com piso. "Aplicar" soma a diferença a todos os conjuntos (como o recálculo pelo peso); se algum conjunto está em gramas, só orienta ir a Metas.
+- 2026-10-08 · Peso-alvo em config.alvo = {peso, inicio:{data, kg}}; início = tendência no dia em que o alvo foi definido. Projeção pelo ritmo de 4 semanas (null se direção errada ou > 2 anos).
+- 2026-10-08 · Calendário: faixa ±10% da meta do dia; cores verde (meta), âmbar (acima), azul (abaixo).
+- 2026-10-08 · Origem das calorias: médias por dia registrado; adição rápida agrupada pelo nome sem o "(≈ g)".
+- 2026-10-08 · Relatório semanal padrão = última semana completa (segunda a domingo); imagem 1080×1250 PNG com as cores do tema atual.
+- 2026-10-08 · Atalhos do ícone: Adicionar, Foto do prato, Código de barras, Peso (Android mostra até 4).

@@ -2,7 +2,7 @@
 """gerar_icones.py — gera os ícones do app e dos atalhos (PNG, sem dependências, com antialiasing).
 
 icons/icon-192.png, icon-512.png, icon-maskable-512.png  — anel de progresso (marca do app)
-icons/atalho-adicionar.png, atalho-codigo.png, atalho-peso.png (192 px) — atalhos do ícone
+icons/atalho-adicionar.png, atalho-codigo.png, atalho-peso.png, atalho-foto.png (192 px) — atalhos do ícone
 """
 import math, os, struct, zlib
 
@@ -121,9 +121,25 @@ def balanca(tela):
     tela.pintar(ponteiro, VERDE)
 
 
+def camera(tela):
+    # corpo arredondado com "calombo" do visor em cima
+    def corpo(x, y):
+        r = 0.07
+        if 0.36 <= x <= 0.64 and 0.24 <= y <= 0.34:
+            return True
+        if not (0.17 <= x <= 0.83 and 0.30 <= y <= 0.76):
+            return False
+        cx = min(max(x, 0.17 + r), 0.83 - r); cy = min(max(y, 0.30 + r), 0.76 - r)
+        return (x - cx) ** 2 + (y - cy) ** 2 <= r * r
+    tela.pintar(corpo, BRANCO)
+    tela.pintar(lambda x, y: math.hypot(x - .5, y - .53) <= 0.16, FUNDO_A)   # lente
+    tela.pintar(lambda x, y: math.hypot(x - .5, y - .53) <= 0.10, VERDE)
+    tela.pintar(lambda x, y: math.hypot(x - .72, y - .39) <= 0.025, VERDE)   # flash
+
+
 os.makedirs(os.path.join(RAIZ, 'icons'), exist_ok=True)
 for nome, tam, esc, cheio in (('icon-192.png', 192, 1, False), ('icon-512.png', 512, 1, False), ('icon-maskable-512.png', 512, .8, True)):
     t = Tela(tam); anel(t, esc); t.salvar(os.path.join(RAIZ, 'icons', nome), fundo_cheio=cheio)
-for nome, fn in (('atalho-adicionar.png', mais), ('atalho-codigo.png', codigo), ('atalho-peso.png', balanca)):
+for nome, fn in (('atalho-adicionar.png', mais), ('atalho-codigo.png', codigo), ('atalho-peso.png', balanca), ('atalho-foto.png', camera)):
     t = Tela(192); fn(t); t.salvar(os.path.join(RAIZ, 'icons', nome), fundo_cheio=False, raio_canto=0.5)
 print('ícones gerados')

@@ -109,6 +109,10 @@ export async function render(tela) {
   q.addEventListener('input', pesquisar);
   pesquisar();
 
+  if (new URLSearchParams(location.hash.split('?')[1] || '').get('foto')) {
+    history.replaceState(null, '', '#adicionar');           // atalho do ícone: abre a foto do prato direto
+    folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+  }
   if (new URLSearchParams(location.hash.split('?')[1] || '').get('scan')) {
     history.replaceState(null, '', '#adicionar');           // atalho do ícone: abre o leitor direto
     abrirScanner({ aoAlimento: async (f) => { await recarregar(); abrir(f); } });
