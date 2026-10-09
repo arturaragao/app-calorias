@@ -77,3 +77,8 @@
 - 2026-10-09 · Densidade mL→g: `food.densidade` > regra em porcoes.json › densidades (FAO/INFOODS Density Database v2.0, 2012: leite 1,03; azeite/óleo 0,92; mel 1,42) > 1 g/mL. Leite em pó/condensado/coco/achocolatado/fermentado e melancia/melão/melado ficam em 1. Item em mL guarda `porcao.g` = densidade usada.
 - 2026-10-09 · Alimento sem kcal na fonte: busca mostra "sem dados na <fonte>" no lugar das kcal; "Criar pelo rótulo" abre Novo alimento só com o nome (fonte "rótulo").
 - 2026-10-09 · Lógica pura do layout (BLOCOS, mesclarOrdem, ordenarPorOrdem) em js/layout-ordem.js; layout.js reexporta. Ordem salva ignora ids repetidos.
+- 2026-10-09 · "O que comer agora": erro relativo ponderado (kcal 1, P 1, C 0,5, G 0,5; passar das kcal × 1,5), escalas mín. 100 kcal / 10 g; heurística do app, não recomendação clínica. Nutrientes sempre da tabela do alimento. Alimentos sem kcal na fonte ficam fora.
+- 2026-10-09 · Refeição alvo = a do horário; se já tem itens, a próxima vazia. Parcela = distRef da refeição ÷ soma das vazias a partir dela.
+- 2026-10-09 · Chips só em refeição vazia; "de sempre" copia o snapshot mais recente de cada alimento habitual (como Copiar).
+- 2026-10-09 · Lançamento suspeito: limiares práticos (gordura ≥ 80 g/100 g e > 60 g; > 2000 kcal; > 1500 g; > 4× a mediana de gramas do alimento com > 100 g; kcal > 400 e > 2,5× o p95 dos itens de 90 dias). Confirmação por 2º toque, sem bloquear.
+- 2026-10-09 · Ditado pela Web Speech API (gratuita; no Chrome o áudio vai ao serviço de voz do Google). Sem suporte → botão escondido, segue a dica do microfone do teclado.

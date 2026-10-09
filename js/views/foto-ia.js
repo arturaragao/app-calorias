@@ -11,6 +11,7 @@ import { correspondencias } from '../foods.js';
 import { folhaAlimento } from './alimento-form.js';
 import { abrirFolha, fecharFolha, aviso, esc, $, $$, ICONES } from '../ui.js';
 import { fmtKcal, fmtMacro, fmtNum, lerNumero, uid } from '../utils.js';
+import { suportaVoz, ditar } from '../voz.js';
 
 const IA = 'ia';   // valor do seletor de fonte = "estimativa da IA"
 
@@ -45,10 +46,26 @@ export function folhaTextoIA({ data = estado.dataAtual, refId = estado.refeicaoA
   const p = abrirFolha('Descrever o que comeu (IA)', `<form id="ft" novalidate>
     <label class="campo"><span>O que você comeu?</span><textarea name="txt" rows="3" maxlength="400"
       placeholder="ex.: 2 ovos mexidos, 1 pão francês com manteiga e café com leite"></textarea></label>
-    <p class="mudo">Dica: toque no microfone do teclado para ditar. Quantidades ajudam (“200 g de arroz”, “2 colheres”).</p>
+    ${suportaVoz() ? '<button type="button" class="btn bloco" data-ditar>🎤 Ditar</button>' : ''}
+    <p class="mudo">${suportaVoz() ? 'Toque em 🎤 Ditar e fale; toque de novo para parar.' : 'Dica: toque no microfone do teclado para ditar.'} Quantidades ajudam (“200 g de arroz”, “2 colheres”).</p>
     <p class="erro" id="erro"></p><button class="btn prim bloco">Estimar</button></form>`);
+  // ditado (Web Speech API): acrescenta ao que já estiver escrito
+  let parar = null;
+  const bDitar = $('[data-ditar]', p);
+  if (bDitar) bDitar.onclick = () => {
+    if (parar) return parar();
+    const campo = $('[name=txt]', p), antes = campo.value.trim();
+    bDitar.classList.add('gravando'); bDitar.textContent = '■ Parar (ouvindo…)';
+    navigator.vibrate?.(10);
+    parar = ditar((final, parcial) => { campo.value = [antes, final, parcial].filter(Boolean).join(' ').slice(0, 400); }, (erro) => {
+      parar = null;
+      bDitar.classList.remove('gravando'); bDitar.textContent = '🎤 Ditar';
+      if (erro) $('#erro', p).textContent = erro;
+    });
+  };
   $('#ft', p).onsubmit = async (e) => {
     e.preventDefault();
+    parar?.();
     const txt = e.target.txt.value.trim();
     if (txt.length < 3) { $('#erro', p).textContent = 'Descreva o que comeu.'; return; }
     await processar(p, () => estimarTexto(txt), { data, refId, aoLancar, origem: 'Texto (IA)',

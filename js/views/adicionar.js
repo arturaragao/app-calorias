@@ -15,6 +15,7 @@ import { folhaFotoIA, folhaTextoIA, folhaRotulo } from './foto-ia.js';
 import { folhaSalvas } from './salvas.js';
 import { db } from '../db.js';
 import { aplicarLayout, ordemDe, visivel } from '../layout.js';
+import { refeicaoPeloHorario as sugerirRefeicao } from './sugestao.js';
 
 const LOTE = 30;
 const ABAS = [['recentes', 'Recentes'], ['favoritos', 'Favoritos'], ['meus', 'Meus'], ['receitas', 'Receitas']];
@@ -204,9 +205,3 @@ export async function render(tela) {
 const rotuloQtd = (u) => (u.porcao?.ml ? `${fmtNum(Math.round(u.porcao.qtd))} mL`
   : u.porcao && u.porcao.nome !== 'grama' ? `${fmtNum(u.porcao.qtd)} × ${u.porcao.nome}` : `${fmtNum(Math.round(u.g))} g`);
 
-/** Refeição provável pelo horário (só quando nenhuma foi escolhida). */
-function sugerirRefeicao(refs) {
-  const h = new Date().getHours();
-  const id = h < 10 ? 'cafe' : h < 15 ? 'almoco' : h < 18 ? 'lanche' : h < 22 ? 'jantar' : 'ceia';
-  return (refs.find((r) => r.id === id) || refs[0])?.id;
-}

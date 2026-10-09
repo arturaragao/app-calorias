@@ -7,7 +7,7 @@ import { detalheDia, painelRefeicao } from './detalhe-dia.js';
 import { aplicarLayout, botaoOrganizar } from '../layout.js';
 import { metaDoDia } from '../goals.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem,
-  criarItemRapido, adicionarItem, copiarPara, criarItem, ETIQUETAS, ehTreino, alvoProteinaRefeicao } from '../diary.js';
+  criarItemRapido, adicionarItem, copiarPara, criarItem, lancarSalva, ETIQUETAS, ehTreino, alvoProteinaRefeicao } from '../diary.js';
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
 import { abrirScanner } from './scanner.js';
 import { diasDesdeUltima } from './reg-dobras.js';
@@ -20,9 +20,11 @@ import { folhaFotos } from './fotos.js';
 import { folhaFotoIA, folhaTextoIA } from './foto-ia.js';
 import { folhaSalvarRefeicao, folhaSalvas } from './salvas.js';
 import { pendenteToque } from '../drive.js';
+import { folhaOQueComer, diariosRecentes, contextoSuspeito } from './sugestao.js';
+import { refeicaoDeSempre, avaliarSuspeito } from '../inteligencia.js';
 import { enviarAgora } from './drive-ui.js';
 
-let tela, dia, meta, fotosCont = {}, ignorarClique = false, alvoProtRef = 0;
+let tela, dia, meta, fotosCont = {}, ignorarClique = false, alvoProtRef = 0, chips = {}, agoraRestante = null;
 
 export async function render(t) {
   tela = t;
@@ -98,6 +100,21 @@ async function desenhar() {
     db.get('water', estado.dataAtual),
   ]);
   const ag = { ...AGUA_PADRAO, ...(estado.config.agua || {}) }, mlAgua = totalAgua(agua);
+  // chips de 1 toque nas refeições vazias: "Repetir de ontem" e "Seu … de sempre"
+  chips = {};
+  const vazias = refs.filter((r) => !(dia.refeicoes[r.id] || []).length);
+  if (vazias.length) {
+    const [ontem, recentes] = await Promise.all([lerDia(somarDias(estado.dataAtual, -1)), diariosRecentes(30).catch(() => [])]);
+    const anteriores = recentes.filter((d) => d.data < estado.dataAtual);
+    for (const r of vazias) {
+      const deOntem = ontem.refeicoes[r.id] || [];
+      const sempre = refeicaoDeSempre(anteriores, r.id);
+      const igual = sempre.length && sempre.length === deOntem.length && sempre.every((it) => deOntem.some((o) => o.foodId === it.foodId));
+      chips[r.id] = { ontem: deOntem.length, sempre: igual ? [] : sempre };
+    }
+  }
+  const restMacros = { kcal: restante, prot: meta.prot - tot.prot, carb: meta.carb - tot.carb, gord: meta.gord - tot.gord };
+  agoraRestante = restMacros;
   tela.innerHTML = `
     ${faixaSemana(ativos)}
     ${ehHoje && pendenteToque() ? '<button class="nota" data-drive>☁️ Backup diário no Google Drive pendente — tocar para enviar.</button>' : ''}
@@ -123,6 +140,7 @@ async function desenhar() {
         <div><b>${fmtKcal(tot.kcal)} <small>kcal</small></b><span>Consumido</span></div>
         <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)} <small>kcal</small></b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>
     </section>
+    ${ehHoje && restante >= 50 ? `<button class="btn bloco suave" data-bloco="agora" data-agora>🍽 O que comer agora <span class="mudo num">· faltam ${fmtKcal(restante)} kcal</span></button>` : ''}
     ${faixaEtiquetas()}
     <section class="card agua-card" data-bloco="agua" aria-label="Água">
       <div class="gota">${ICONES.gota}</div>
@@ -194,9 +212,18 @@ function cartaoRefeicao(r) {
           : `${rotuloQtdItem(it)}${it.falta?.length ? ' · dados parciais' : ''}`}</div></div>
       <span class="kcal num">${fmtKcal(it.n.kcal)}</span>
       <button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button></div></li>`).join('')}</ul>` : ''}
+    ${chipsRefeicao(r)}
     <div class="add-linha"><button class="add-alim" data-add>+ Adicionar alimento</button>
       <button class="ico" data-scan aria-label="Ler código de barras para ${esc(r.nome)}">${ICONES.codigo}</button></div>
   </section>`;
+}
+
+/** Chips de 1 toque (só em refeição vazia). */
+function chipsRefeicao(r) {
+  const c = chips[r.id];
+  if (!c || (!c.ontem && !c.sempre.length)) return '';
+  return `<div class="chips-ref">${c.ontem ? `<button class="chip-tog" data-chip-ontem>↺ Repetir de ontem (${c.ontem})</button>` : ''}${
+    c.sempre.length ? `<button class="chip-tog" data-chip-sempre>⭐ Seu ${esc(r.nome.toLowerCase())} de sempre (${c.sempre.length})</button>` : ''}</div>`;
 }
 
 /** "38 g", "200 mL" ou "2 × fatia · 50 g" (gramas sem casas decimais só na exibição). */
@@ -224,6 +251,7 @@ async function clique(e) {
   const dr = e.target.closest('[data-drive]');
   if (dr) { dr.disabled = true; try { await enviarAgora(); dr.remove(); } catch (err) { aviso(err.message, { ms: 8000 }); dr.disabled = false; } return; }
   if (e.target.closest('[data-copiar-dia]')) return copiarDeOntem(null);
+  if (e.target.closest('[data-agora]')) return folhaOQueComer({ dia, restante: agoraRestante, aoLancar: desenhar });
   const sec = e.target.closest('[data-ref]');
   if (!sec) return;
   const refId = sec.dataset.ref;
@@ -233,6 +261,15 @@ async function clique(e) {
     estado.refeicaoDoDiario = true;
     location.hash = '#adicionar';
     return;
+  }
+  if (e.target.closest('[data-chip-ontem]')) { navigator.vibrate?.(10); return copiarDeOntem(refId); }
+  if (e.target.closest('[data-chip-sempre]')) {
+    const itens = chips[refId]?.sempre || [];
+    const antes = dia;
+    await gravarDia(lancarSalva(dia, refId, nomeRef, { itens }));
+    navigator.vibrate?.(10);
+    await desenhar();
+    return aviso(`${itens.length} item(ns) → ${nomeRef}`, { acao: async () => { await gravarDia(antes); desenhar(); } });
   }
   if (e.target.closest('[data-painel-ref]')) return painelRefeicao(dia, meta, refId, { aoMudar: desenhar });
   if (e.target.closest('[data-fotos]')) return folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
@@ -333,7 +370,9 @@ function folhaRapida(item, refId) {
       : v.kcal > 10000 ? 'Mais de 10000 kcal num item parece engano.' : '';
     $('#erro', p).textContent = erro;
     if (erro) return;
-    const av = avisoKcalMacros({ kcal: v.kcal, prot: v.prot ?? 0, carb: v.carb ?? 0, gord: v.gord ?? 0 });
+    // kcal muito acima do padrão do usuário também pede confirmação (avaliarSuspeito com 100 g = valor digitado)
+    const av = avisoKcalMacros({ kcal: v.kcal, prot: v.prot ?? 0, carb: v.carb ?? 0, gord: v.gord ?? 0 })
+      || avaliarSuspeito({ nome: 'adição rápida', kcal: v.kcal }, 100, await contextoSuspeito(null).catch(() => ({})));
     if (av && (v.prot != null || v.carb != null || v.gord != null) && !confirmado) {
       $('#av', p).textContent = av + ' Toque de novo para confirmar.'; $('#av', p).hidden = false; confirmado = true; return;
     }

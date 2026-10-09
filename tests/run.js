@@ -610,6 +610,74 @@ t('Densidade mL→g: porcoes.json (leite 1,03, óleo/azeite 0,92, mel 1,42), cam
   aprox(F6.densidadeDe({ nome: 'Leite' }, {}), 1);
 });
 
+// ---------- Pacote 7 ----------
+const I7 = await import('../js/inteligencia.js');
+const fArroz = { id: 'arroz', nome: 'Arroz cozido', kcal: 128, prot: 2.5, carb: 28.1, gord: 0.2 };
+const fFrango = { id: 'frango', nome: 'Frango grelhado', kcal: 159, prot: 32, carb: 0, gord: 2.5 };
+const fAzeite = { id: 'azeite', nome: 'Azeite', kcal: 884, prot: 0, carb: 0, gord: 100 };
+const fLeite = { id: 'leite', nome: 'Leite integral', kcal: null };
+const itemDe = (f, g) => ({ foodId: f.id, nome: f.nome, g, n: { kcal: (f.kcal || 0) * g / 100 } });
+const diaCom = (data, ref, ...its) => ({ data, refeicoes: { [ref]: its } });
+t('Candidatos: frequência, mediana dos gramas, favoritos e sem kcal fora', () => {
+  const ds = [diaCom('2026-01-01', 'almoco', itemDe(fArroz, 100), itemDe(fFrango, 120)), diaCom('2026-01-02', 'almoco', itemDe(fArroz, 200)),
+    diaCom('2026-01-03', 'almoco', itemDe(fArroz, 150), itemDe(fLeite, 200))];
+  const por = { arroz: fArroz, frango: fFrango, azeite: fAzeite, leite: fLeite };
+  const c = I7.candidatosFrequentes(ds, (id) => por[id], { favoritos: ['azeite'], ultimaQtd: { azeite: { g: 10 } } });
+  eq(c.map((x) => x.food.id).join(), 'arroz,azeite,frango');
+  eq(c[0].gTipico, 150); eq(c.find((x) => x.food.id === 'azeite').gTipico, 10);
+  eq(I7.candidatosFrequentes(ds, (id) => por[id], { refId: 'cafe' }).length, 0);
+  eq(I7.candidatosFrequentes(ds, (id) => por[id], { refId: 'almoco' }).length, 2);
+});
+t('O que comer agora: combinações próximas do restante, distintas, dentro dos limites de porção', () => {
+  const cands = [{ food: fArroz, gTipico: 150, vezes: 5 }, { food: fFrango, gTipico: 120, vezes: 4 }, { food: fAzeite, gTipico: 10, vezes: 2 }];
+  const r = { kcal: 600, prot: 45, carb: 60, gord: 10 };
+  const combos = I7.sugerirCombinacoes(r, cands);
+  if (!combos.length || combos.length > 3) throw new Error('n combos ' + combos.length);
+  const melhor = combos[0];
+  if (Math.abs(melhor.tot.kcal - 600) > 120) throw new Error('kcal longe: ' + melhor.tot.kcal);
+  for (const c of combos) for (const it of c.itens) {
+    const ct = cands.find((x) => x.food === it.food);
+    if (it.g < ct.gTipico * 0.5 - 5 || it.g > ct.gTipico * 2 + 5 || it.g % 5) throw new Error('porção fora: ' + it.food.id + ' ' + it.g);
+  }
+  eq(new Set(combos.map((c) => c.itens.map((i) => i.food.id).sort().join())).size, combos.length);
+  for (let i = 1; i < combos.length; i++) if (combos[i].erro < combos[i - 1].erro) throw new Error('ordem');
+});
+t('O que comer agora: meta batida ou sem candidatos = nenhuma sugestão', () => {
+  eq(I7.sugerirCombinacoes({ kcal: 30, prot: 0, carb: 0, gord: 0 }, [{ food: fArroz, gTipico: 100 }]).length, 0);
+  eq(I7.sugerirCombinacoes({ kcal: 500, prot: 30, carb: 50, gord: 10 }, []).length, 0);
+  eq(I7.erroCombinacao({ kcal: 500, prot: 30, carb: 50, gord: 10 }, { kcal: 500, prot: 30, carb: 50, gord: 10 }), 0);
+  if (!(I7.erroCombinacao({ kcal: 600, prot: 30, carb: 50, gord: 10 }, { kcal: 500, prot: 30, carb: 50, gord: 10 })
+    > I7.erroCombinacao({ kcal: 400, prot: 30, carb: 50, gord: 10 }, { kcal: 500, prot: 30, carb: 50, gord: 10 }))) throw new Error('passar deve pesar mais');
+});
+t('Próxima refeição: parcela entre as refeições vazias a partir dela', () => {
+  const ordem = ['cafe', 'almoco', 'lanche', 'jantar', 'ceia'], dist = { cafe: 0.25, almoco: 0.35, lanche: 0.1, jantar: 0.25, ceia: 0.05 };
+  aprox(I7.fracaoProximaRefeicao('lanche', ordem, new Set(['lanche', 'jantar', 'ceia']), dist), 0.25);
+  aprox(I7.fracaoProximaRefeicao('jantar', ordem, new Set(['jantar']), dist), 1);
+  aprox(I7.fracaoProximaRefeicao('almoco', ordem, new Set(['jantar']), dist), 0.35 / 0.6);   // almoço já tem itens: conta ele + vazias seguintes
+  aprox(I7.fracaoProximaRefeicao('x', ordem, new Set(), dist), 1);
+});
+t('Refeição de sempre: alimentos em ≥ 40% dos dias (mín. 3 dias), item mais recente', () => {
+  const pao = { id: 'pao', nome: 'Pão' }, cafe = { id: 'cafe', nome: 'Café' }, ovo = { id: 'ovo', nome: 'Ovo' };
+  const ds = [diaCom('2026-01-01', 'cafe', itemDe(pao, 50), itemDe(cafe, 100)), diaCom('2026-01-02', 'cafe', itemDe(pao, 50), itemDe(ovo, 50)),
+    diaCom('2026-01-03', 'cafe', itemDe(pao, 60), itemDe(cafe, 120)), diaCom('2026-01-04', 'cafe', itemDe(pao, 70))];
+  const s = I7.refeicaoDeSempre(ds, 'cafe');
+  eq(s.map((i) => i.foodId).join(), 'pao,cafe'); eq(s[0].g, 70); eq(s[1].g, 120);
+  eq(I7.refeicaoDeSempre(ds.slice(0, 2), 'cafe').length, 0);
+  eq(I7.refeicaoDeSempre(ds, 'jantar').length, 0);
+});
+t('Lançamento suspeito: azeite em excesso, kcal enorme, muito acima do usual e do padrão', () => {
+  if (!I7.avaliarSuspeito(fAzeite, 1000)) throw new Error('1000 g azeite');
+  eq(I7.avaliarSuspeito(fAzeite, 13), null);
+  if (!I7.avaliarSuspeito(fArroz, 2000)) throw new Error('arroz 2000 g');
+  eq(I7.avaliarSuspeito(fArroz, 200), null);
+  if (!I7.avaliarSuspeito(fArroz, 900, { gUsual: 150 })) throw new Error('6× o usual');
+  eq(I7.avaliarSuspeito(fArroz, 300, { gUsual: 150 }), null);
+  const hist = Array.from({ length: 40 }, (_, i) => 100 + i * 5);   // itens de 100 a 295 kcal
+  if (!I7.avaliarSuspeito({ nome: 'x', kcal: 900 }, 100, { kcalItensUsuario: hist })) throw new Error('acima do padrão');
+  eq(I7.avaliarSuspeito({ nome: 'x', kcal: 500 }, 100, { kcalItensUsuario: hist }), null);
+  eq(I7.percentil([1, 2, 3, 4], 0.5), 2); eq(I7.percentil([], 0.5), null);
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

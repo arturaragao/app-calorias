@@ -512,3 +512,11 @@ input[type=range] { accent-color: var(--acento); }
 .det-alim li > i { grid-column: 1 / 3; display: block; height: 5px; border-radius: 3px; margin-top: 3px; }
 .det-alim li > .pilha { grid-column: 1 / 3; height: 6px; margin-top: 3px; }
 @media (max-width: 340px) { .det-topo { flex-direction: column; align-items: stretch; } .det-topo .rosca { margin: 0 auto; } }
+
+/* ---------- Pacote 7: chips de 1 toque, sugestões, ditado ---------- */
+.chips-ref { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+.chips-ref .chip-tog { min-height: 36px; }
+.lista-simples { list-style: none; margin: 0; padding: 0; }
+.lista-simples li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
+.alerta-suspeito { margin: 8px 0 0; }
+.btn.gravando { background: var(--alerta); color: var(--bg); border-color: var(--alerta); }

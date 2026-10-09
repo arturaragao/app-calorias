@@ -7,6 +7,8 @@ import { nutrientesPorGramas } from '../diary.js';
 import { abrirFolha, fecharFolha, esc, aviso } from '../ui.js';
 import { ehFavorito, alternarFavorito, catalogo } from '../custom.js';
 import { folhaAlimento } from './alimento-form.js';
+import { avaliarSuspeito } from '../inteligencia.js';
+import { contextoSuspeito } from './sugestao.js';
 import { fmtKcal, fmtMacro, fmtNum, lerNumero } from '../utils.js';
 
 /**
@@ -65,6 +67,7 @@ export async function folhaQuantidade(food, opcoes) {
       `<option value="${r.id}" ${r.id === refIni ? 'selected' : ''}>${esc(r.nome)}</option>`).join('')}</select></label>
     <table class="tabela num" id="calc"></table>
     <p class="erro" id="erro"></p>
+    <p class="nota alerta alerta-suspeito" id="suspeito" hidden></p>
     <div class="linha" style="margin-top:8px">
       ${opcoes.aoApagar ? '<button type="button" class="btn perigo" data-apagar>Apagar</button>' : ''}
       <button type="button" class="btn prim" data-ok>${esc(opcoes.botao || 'Adicionar')}</button></div>`);
@@ -80,7 +83,9 @@ export async function folhaQuantidade(food, opcoes) {
     return { g: p.g * qtd, porcao: { nome: p.nome, g: p.g, qtd } };
   };
   const erroDe = ({ g }) => (isNaN(g) || g <= 0 ? 'Informe uma quantidade maior que zero.' : g > 5000 ? 'Quantidade acima de 5000 g.' : '');
+  let confirmado = false;   // lançamento suspeito: 2º toque em "Lançar mesmo assim" confirma
   const atualizar = () => {
+    if (confirmado) { confirmado = false; painel.querySelector('#suspeito').hidden = true; painel.querySelector('[data-ok]').textContent = opcoes.botao || 'Adicionar'; }
     painel.querySelector('#m-g').hidden = modo === 'porcao';
     painel.querySelector('#m-p').hidden = modo !== 'porcao';
     painel.querySelector('#nota-ml').hidden = modo !== 'ml';
@@ -133,6 +138,17 @@ export async function folhaQuantidade(food, opcoes) {
     } else if ('ok' in t.dataset) {
       const q = ler();
       if (erroDe(q)) return;
+      if (!confirmado) {
+        const msg = avaliarSuspeito(food, q.g, await contextoSuspeito(food.id).catch(() => ({})));
+        if (msg) {
+          const el = painel.querySelector('#suspeito');
+          el.textContent = '⚠ ' + msg; el.hidden = false;
+          t.textContent = 'Lançar mesmo assim';
+          navigator.vibrate?.([20, 40, 20]);
+          confirmado = true;
+          return;
+        }
+      }
       const refId = painel.querySelector('[name=ref]').value;
       estado.config.ultimaQtd[food.id] = { g: q.g, porcao: q.porcao };
       salvarConfig();

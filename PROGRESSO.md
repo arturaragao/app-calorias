@@ -1,6 +1,6 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro novo (Pacotes 6–9). Pacote 6 entregue (v14); próximo: Pacote 7, após OK do Artur.
+**Etapa atual:** roteiro novo (Pacotes 6–9). Pacotes 6 (v14) e 7 (v15) entregues; Pacote 8 em seguida (pedido do Artur: 7 e 8 juntos).
 
 **Roteiro aprovado pelo Artur (fazer TODOS, um pacote por vez):**
 - [x] Pacote 1 — Progresso profissional (v10)
@@ -9,10 +9,17 @@
 - [x] Pacote 4 (v12) — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
 - [x] Pacote 5 (v13) — telas organizáveis, cores editáveis, Detalhes do dia novo, painel da refeição, mL, ícone novo
 - [x] Pacote 6 (v14) — correções e robustez
-- [ ] Pacote 7 — inteligência sem custo (o que comer agora, chips de 1 toque, lançamento suspeito, ditado por voz)
+- [x] Pacote 7 (v15) — inteligência sem custo (o que comer agora, chips de 1 toque, lançamento suspeito, ditado por voz)
 - [ ] Pacote 8 — IA gratuita (coach semanal, foto de cardápio/receita, Gemini Nano, limite diário visível)
 - [ ] Pacote 9 — acabamento (contraste AA, deslizar dias, animações, tour, Drive quando vier o ID OAuth)
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 7 (v15, 2026-10-09)**
+- "🍽 O que comer agora" (bloco novo do Diário, só hoje e com ≥ 50 kcal restantes): alvo = parte do restante para a próxima refeição vazia (parcela distRef entre as vazias) ou "Restante do dia"; 3 combinações (gulosa, 1–3 alimentos, porções entre 0,5× e 2× a sua quantidade típica, passo 5 g) com os alimentos frequentes da refeição (30 dias) + favoritos; botão Lançar com desfazer. Lógica pura em js/inteligencia.js; folha em views/sugestao.js.
+- Chips de 1 toque nas refeições vazias: "↺ Repetir de ontem (N)" e "⭐ Seu … de sempre (N)" (alimentos em ≥ 40% dos dias com a refeição, mín. 3 dias; some se for igual a ontem).
+- Lançamento suspeito: folha de quantidade e Adição rápida pedem 2º toque ("Lançar mesmo assim") para gordura quase pura > 60 g, > 2000 kcal, > 1500 g, > 4× seus gramas usuais ou kcal > 2,5× o seu p95 (≥ 20 itens).
+- Ditado: botão 🎤 Ditar no "Descrever o que comeu" (Web Speech API, pt-BR; precisa de internet no Chrome).
+- Testes: 125 aprovados. Conferido no navegador (375 px), sem erros no console.
 
 **Pacote 6 (v14, 2026-10-09)**
 - navegar() zera onclick/oninput/onchange/onkeydown/onsubmit/onpointer* de #tela antes de cada tela (handler da tela anterior não vaza mais para Registros etc.).
