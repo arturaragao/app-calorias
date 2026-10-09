@@ -8,7 +8,7 @@ import { detalheDia, painelRefeicao } from './detalhe-dia.js';
 import { aplicarLayout, botaoOrganizar } from '../layout.js';
 import { metaDoDia } from '../goals.js';
 import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem,
-  criarItemRapido, adicionarItem, copiarPara, criarItem, lancarSalva, ETIQUETAS, ehTreino, alvoProteinaRefeicao, linhaDoTempo } from '../diary.js';
+  criarItemRapido, adicionarItem, copiarPara, criarItem, lancarSalva, ETIQUETAS, ehTreino, alvoProteinaRefeicao, linhaDoTempo, confirmarPlanejado } from '../diary.js';
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
 import { abrirScanner } from './scanner.js';
 import { diasDesdeUltima } from './reg-dobras.js';
@@ -320,13 +320,14 @@ function linhaVazia(r) {
 }
 
 function linhaItem(it, refId, extra = '') {
-  return `<li class="item-wrap${novos.has(it.id) ? ' novo' : ''}" data-ref="${refId}"><div class="fundo-apagar" aria-hidden="true">Apagar</div>
+  return `<li class="item-wrap${novos.has(it.id) ? ' novo' : ''}${it.planejado ? ' planejado' : ''}" data-ref="${refId}"><div class="fundo-apagar" aria-hidden="true">Apagar</div>
     <div class="item" data-item="${it.id}">${extra}
     <div class="info" data-editar><div class="nome">${esc(it.nome)}</div>
-      <div class="mudo num">${it.rapido ? `Adição rápida · P ${fmtG(it.n.prot)} C ${fmtG(it.n.carb)} G ${fmtG(it.n.gord)}`
+      <div class="mudo num">${it.planejado ? 'Planejado · ' : ''}${it.rapido ? `Adição rápida · P ${fmtG(it.n.prot)} C ${fmtG(it.n.carb)} G ${fmtG(it.n.gord)}`
         : `${rotuloQtdItem(it)}${it.falta?.length ? ' · dados parciais' : ''}`}</div></div>
     <span class="kcal num">${fmtKcal(it.n.kcal)}</span>
-    <button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button></div></li>`;
+    ${it.planejado ? `<button class="ico confirmar" data-confirmar aria-label="Comi: confirmar ${esc(it.nome)}">${ic('circle-check', 'g')}</button>`
+      : `<button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button>`}</div></li>`;
 }
 
 const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
@@ -502,13 +503,22 @@ async function clique(e) {
   if (!li) return;
   const item = dia.refeicoes[refId].find((i) => i.id === li.dataset.item);
   if (e.target.closest('[data-apagar]')) return apagar(refId, item.id);
+  if (e.target.closest('[data-confirmar]')) {
+    const antes = dia;
+    await gravarDia(confirmarPlanejado(dia, refId, item.id));
+    vibrar(12);
+    await desenhar();
+    return aviso(`${item.nome}: comido`, { acao: async () => { await gravarDia(antes); desenhar(); } });
+  }
   if (e.target.closest('[data-editar]') && item.rapido) return folhaRapida(item, refId);
   if (e.target.closest('[data-editar]')) {
     folhaQuantidade({ ...item.por100, id: item.foodId, nome: item.nome, fonte: item.fonte }, {
       titulo: 'Editar item', g: item.g, porcao: item.porcao, refId, botao: 'Salvar', semAcoes: true,
+      descontar: item.planejado ? null : item.n, planejado: !!item.planejado,
       aoApagar: () => apagar(refId, item.id),
-      aoConfirmar: async ({ g, porcao, refId: novaRef }) => {
+      aoConfirmar: async ({ g, porcao, refId: novaRef, planejado }) => {
         const novo = alterarQuantidade(item, g, porcao);
+        if (planejado) novo.planejado = true; else delete novo.planejado;
         let d = dia;
         if (novaRef !== refId) {
           d = removerItem(d, refId, item.id).dia;
@@ -527,10 +537,12 @@ function lerCodigoPara(refId) {
   return abrirScanner({
     aoAlimento: (food) => folhaQuantidade(food, {
       refId,
-      aoConfirmar: async ({ g, porcao, refId: r }) => {
+      aoConfirmar: async ({ g, porcao, refId: r, planejado }) => {
         const ref = estado.config.refeicoes.find((x) => x.id === r);
         const antes = dia;
-        await gravarDia(adicionarItem(dia, r, ref.nome, criarItem(food, g, porcao)));
+        const novo = criarItem(food, g, porcao);
+        if (planejado) novo.planejado = true;
+        await gravarDia(adicionarItem(dia, r, ref.nome, novo));
         registrarRecente(food.id);
         await desenhar();
         aviso(`${food.nome} → ${ref.nome}`, { acao: async () => { await gravarDia(antes); desenhar(); } });
@@ -547,11 +559,13 @@ function menuRefeicao(refId, nomeRef) {
     <button class="btn" data-op="rapida">${ICONES.raio} Adição rápida (kcal e macros)</button>
     <button class="btn" data-op="scan">${ICONES.codigo} Ler código de barras</button>
     <button class="btn" data-op="ia">${ICONES.camera} Estimar por foto (IA)</button>
-    <button class="btn" data-op="texto">${ic('pencil-line')} Descrever o que comeu (IA)</button>
+    <button class="btn" data-op="texto">${ic('mic')} Falar ou escrever o que comeu</button>
     <button class="btn" data-op="cardapio">${ic('clipboard-list')} Foto de cardápio (IA)</button>
     <button class="btn" data-op="salvas">${ic('star')} Lançar refeição salva</button>
     ${tem ? '<button class="btn" data-op="salvar">' + ic('save') + ' Salvar como refeição salva</button>' : ''}
     <button class="btn" data-op="copiar">${ICONES.copiar} Copiar ${esc(nomeRef)} de ontem</button>
+    ${tem ? `<button class="btn" data-op="copiar-dias">${ic('calendar-range')} Copiar ${esc(nomeRef)} para outros dias</button>` : ''}
+    ${Object.values(dia.refeicoes).some((l) => l.length) ? `<button class="btn" data-op="copiar-dia">${ic('calendar-range')} Copiar o dia inteiro para outros dias</button>` : ''}
     <button class="btn" data-op="fotos">${ICONES.camera} Foto da refeição ${fotosCont[refId] ? `(${fotosCont[refId]})` : ''}</button></div>`);
   const depois = (f) => { fecharFolha(); setTimeout(f, 350); };
   p.onclick = (ev) => {
@@ -559,11 +573,13 @@ function menuRefeicao(refId, nomeRef) {
     if (op === 'painel') depois(() => painelRefeicao(dia, meta, refId, { aoMudar: desenhar }));
     if (op === 'rapida') folhaRapida(null, refId);
     if (op === 'ia') depois(() => folhaFotoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }));
-    if (op === 'texto') depois(() => folhaTextoIA({ data: estado.dataAtual, refId, aoLancar: desenhar }));
+    if (op === 'texto') depois(() => import('./frase-ui.js').then((m) => m.folhaFrase({ data: estado.dataAtual, refId, aoLancar: desenhar })));
     if (op === 'cardapio') depois(() => folhaCardapioIA({ data: estado.dataAtual, refId, aoLancar: desenhar }));
     if (op === 'salvas') depois(() => folhaSalvas({ data: estado.dataAtual, refId, aoLancar: desenhar }));
     if (op === 'salvar') depois(() => folhaSalvarRefeicao(dia.refeicoes[refId], nomeRef));
     if (op === 'copiar') { fecharFolha(); copiarDeOntem(refId); }
+    if (op === 'copiar-dias' || op === 'copiar-dia') depois(() => import('./copiar-dias.js').then((m) =>
+      m.folhaCopiarDias(dia, { refId: op === 'copiar-dias' ? refId : null, nomeRef, aoTerminar: desenhar })));
     if (op === 'fotos') folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
     if (op === 'scan') depois(() => lerCodigoPara(refId));
   };

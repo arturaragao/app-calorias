@@ -3,16 +3,20 @@
 
 import { estado, lerDia, gravarDia } from '../state.js';
 import { ic } from '../icones.js';
-import { buscar, rotuloFonte } from '../foods.js';
+import { buscar, porcoesDe } from '../foods.js';
 import { catalogo, registrarRecente, ehFavorito } from '../custom.js';
-import { criarItem, adicionarItem, sugestoesRefeicao } from '../diary.js';
+import { criarItem, adicionarItem, sugestoesRefeicao, nutrientesPorGramas } from '../diary.js';
 import { topo, esc, $, $$, aviso, ICONES, vibrar } from '../ui.js';
-import { fmtKcal, fmtData, fmtNum, chaveData, somarDias } from '../utils.js';
+import { fmtKcal, fmtData, fmtNum, fmtG, chaveData, somarDias, normalizar } from '../utils.js';
+import { pareceFrase } from '../frase.js';
+import { pesosBusca } from '../inteligencia.js';
+import { folhaFrase, lembrarEscolha } from './frase-ui.js';
+import { folhaCesta } from './cesta.js';
 import { buscarNome } from '../off.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaAlimento } from './alimento-form.js';
 import { abrirScanner } from './scanner.js';
-import { folhaFotoIA, folhaTextoIA, folhaRotulo, folhaCardapioIA } from './foto-ia.js';
+import { folhaFotoIA, folhaRotulo, folhaCardapioIA } from './foto-ia.js';
 import { motorIA } from '../ia.js';
 import { estadoVazio } from '../vazio.js';
 import { folhaSalvas } from './salvas.js';
@@ -25,7 +29,8 @@ const ABAS = [['recentes', 'Recentes'], ['favoritos', 'Favoritos'], ['meus', 'Me
 let ultimaBusca = '';
 
 export async function render(tela) {
-  const aba = new URLSearchParams(location.hash.split('?')[1] || '').get('aba');
+  const params = new URLSearchParams(location.hash.split('?')[1] || '');
+  const aba = params.get('aba');
   if (aba) estado.abaAdicionar = aba;
   ultimaBusca = '';                         // ao voltar para a aba, a busca começa limpa
   estado.abaAdicionar ||= 'recentes';
@@ -46,7 +51,8 @@ export async function render(tela) {
         `<button type="button" role="tab" data-bloco="aba-${v}" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
     <div class="acoes-rolar" role="group" aria-label="Outras formas de adicionar">
       <button class="btn peq suave" data-bloco="foto" data-foto-ia>${ICONES.camera} Foto do prato</button>
-      <button class="btn peq suave" data-bloco="texto" data-texto-ia>${ic('pencil-line')} Descrever</button>
+      <button class="btn peq suave" data-bloco="texto" data-texto-ia>${ic('mic')} Falar ou escrever</button>
+      <button class="btn peq suave" data-bloco="cesta" data-cesta-iniciar>${ic('list-checks')} Vários de uma vez</button>
       <button class="btn peq suave" data-bloco="cardapio" data-cardapio-ia>${ic('clipboard-list')} Cardápio/receita</button>
       <button class="btn peq suave" data-bloco="salvas" data-salvas>${ic('star')} Refeições salvas</button>
       <button class="btn peq suave" data-bloco="rotulo" data-rotulo>${ic('tag')} Ler rótulo</button>
@@ -55,7 +61,9 @@ export async function render(tela) {
       <button class="btn peq" data-organizar="adicionar" aria-label="Organizar abas e atalhos">${ic('arrow-up-down')}</button></div>
     <div id="sug"></div>
     <div class="mudo" id="info"></div><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
-    <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
+    <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>
+    <div class="cesta-barra" hidden role="region" aria-label="Seleção"><button type="button" class="btn texto" data-cesta-sair>Cancelar</button>
+      <span class="num" id="cesta-n"></span><button type="button" class="btn prim" data-cesta-ok>Lançar</button></div>`;
   aplicarLayout(tela, 'adicionar');
   // sem IA do Chrome nem chave do Gemini, o atalho de cardápio some (8.3)
   motorIA({ comImagem: true }).then((m) => { const b = $('[data-cardapio-ia]', tela); if (!m && b) b.hidden = true; }).catch(() => {});
@@ -64,16 +72,29 @@ export async function render(tela) {
     $$('[data-aba]', tela).forEach((b) => b.setAttribute('aria-pressed', b.dataset.aba === estado.abaAdicionar));
   }
   let cat = await catalogo();
-  const ini30 = somarDias(chaveData(), -30);
-  const recentesDiario = (await db.getAll('diary')).map(([, d]) => d).filter((d) => d.data >= ini30);
-  const linhaAlimento = (f) => {
+  const ini30 = somarDias(chaveData(), -30), ini60 = somarDias(chaveData(), -60);
+  const diarios60 = (await db.getAll('diary')).map(([, d]) => d).filter((d) => d.data >= ini60);
+  const recentesDiario = diarios60.filter((d) => d.data >= ini30);
+  let bonus = pesosBusca(diarios60, { refId: estado.refeicaoAlvo, hoje: chaveData() });
+  let modoSel = false;
+  const cesta = new Map();
+  /** Porção usual: a última usada, senão a 1ª porção conhecida, senão 100 g. */
+  const porcaoUsual = (f) => {
     const u = estado.config.ultimaQtd[f.id];
-    return `<li><button data-id="${esc(f.id)}">
-      <span><span class="nome">${ehFavorito(f.id) ? ic('star', 'p cheio') + ' ' : ''}${esc(f.nome)}</span><span class="mudo">${esc(rotuloFonte(f))}${u ? ` · última: ${esc(rotuloQtd(u))}` : ''}</span></span>
-      ${f.kcal == null /* sem kcal na fonte (ex.: leite integral/UHT na TACO): avisa em vez de mostrar 0 */
-        ? `<span class="mudo" style="white-space:nowrap;font-size:.78rem">${ic('triangle-alert', 'p')} sem dados na ${esc(f.fonte || 'fonte')}</span>`
-        : `<span class="num" style="white-space:nowrap"><b>${fmtKcal(f.kcal)}</b> <span class="mudo">kcal/100 g</span></span>`}</button>
-      ${u ? `<button class="rapido" data-rapido="${esc(f.id)}" aria-label="Adicionar ${esc(rotuloQtd(u))} de ${esc(f.nome)} com um toque">+</button>` : ''}</li>`;
+    if (u) return { g: u.g, rot: rotuloQtd(u) + (u.porcao && !u.porcao.ml && u.porcao.nome !== 'grama' ? ` (${fmtG(u.g)} g)` : '') };
+    const p0 = porcoesDe(f, cat.porcoes, estado.config.porcoesUsuario)[0];
+    return p0 ? { g: p0.g, rot: `1 ${p0.nome} (${fmtG(p0.g)} g)` } : { g: 100, rot: '100 g' };
+  };
+  const linhaAlimento = (f) => {
+    const u = estado.config.ultimaQtd[f.id], pu = porcaoUsual(f), sel = cesta.has(f.id);
+    const n = f.kcal == null ? null : nutrientesPorGramas(f, pu.g).n;
+    return `<li><button data-id="${esc(f.id)}" class="res${sel ? ' sel' : ''}"${modoSel ? ` aria-pressed="${sel}"` : ''}>
+      ${modoSel ? `<span class="sel-caixa" aria-hidden="true">${sel ? ic('check') : ''}</span>` : ''}
+      <span class="res-txt"><span class="nome">${ehFavorito(f.id) ? ic('star', 'p cheio') + ' ' : ''}${esc(f.nome)}</span>
+      ${n /* sem kcal na fonte (ex.: leite integral/UHT na TACO): avisa em vez de mostrar 0 */
+        ? `<span class="mudo num">${esc(pu.rot)} · <b>${fmtKcal(n.kcal)} kcal</b> · P ${fmtG(n.prot)} C ${fmtG(n.carb)} G ${fmtG(n.gord)}${f.fonte && f.fonte !== 'TACO' ? ` · ${esc(f.fonte)}` : ''}</span>`
+        : `<span class="mudo">${ic('triangle-alert', 'p')} sem dados na ${esc(f.fonte || 'fonte')}</span>`}</span></button>
+      ${u && !modoSel ? `<button class="rapido" data-rapido="${esc(f.id)}" aria-label="Adicionar ${esc(rotuloQtd(u))} de ${esc(f.nome)} com um toque">+</button>` : ''}</li>`;
   };
   const desenharSugestoes = (buscando) => {
     const el = $('#sug', tela);
@@ -111,8 +132,10 @@ export async function render(tela) {
     $$('[data-aba]', tela).forEach((b) => b.setAttribute('aria-pressed', !buscando && b.dataset.aba === estado.abaAdicionar));
     if (buscando) {
       const prioridade = new Set([...cat.meus.map((f) => f.id), ...cat.recFoods.map((f) => f.id), ...(estado.config.recentes || [])]);
-      lista = buscar(cat.indice, q.value, { limite: 500, prioridade });
-      info.textContent = lista.length ? `${lista.length} resultado(s)` : 'Nada encontrado. Tente outra palavra ou crie em "+ Novo alimento".';
+      lista = buscar(cat.indice, q.value, { limite: 500, prioridade, bonus, sinonimos: cat.porcoes?.sinonimos,
+        escolha: estado.config.escolhas?.[normalizar(q.value)] });
+      info.innerHTML = (pareceFrase(q.value) ? `<button type="button" class="btn bloco suave frase-btn" data-frase>${ic('sparkles')} Lançar como frase: “${esc(q.value.trim())}”</button>` : '')
+        + (lista.length ? `${lista.length} resultado(s)` : 'Nada encontrado. Tente outra palavra ou crie em "+ Novo alimento".');
     } else {
       lista = daAba();
       info.innerHTML = lista.length ? '' : estadoVazio(VAZIO_FIG[estado.abaAdicionar], VAZIO_TIT[estado.abaAdicionar], VAZIO[estado.abaAdicionar]);
@@ -144,10 +167,18 @@ export async function render(tela) {
     }
   }
   q.addEventListener('input', pesquisar);
-  tela.addEventListener('trocou-ref', () => desenharSugestoes(!!q.value.trim()));
+  tela.addEventListener('trocou-ref', () => { bonus = pesosBusca(diarios60, { refId: estado.refeicaoAlvo, hoje: chaveData() }); desenharSugestoes(!!q.value.trim()); });
   pesquisar();
 
-  if (new URLSearchParams(location.hash.split('?')[1] || '').get('foto')) {
+  if (params.get('q')) {                                   // busca vinda de outra tela (ex.: trecho não reconhecido)
+    history.replaceState(null, '', '#adicionar');
+    q.value = params.get('q'); pesquisar();
+  }
+  if (params.get('falar')) {                               // "+" › Falar, atalhos e rotinas do Android
+    history.replaceState(null, '', '#adicionar');
+    folhaFrase({ ditarJa: true, refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+  }
+  if (params.get('foto')) {
     history.replaceState(null, '', '#adicionar');           // atalho do ícone: abre a foto do prato direto
     folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
   }
@@ -165,7 +196,16 @@ export async function render(tela) {
     if (ab) { estado.abaAdicionar = ab.dataset.aba; q.value = ''; return pesquisar(); }
     if (e.target.closest('[data-foto-ia]')) return folhaFotoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
     if (e.target.closest('[data-cardapio-ia]')) return folhaCardapioIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
-    if (e.target.closest('[data-texto-ia]')) return folhaTextoIA({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-texto-ia]')) return folhaFrase({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-frase]')) return folhaFrase({ texto: q.value, refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    if (e.target.closest('[data-cesta-iniciar]')) return alternarSelecao(true);
+    if (e.target.closest('[data-cesta-sair]')) return alternarSelecao(false);
+    if (e.target.closest('[data-cesta-ok]')) {
+      if (!cesta.size) return aviso('Marque ao menos um alimento.');
+      const foods = [...cesta.values()];
+      alternarSelecao(false);
+      return folhaCesta(foods, { refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
+    }
     if (e.target.closest('[data-salvas]')) return folhaSalvas({ refId: estado.refeicaoAlvo, aoLancar: () => { location.hash = '#diario'; } });
     if (e.target.closest('[data-rotulo]')) return folhaRotulo({ aoSalvar: async (f) => { await recarregar(); abrir(f); } });
     if (e.target.closest('[data-novo-alim]')) return folhaAlimento(null, { aoSalvar: recarregar });
@@ -186,8 +226,39 @@ export async function render(tela) {
     }
     const b = e.target.closest('[data-id]');
     if (!b) return;
-    abrir(cat.porId.get(b.dataset.id));
+    if (segurou) { segurou = false; return; }
+    const food = cat.porId.get(b.dataset.id);
+    if (modoSel) {
+      if (cesta.has(food.id)) cesta.delete(food.id); else cesta.set(food.id, food);
+      vibrar(8);
+      return redesenharLinhas();
+    }
+    // escolher um resultado ensina a busca ("arroz" → o arroz que você come: cozido, tipo 1…)
+    if (q.value.trim()) lembrarEscolha(q.value, food.id);
+    abrir(food);
   };
+
+  // ---------- Cesta: segurar um resultado (ou "Vários de uma vez") marca vários ----------
+  let segurou = false, tSeg = null, xy = null;
+  function redesenharLinhas() {
+    res.innerHTML = lista.slice(0, mostrados).map(linhaAlimento).join('');
+    desenharSugestoes(!!q.value.trim());
+    const barra = $('.cesta-barra', tela);
+    barra.hidden = !modoSel;
+    $('#cesta-n', tela).textContent = `${cesta.size} selecionado(s)`;
+    $('[data-cesta-ok]', tela).textContent = cesta.size ? `Lançar ${cesta.size}` : 'Lançar';
+  }
+  function alternarSelecao(on) { modoSel = on; if (!on) cesta.clear(); redesenharLinhas(); }
+  // propriedades on* (não addEventListener): navegar() as zera ao trocar de tela
+  tela.onpointerdown = (e) => {
+    const b = e.target.closest('[data-id]');
+    if (!b || modoSel) return;
+    xy = [e.clientX, e.clientY];
+    tSeg = setTimeout(() => { segurou = true; vibrar(15); const f = cat.porId.get(b.dataset.id); cesta.set(f.id, f); alternarSelecao(true); }, 500);
+  };
+  tela.onpointermove = (e) => { if (tSeg && xy && Math.hypot(e.clientX - xy[0], e.clientY - xy[1]) > 10) { clearTimeout(tSeg); tSeg = null; } };
+  tela.onpointerup = tela.onpointercancel = () => { clearTimeout(tSeg); tSeg = null; };
+  tela.oncontextmenu = (e) => { if (e.target.closest('[data-id]')) e.preventDefault(); };
 
   function abrir(food) {
     folhaQuantidade(food, {
@@ -197,16 +268,17 @@ export async function render(tela) {
     });
   }
 
-  async function lancar(food, { g, porcao, refId }) {
+  async function lancar(food, { g, porcao, refId, planejado }) {
     const ref = refs.find((r) => r.id === refId);
     const item = criarItem(food, g, porcao);
+    if (planejado) item.planejado = true;
     const antes = await lerDia(estado.dataAtual);
     await gravarDia(adicionarItem(antes, refId, ref.nome, item));
     estado.refeicaoAlvo = refId;
     $('#ref-alvo').value = refId;
     registrarRecente(food.id);
     vibrar(12);
-    aviso(`${food.nome} (${fmtKcal(item.n.kcal)} kcal) → ${ref.nome}`, { acao: async () => { await gravarDia(antes); aviso('Desfeito'); } });
+    aviso(`${food.nome} (${fmtKcal(item.n.kcal)} kcal) → ${ref.nome}${planejado ? ' (planejado)' : ''}`, { acao: async () => { await gravarDia(antes); aviso('Desfeito'); } });
     if (!q.value.trim() && estado.abaAdicionar === 'recentes') pesquisar();
   }
 }

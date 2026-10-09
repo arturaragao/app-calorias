@@ -757,3 +757,63 @@ input[type=range] { accent-color: var(--acento); }
 .ref-vazia.duas .rv-chips { order: 3; flex-basis: 100%; padding: 0 0 var(--e2) 42px; }
 .ref-vazia.duas .rv-chips > :first-child { margin-left: 0; }
 .ref-vazia.duas .rv-nome { flex: 1; max-width: none; }
+
+/* ---------- Pacote 12: registro ultrarrápido ---------- */
+/* resultados da busca em 2 linhas (porção usual, kcal e P/C/G) */
+.lista button.res { align-items: center; }
+.res-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.res-txt .nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-txt .mudo { font-size: var(--fs-13); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-txt .mudo b { color: var(--txt); font-weight: var(--fw-sb); }
+.sel-caixa { width: 24px; height: 24px; flex: none; border-radius: 7px; border: 2px solid var(--borda); display: grid; place-items: center; color: var(--acento-txt); }
+.res.sel .sel-caixa { background: var(--acento); border-color: var(--acento); }
+.res.sel .sel-caixa .i { width: 16px; height: 16px; stroke-width: 2.5; }
+.frase-btn { justify-content: flex-start; margin: 2px 0 8px; text-align: left; }
+.frase-btn .i { color: var(--acento); }
+.cesta-barra { position: fixed; left: var(--e3); right: var(--e3); bottom: calc(var(--nav-h) + 22px + var(--e3) + env(safe-area-inset-bottom)); z-index: 12;
+  max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: var(--e2); padding: var(--e2); border-radius: var(--r-m);
+  background: var(--sup-alto); border: 1px solid var(--borda); box-shadow: var(--elev-3); }
+.cesta-barra span { flex: 1; font-size: var(--fs-14); color: var(--txt2); }
+
+/* folha de quantidade: visor, atalhos, teclado próprio, prévia */
+.qtd-visor { display: flex; align-items: baseline; justify-content: center; gap: var(--e2); margin: var(--e3) 0 var(--e2); }
+.qtd-visor input { width: auto; max-width: 60%; min-height: 0; border: 0; background: none; padding: 0; text-align: right; caret-color: transparent;
+  font-size: var(--fs-40); font-weight: var(--fw-b); letter-spacing: -.02em; color: var(--txt); box-shadow: none !important; field-sizing: content; min-width: 2ch; }
+.qtd-un { font-size: var(--fs-16); color: var(--txt2); font-weight: var(--fw-m); max-width: 40%; }
+.qtd-atalhos { display: flex; align-items: center; gap: 6px; margin-bottom: var(--e2); flex-wrap: wrap; }
+.qtd-atalhos .chip-tog { min-width: 48px; justify-content: center; font-size: var(--fs-14); }
+.qtd-atalhos .mudo { font-size: var(--fs-12); }
+.teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: var(--e2); }
+.teclado button { min-height: 48px; border: 0; border-radius: var(--r-s); background-color: var(--sup2); color: var(--txt); font: inherit; font-size: var(--fs-20); font-weight: var(--fw-m); cursor: pointer; display: grid; place-items: center; }
+.qtd-calc { display: flex; justify-content: center; gap: var(--e3); flex-wrap: wrap; font-size: var(--fs-14); color: var(--txt2); padding: var(--e2) 0; border-top: 1px solid var(--borda); }
+.qtd-calc b { color: var(--txt); }
+.previa { margin: 0; padding: 10px var(--e3); border-radius: var(--r-s); background: var(--acento-suave); font-size: var(--fs-14); color: var(--txt); }
+.previa.acima { background: color-mix(in srgb, var(--alerta) 16%, var(--sup)); }
+:where(.teclado button) { --camada: 0%; }
+.teclado button:active { background-image: linear-gradient(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 12%, transparent)); }
+
+/* "Falar ou escrever" e cesta */
+.fr-item { border: 1px solid var(--borda); border-radius: var(--r-s); padding: var(--e2) var(--e3); margin: var(--e2) 0; }
+.fr-item.incerto { border-color: color-mix(in srgb, var(--alerta) 55%, var(--borda)); }
+.fr-item.nao { border-style: dashed; }
+.fr-item.nao p { margin: 0 0 6px; font-size: var(--fs-14); }
+.fr-lin { display: flex; align-items: center; gap: var(--e2); justify-content: space-between; }
+.fr-nome { flex: 1; min-width: 0; font-weight: var(--fw-sb); font-size: var(--fs-14); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fr-item .ico { width: 40px; height: 40px; flex-basis: 40px; }
+.passo-mini { display: flex; align-items: center; gap: 2px; font-size: var(--fs-14); }
+.passo-mini .ico { width: 36px; height: 36px; flex-basis: 36px; background-color: var(--sup2); }
+.passo-mini span { padding: 0 6px; }
+.fr-duvida { margin: 6px 0 4px; font-size: var(--fs-13); color: var(--alerta); }
+.fr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.fr-total { text-align: right; font-size: var(--fs-14); color: var(--txt2); margin: 4px 0 8px; }
+.fr-total b { color: var(--txt); }
+.cesta-item { border-bottom: 1px solid var(--borda); padding: var(--e2) 0; }
+.cesta-qtd { display: flex; gap: var(--e2); margin-top: 6px; }
+.cesta-qtd input { flex: 0 0 84px; min-height: 44px; text-align: center; }
+.cesta-qtd select { flex: 1; min-width: 0; min-height: 44px; font-size: var(--fs-14); }
+
+/* itens planejados: aparência fantasma até confirmar "comi" */
+.item-wrap.planejado .item { background: repeating-linear-gradient(-45deg, var(--sup), var(--sup) 8px, var(--sup3) 8px, var(--sup3) 16px); }
+.item-wrap.planejado .nome, .item-wrap.planejado .kcal { color: var(--txt2); }
+.item-wrap.planejado .nome { font-style: italic; }
+.item .confirmar { color: var(--acento); }

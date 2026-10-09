@@ -16,6 +16,35 @@ import { suportaVoz, ditar } from '../voz.js';
 
 const IA = 'ia';   // valor do seletor de fonte = "estimativa da IA"
 
+// ---------- Imagem vinda de fora (compartilhar para o app) ou da área de transferência ----------
+
+/** Coloca o arquivo no campo de imagem da folha e dispara o mesmo fluxo da galeria. */
+export function entregarImagem(p, arquivo) {
+  const inp = [...p.querySelectorAll('input[type=file]')].pop();
+  if (!inp || !arquivo) return;
+  const dt = new DataTransfer();
+  dt.items.add(arquivo instanceof File ? arquivo : new File([arquivo], 'imagem.jpg', { type: arquivo.type || 'image/jpeg' }));
+  inp.files = dt.files;
+  inp.dispatchEvent(new Event('change'));
+}
+
+const BOTAO_COLAR = `<button type="button" class="btn texto bloco" data-colar>${ic('clipboard-paste')} Colar imagem copiada</button>`;
+/** Plano B do compartilhamento: imagem copiada (print, foto) colada direto na folha. */
+function ligarColar(p) {
+  const b = p.querySelector('[data-colar]');
+  if (!b) return;
+  if (!navigator.clipboard?.read) { b.hidden = true; return; }
+  b.onclick = async () => {
+    try {
+      for (const item of await navigator.clipboard.read()) {
+        const tipo = item.types.find((t) => t.startsWith('image/'));
+        if (tipo) return entregarImagem(p, new File([await item.getType(tipo)], 'colada', { type: tipo }));
+      }
+      aviso('Não há imagem copiada.');
+    } catch { aviso('Não consegui ler a área de transferência. Permita o acesso ou use "Da galeria".'); }
+  };
+}
+
 // ---------- Entradas ----------
 
 /** Linha discreta com o motor e as chamadas restantes do dia (8.4). */
@@ -25,11 +54,12 @@ async function mostrarCota(p, comImagem) {
 }
 
 /** Foto do prato. `aoLancar` redesenha a tela de origem depois de lançar (ou desfazer). */
-export async function folhaFotoIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar } = {}) {
-  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaFotoIA({ data, refId, aoLancar }));
+export async function folhaFotoIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar, arquivo = null } = {}) {
+  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaFotoIA({ data, refId, aoLancar, arquivo }));
   const p = abrirFolha('Estimar por foto (IA)', `
     <div class="grade2"><label class="btn prim">${ICONES.camera} Tirar foto<input type="file" accept="image/*" capture="environment" hidden></label>
       <label class="btn">Da galeria<input type="file" accept="image/*" hidden></label></div>
+    ${BOTAO_COLAR}
     <label class="campo"><span>Dica (opcional)</span><input type="text" name="dica" maxlength="120" placeholder="ex.: 2 ovos mexidos com manteiga, pão francês"></label>
     <label class="linha"><input type="checkbox" name="guardar" checked style="flex:0;width:22px;height:22px"><span>Guardar a foto na refeição</span></label>
     <p class="mudo">A IA identifica e estima o peso; os nutrientes vêm da TACO quando houver correspondência. Confira antes de lançar.</p>`, { foco: false });
@@ -46,14 +76,16 @@ export async function folhaFotoIA({ data = estado.dataAtual, refId = estado.refe
         deNovo: () => folhaFotoIA({ data, refId, aoLancar }) });
     };
   });
+  ligarColar(p);
+  if (arquivo) entregarImagem(p, arquivo);
 }
 
 /** Descrever o que comeu em texto livre (pode usar o microfone do teclado). */
-export async function folhaTextoIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar } = {}) {
-  if (!(await motorIA())) return folhaChave(() => folhaTextoIA({ data, refId, aoLancar }));
+export async function folhaTextoIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar, texto = '' } = {}) {
+  if (!(await motorIA())) return folhaChave(() => folhaTextoIA({ data, refId, aoLancar, texto }));
   const p = abrirFolha('Descrever o que comeu (IA)', `<form id="ft" novalidate>
     <label class="campo"><span>O que você comeu?</span><textarea name="txt" rows="3" maxlength="400"
-      placeholder="ex.: 2 ovos mexidos, 1 pão francês com manteiga e café com leite"></textarea></label>
+      placeholder="ex.: 2 ovos mexidos, 1 pão francês com manteiga e café com leite">${esc(texto)}</textarea></label>
     ${suportaVoz() ? '<button type="button" class="btn bloco" data-ditar>' + ic('mic') + ' Ditar</button>' : ''}
     <p class="mudo">${suportaVoz() ? 'Toque em Ditar e fale; toque de novo para parar.' : 'Dica: toque no microfone do teclado para ditar.'} Quantidades ajudam (“200 g de arroz”, “2 colheres”).</p>
     <p class="erro" id="erro"></p><button class="btn prim bloco">Estimar</button></form>`);
@@ -87,14 +119,15 @@ export async function folhaTextoIA({ data = estado.dataAtual, refId = estado.ref
  * ingredientes que têm correspondência na TACO/Meus alimentos, para conferir no editor de receitas).
  * Escondida (sem chamar) se não houver IA do Chrome nem chave do Gemini.
  */
-export async function folhaCardapioIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar } = {}) {
-  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaCardapioIA({ data, refId, aoLancar }));
-  let tipo = 'cardapio';
+export async function folhaCardapioIA({ data = estado.dataAtual, refId = estado.refeicaoAlvo, aoLancar, arquivo = null, tipoIni = 'cardapio' } = {}) {
+  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaCardapioIA({ data, refId, aoLancar, arquivo, tipoIni }));
+  let tipo = tipoIni;
   const p = abrirFolha('Cardápio ou receita (IA)', `
-    <div class="seg" role="group"><button type="button" data-tipo="cardapio" aria-pressed="true">Cardápio</button>
-      <button type="button" data-tipo="receita" aria-pressed="false">Receita</button></div>
+    <div class="seg" role="group"><button type="button" data-tipo="cardapio" aria-pressed="${tipo === 'cardapio'}">Cardápio</button>
+      <button type="button" data-tipo="receita" aria-pressed="${tipo === 'receita'}">Receita</button></div>
     <div class="grade2" style="margin-top:10px"><label class="btn prim">${ICONES.camera} Fotografar<input type="file" accept="image/*" capture="environment" hidden></label>
       <label class="btn">Da galeria<input type="file" accept="image/*" hidden></label></div>
+    ${BOTAO_COLAR}
     <p class="mudo" id="cd-dica">Cardápio: a IA lista os pratos e estima uma porção usual de cada; você marca o que comeu e ajusta os gramas.</p>`, { foco: false });
   mostrarCota(p, true);
   const DICAS = {
@@ -120,6 +153,8 @@ export async function folhaCardapioIA({ data = estado.dataAtual, refId = estado.
         origem: tipo === 'receita' ? 'Receita (IA)' : 'Cardápio (IA)', deNovo: () => folhaCardapioIA({ data, refId, aoLancar }) });
     };
   });
+  ligarColar(p);
+  if (arquivo) entregarImagem(p, arquivo);
 }
 
 /** Itens revisados → receita nova (só os ligados a um alimento da base). Abre o editor de receitas. */
@@ -137,11 +172,12 @@ async function criarReceitaDe(sel, obs) {
 }
 
 /** Foto da tabela nutricional → revisar e salvar em "Meus alimentos". */
-export async function folhaRotulo({ aoSalvar } = {}) {
-  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaRotulo({ aoSalvar }));
+export async function folhaRotulo({ aoSalvar, arquivo = null } = {}) {
+  if (!(await motorIA({ comImagem: true }))) return folhaChave(() => folhaRotulo({ aoSalvar, arquivo }));
   const p = abrirFolha('Ler rótulo (IA)', `
     <div class="grade2"><label class="btn prim">${ICONES.camera} Fotografar<input type="file" accept="image/*" capture="environment" hidden></label>
       <label class="btn">Da galeria<input type="file" accept="image/*" hidden></label></div>
+    ${BOTAO_COLAR}
     <p class="mudo">Fotografe de perto a <b>tabela nutricional</b>, reta e sem reflexo. Você confere os valores antes de salvar em Meus alimentos.</p>`, { foco: false });
   $$('input[type=file]', p).forEach((inp) => {
     inp.onchange = async () => {
@@ -167,6 +203,8 @@ export async function folhaRotulo({ aoSalvar } = {}) {
       }
     };
   });
+  ligarColar(p);
+  if (arquivo) entregarImagem(p, arquivo);
 }
 
 function folhaChave(depois) {

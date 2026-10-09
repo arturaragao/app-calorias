@@ -1,5 +1,5 @@
 // sw.js — cache versionado do app (offline). Ao mudar arquivos, incremente VERSAO.
-const VERSAO = 'v20';   // manter igual a js/versao.js
+const VERSAO = 'v21';   // manter igual a js/versao.js
 const CACHE = `calorias-${VERSAO}`;
 const ARQUIVOS = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'foods.json', 'porcoes.json',
@@ -17,7 +17,8 @@ const ARQUIVOS = [
   'js/views/relatorio-img.js', 'js/views/salvas.js',
   'js/micros.js', 'js/exportar.js', 'js/views/micros-ui.js', 'js/views/reg-fotos.js', 'js/views/relatorio-pdf.js',
   'js/layout.js', 'js/layout-ordem.js', 'js/inteligencia.js', 'js/voz.js', 'js/views/sugestao.js', 'js/ia-cota.js', 'js/ia-local.js', 'js/coach.js', 'js/vazio.js', 'js/views/tour.js', 'js/cores.js', 'js/views/detalhe-dia.js',
-  'js/icones.js', 'icons/sprite.svg', 'js/views/acoes.js',
+  'js/icones.js', 'icons/sprite.svg', 'js/views/acoes.js', 'js/frase.js',
+  'js/views/frase-ui.js', 'js/views/cesta.js', 'js/views/copiar-dias.js', 'js/views/compartilhado.js',
 ];
 
 self.addEventListener('install', (e) => {
@@ -33,9 +34,28 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('message', (e) => { if (e.data === 'pular-espera') self.skipWaiting(); });
 
+// Compartilhar para o app (Web Share Target, manifest › share_target): o Android manda um POST com texto/imagens;
+// guardamos no cache "compartilhado" e abrimos o app em #compartilhado, que lê e oferece o que fazer.
+async function receberCompartilhado(req) {
+  try {
+    const f = await req.formData();
+    const c = await caches.open('compartilhado');
+    for (const k of await c.keys()) await c.delete(k);
+    const arqs = f.getAll('imagens').filter((x) => x && typeof x !== 'string' && x.size);
+    await Promise.all(arqs.slice(0, 3).map((x, i) => c.put(`./compartilhado/${i}`, new Response(x, { headers: { 'content-type': x.type || 'image/jpeg' } }))));
+    const meta = { titulo: f.get('title') || '', texto: f.get('text') || '', url: f.get('url') || '', imagens: Math.min(arqs.length, 3), em: Date.now() };
+    await c.put('./compartilhado/meta', new Response(JSON.stringify(meta), { headers: { 'content-type': 'application/json' } }));
+  } catch (err) { /* abre o app mesmo assim; a tela avisa que não recebeu nada */ }
+  return Response.redirect('./#compartilhado', 303);
+}
+
 // cache primeiro para arquivos do app; requisições externas (Open Food Facts, Etapa 5) vão direto à rede
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
+  if (e.request.method === 'POST' && url.origin === location.origin && url.pathname.endsWith('/compartilhar')) {
+    e.respondWith(receberCompartilhado(e.request));
+    return;
+  }
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((r) => r || fetch(e.request).catch(() =>
     e.request.mode === 'navigate' ? caches.match('index.html') : Response.error())));

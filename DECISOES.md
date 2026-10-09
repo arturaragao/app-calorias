@@ -106,3 +106,9 @@
 - 2026-10-09 · Aderência na faixa da semana = situacaoDia (±10% da meta do dia, histórico de metas e dia de treino); hoje fica neutro até acabar.
 - 2026-10-09 · Dicas únicas (localStorage `dicasVistas`), só depois do tour; uma por vez, somem ao tocar/rolar ou em 9 s.
 - 2026-10-09 · Folha do "+": segurar 450 ms ou arrastar 28 px para cima; cada ação é um endereço (servem para atalhos/rotinas do Android no Pacote 15). Água por endereço aceita `ml` (1–5000).
+- 2026-10-09 · Web Share Target: viável (Chrome Android 76+, só com o app instalado; arquivos exigem POST multipart tratado no service worker — developer.chrome.com/docs/capabilities/web-apis/web-share-target). Implementado; plano B (colar imagem) também.
+- 2026-10-09 · Interpretador: nunca inventa gramas — usa g/mL ditos, porções do alimento (porcoes.json/usuário) ou a última quantidade; medida que o alimento não tem → "incerto" com chips. Preferências na dúvida: alimento pronto (cru/pó +0,35), sem doce/suco/conserva não ditos (+0,5), sem kcal na fonte (+0,6), medida dita que o alimento tem (−0,6); "lata/pote" favorece conserva.
+- 2026-10-09 · Escolhas lembradas (config.escolhas, até 300): texto normalizado → alimento; valem na busca (vai ao topo) e nas frases. Gravadas ao abrir um resultado com busca, ao escolher um chip e ao lançar itens não incertos.
+- 2026-10-09 · Bônus de busca = 0,45·frequência (log, 20 usos) + 0,25·recência (60 dias) + 0,2·fração na refeição do horário; sinônimos ficam em porcoes.json (dados de nome, não de nutrientes).
+- 2026-10-09 · Planejado = `item.planejado`; `somar` ignora; `temConsumo` (calendário/dias seguidos) ignora; hábitos ("de sempre", frequentes) ignoram. Cópias não levam `ts` nem `planejado` (exceto se pedido).
+- 2026-10-09 · Copiar para vários dias: até 62 datas, todos os dias da semana marcados por padrão; datas futuras saem como planejadas por padrão.

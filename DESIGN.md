@@ -40,6 +40,11 @@ Referência de todas as telas. Inspiração: Material 3 Expressive (sem copiar o
 | Anel de macro | `anelMacro()` (diario.js) → `.mac` | Consumido no centro, "faltam X g" embaixo; proteína maior. |
 | Dica única (coachmark) | `ui.talvezDica([{ chave, el, texto }])` | Balão com seta apontando o elemento; uma vez por aparelho. |
 | Grade de ações | `.acoes-grade` > `.acao` (`views/acoes.js`) | Ícone 56 px tonal + rótulo; 4 por linha. |
+| Teclado numérico | `.qtd-visor` + `.qtd-atalhos` + `.teclado` (quantidade.js) | Campo `inputmode="none"` (sem teclado do sistema), teclas de 48 px, 1ª tecla substitui o valor. |
+| Prévia do impacto | `.previa` (`.acima` quando passa da meta) | "Depois disto: faltam X kcal · Y g de proteína". |
+| Item interpretado | `.fr-item` (`.incerto`, `.nao`) + `.fr-chips` | Dúvida em âmbar com chips; não reconhecido tracejado. |
+| Barra de seleção | `.cesta-barra` | Fixa acima do "+", com Cancelar e Lançar N. |
+| Item planejado | `.item-wrap.planejado` + `.ico.confirmar` | Listrado e em itálico até o ✓. |
 
 ## Ícones
 

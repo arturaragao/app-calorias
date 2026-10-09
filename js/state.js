@@ -1,7 +1,7 @@
 // state.js — estado em memória compartilhado pelas telas + persistência no kv.
 
 import { kvGet, kvSet, db } from './db.js';
-import { REFEICOES_PADRAO, diaVazio } from './diary.js';
+import { REFEICOES_PADRAO, diaVazio, temConsumo } from './diary.js';
 import { chaveData } from './utils.js';
 
 export const estado = {
@@ -41,13 +41,13 @@ let diasAtivos = null;   // Set de datas com algum item (cache em memória, atua
 
 /** Dia sem itens é apagado do banco (mantém o banco enxuto e a contagem de dias correta). */
 export async function gravarDia(dia) {
-  if (temItens(dia)) diasAtivos?.add(dia.data); else diasAtivos?.delete(dia.data);
+  if (temConsumo(dia)) diasAtivos?.add(dia.data); else diasAtivos?.delete(dia.data);
   if (temItens(dia) || dia.tags?.length || dia.nota) await db.put('diary', dia.data, dia);
   else await db.del('diary', dia.data);
 }
 
 export async function datasComRegistro() {
-  if (!diasAtivos) diasAtivos = new Set((await db.getAll('diary')).filter(([, d]) => temItens(d)).map(([k]) => k));
+  if (!diasAtivos) diasAtivos = new Set((await db.getAll('diary')).filter(([, d]) => temConsumo(d)).map(([k]) => k));
   return diasAtivos;
 }
 

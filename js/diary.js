@@ -92,14 +92,17 @@ export function linhaDoTempo(dia, refs) {
 }
 
 /** Acrescenta os itens de `origem` (dia inteiro ou uma refeição) em `destino`. */
-export function copiarPara(destino, origem, refId = null) {
+export function copiarPara(destino, origem, refId = null, { planejado = false } = {}) {
   const d = structuredClone(destino);
   const refs = refId ? [refId] : Object.keys(origem.refeicoes);
   let n = 0;
   for (const r of refs) {
     const itens = origem.refeicoes[r] || [];
     if (!itens.length) continue;
-    (d.refeicoes[r] ||= []).push(...copiarItens(itens));
+    (d.refeicoes[r] ||= []).push(...copiarItens(itens).map((it) => {
+      if (planejado) it.planejado = true; else delete it.planejado;
+      return it;
+    }));
     d.nomes[r] = d.nomes[r] || origem.nomes[r];
     n += itens.length;
   }
@@ -129,9 +132,10 @@ export function substituirItem(dia, refId, item) {
   return d;
 }
 
+/** Soma os nutrientes; itens planejados (ainda não comidos) não entram no consumido. */
 export function somar(itens) {
   const t = Object.fromEntries(NUTRIENTES.map((k) => [k, 0]));
-  for (const it of itens) for (const k of NUTRIENTES) t[k] += it.n[k] || 0;
+  for (const it of itens) if (!it.planejado) for (const k of NUTRIENTES) t[k] += it.n[k] || 0;
   return t;
 }
 
@@ -179,7 +183,7 @@ export function sugestoesRefeicao(diarios, refId, max = 6) {
   const ordenados = [...diarios].sort((a, b) => (a.data < b.data ? -1 : 1));
   for (const d of ordenados) {
     for (const it of d.refeicoes[refId] || []) {
-      if (!it.foodId) continue;
+      if (!it.foodId || it.planejado) continue;
       const c = cont.get(it.foodId) || { foodId: it.foodId, vezes: 0, data: '', ultima: null };
       c.vezes++; c.data = d.data; c.ultima = { g: it.g, porcao: it.porcao };
       cont.set(it.foodId, c);
@@ -209,4 +213,29 @@ export function distribuicaoRefeicoes(refs, personal = {}) {
   const brutos = val.map((v) => (v == null ? resto : Math.max(0, v)));
   const soma = brutos.reduce((s, v) => s + v, 0) || 1;
   return Object.fromEntries(refs.map((r, i) => [r.id, brutos[i] / soma]));
+}
+
+// ---------- Itens planejados (Pacote 12) ----------
+
+/** Confirma um item planejado ("comi"): passa a contar, com o horário de agora. */
+export function confirmarPlanejado(dia, refId, itemId) {
+  const d = structuredClone(dia);
+  const it = (d.refeicoes[refId] || []).find((i) => i.id === itemId);
+  if (it) { delete it.planejado; it.ts = Date.now(); }
+  return d;
+}
+
+/** Há algo de fato consumido no dia (planejados não contam como registro). */
+export const temConsumo = (dia) => Object.values(dia?.refeicoes || {}).some((l) => l.some((i) => !i.planejado));
+
+/** Datas de `ini` a `fim` (inclusive) cujo dia da semana (0 = segunda) está em `dias`. Máximo 62 datas. */
+export function datasNoIntervalo(ini, fim, dias = [0, 1, 2, 3, 4, 5, 6]) {
+  const out = [];
+  const d = new Date(ini + 'T12:00'), f = new Date(fim + 'T12:00');
+  while (d <= f && out.length < 62) {
+    const ch = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (dias.includes((d.getDay() + 6) % 7)) out.push(ch);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
 }

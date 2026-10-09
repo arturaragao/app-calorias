@@ -16,7 +16,7 @@ export function candidatosFrequentes(diarios, porId, { favoritos = [], ultimaQtd
   const cont = new Map();
   for (const d of diarios) {
     for (const it of refId ? d.refeicoes?.[refId] || [] : Object.values(d.refeicoes || {}).flat()) {
-      if (!it.foodId || !(it.g > 0)) continue;
+      if (!it.foodId || !(it.g > 0) || it.planejado) continue;
       const c = cont.get(it.foodId) || { vezes: 0, gs: [] };
       c.vezes++; c.gs.push(it.g);
       cont.set(it.foodId, c);
@@ -135,7 +135,7 @@ export function refeicaoDeSempre(diarios, refId, { minDias = 3, frac = 0.4 } = {
   for (const d of dias) {
     const vistos = new Set();
     for (const it of d.refeicoes[refId]) {
-      if (!it.foodId || vistos.has(it.foodId)) continue;
+      if (!it.foodId || it.planejado || vistos.has(it.foodId)) continue;
       vistos.add(it.foodId);
       cont.set(it.foodId, (cont.get(it.foodId) || 0) + 1);
       ultimo.set(it.foodId, it);
@@ -172,4 +172,32 @@ export function avaliarSuspeito(food, g, ctx = {}) {
     if (kcal > 400 && kcal > p95 * 2.5) return `${Math.round(kcal)} kcal está bem acima dos seus itens habituais (até ~${Math.round(p95)} kcal). Confere?`;
   }
   return null;
+}
+
+// ---------- Ranqueamento da busca pelo uso (Pacote 12) ----------
+
+/**
+ * Bônus 0–0,9 por alimento para a busca: frequência (log, satura em ~20 usos) × 0,45 + recência (1 hoje → 0 em 60 dias) × 0,25
+ * + fração das vezes em que foi lançado na refeição do horário × 0,2. Itens planejados não contam.
+ */
+export function pesosBusca(diarios, { refId = null, hoje } = {}) {
+  const st = new Map();
+  for (const d of diarios) {
+    for (const [r, itens] of Object.entries(d.refeicoes || {})) {
+      for (const it of itens) {
+        if (!it.foodId || it.planejado) continue;
+        const s = st.get(it.foodId) || { n: 0, nRef: 0, ultima: '' };
+        s.n++; if (r === refId) s.nRef++; if (d.data > s.ultima) s.ultima = d.data;
+        st.set(it.foodId, s);
+      }
+    }
+  }
+  const dia = (k) => Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10)) / 86400000;
+  const out = new Map();
+  for (const [id, s] of st) {
+    const freq = Math.min(1, Math.log1p(s.n) / Math.log1p(20));
+    const rec = hoje ? Math.max(0, 1 - (dia(hoje) - dia(s.ultima)) / 60) : 0;
+    out.set(id, 0.45 * freq + 0.25 * rec + 0.2 * (s.nRef / s.n));
+  }
+  return out;
 }

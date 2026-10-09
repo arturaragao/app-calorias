@@ -1,15 +1,25 @@
 # PROGRESSO
 
-**Etapa atual:** roteiro 2.0. Pacotes 10 e 11 entregues (v19–v20); Pacote 12 em andamento (autorizado junto com o 11).
+**Etapa atual:** roteiro 2.0. Pacotes 10–12 entregues (v19–v21); aguardando OK do Artur para os próximos (13 e 14 na prioridade do roteiro).
 
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
 - [x] Pacote 11 — Diário redesenhado (v20)
-- [ ] Pacote 12 — Registro ultrarrápido sem gastar tokens
+- [x] Pacote 12 — Registro ultrarrápido sem gastar tokens (v21)
 - [ ] Pacote 13 — Planejamento, receitas e lista de compras
 - [ ] Pacote 14 — Inteligência prática
 - [ ] Pacote 15 — Atalhos e extras do Android
 - [ ] Pacote 16 — Qualidade de produto profissional
+
+**Pacote 12 (v21, 2026-10-09)**
+- Interpretador local (js/frase.js, sem IA): números por extenso ("duzentos e cinquenta", "um e meio", "meia", "um quarto"), frações (½, 1/2, 1,5), g/kg/mL/litro, medidas caseiras (colher, xícara, concha, escumadeira, fatia, unidade, prato, lata…), separadores "e", vírgula, "+", "mais" e "com" (exceto quando o alimento tem "com" no nome, ex.: tapioca com manteiga). Gramas só de porções conhecidas, g/mL ditos ou da última quantidade; medida desconhecida → item "incerto" com as porções em chips. Teste com 46 frases reais.
+- Folha "Falar ou escrever" (views/frase-ui.js): interpreta enquanto digita/fala (ditado), chips "Qual destes?" (a escolha fica lembrada), ± por item, trecho não reconhecido → Buscar ou Estimar com IA (só aí a IA entra). Entradas: Adicionar › Falar ou escrever, "+" › Falar (#adicionar?falar=1), menu ⋯ da refeição, busca com cara de frase ("Lançar como frase"), texto compartilhado.
+- Busca: sinônimos regionais (porcoes.json › sinonimos: aipim/macaxeira, bergamota/mexerica, jerimum, cacetinho, mussarela, coca…), plural, erro de 1–2 letras (2ª passada), palavra inteira e 1ª palavra valem mais, ranqueamento por frequência + recência + horário (inteligencia.pesosBusca, 60 dias) e escolha anterior para a mesma busca (cru × cozido lembrado, config.escolhas). Resultado em 2 linhas: porção usual · kcal · P/C/G.
+- Quantidade: teclado numérico próprio (o do Android não abre; teclado físico também funciona), atalhos ½ · 1 · 1½ · 2 porções, visor grande e prévia "Depois disto: faltam X kcal · Y g de proteína".
+- Cesta: "Vários de uma vez" ou segurar um resultado → marcar vários → uma folha com quantidade de cada → Lançar todos.
+- Planejados: chave "Planejado" na quantidade (ligada em datas futuras); aparência listrada, não somam nem marcam o dia; botão ✓ "comi" confirma com o horário. Copiar refeição ou dia inteiro para um intervalo de datas (dias da semana escolhidos, como planejado), com desfazer de todos os dias.
+- Compartilhar para o app (Web Share Target, verificado na documentação do Chrome): manifest › share_target POST → sw.js guarda no cache "compartilhado" → #compartilhado pergunta: foto do prato, print de pedido, cardápio, rótulo ou receita (imagem) ou abre a frase (texto). Plano B: "Colar imagem copiada" nas folhas de foto, rótulo e cardápio.
+- Testes: 149 aprovados. Contraste: 84 telas, 0 reprovações. Conferido no Edge (Playwright): busca com erro, frase, teclado e prévia, cesta, compartilhar texto/imagem via service worker, cópia para 5 dias e confirmação de planejado; sem erros no console.
 
 **Pacote 11 (v20, 2026-10-09)**
 - Cartão-herói em 3 páginas (deslizar, pontos, última lembrada; altura acompanha a página): Calorias (anel atual) · Macros em anéis (proteína grande, "faltam X g") · Fibra, sódio e os 3 micronutrientes mais longe da referência. Toque abre Detalhes do dia.
@@ -151,6 +161,7 @@
 - Testes: 85 aprovados.
 
 ## Pendências / próximas etapas
+- Compartilhar para o app: o Android só passa a listar o app em "Compartilhar" quando renovar o WebAPK (até ~1 dia) ou ao reinstalar.
 - Etapa 5: entregue (scanner validado pelo Artur no S23+).
 - Atalhos do ícone: o Android só atualiza ícones/atalhos do app instalado quando renova o WebAPK (pode levar até 1 dia); reinstalar resolve na hora.
 

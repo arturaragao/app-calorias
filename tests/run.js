@@ -834,6 +834,83 @@ t('Estado vazio: ilustração SVG decorativa + título + texto', () => {
   });
 }
 
+// ---------- Pacote 12: busca e frases ----------
+{
+  const F12 = await import('../js/foods.js');
+  const FR12 = await import('../js/frase.js');
+  const I12 = await import('../js/inteligencia.js');
+  const { CASOS, HISTORICO } = await import('./frases.js');
+  const foods12 = JSON.parse(readFileSync(new URL('../foods.json', import.meta.url), 'utf8'));
+  const tab12 = JSON.parse(readFileSync(new URL('../porcoes.json', import.meta.url), 'utf8'));
+  const ind12 = F12.criarIndice(foods12);
+  const nomes = (q, o = {}) => F12.buscar(ind12, q, { limite: 3, sinonimos: tab12.sinonimos, ...o }).map((f) => f.nome);
+  t('Busca: sinônimos regionais (aipim, macaxeira, bergamota, jerimum, cacetinho)', () => {
+    for (const [q, esp] of [['aipim', 'Mandioca'], ['macaxeira', 'Mandioca'], ['bergamota', 'Tangerina'], ['mexerica', 'Tangerina'], ['jerimum', 'Abóbora'], ['cacetinho', 'Pão, trigo, francês']]) {
+      if (!nomes(q)[0]?.startsWith(esp)) throw new Error(`${q} → ${nomes(q)[0]}`);
+    }
+  });
+  t('Busca: erro de digitação (1–2 letras) e plural', () => {
+    if (!nomes('fejão')[0]?.startsWith('Feijão')) throw new Error('fejão → ' + nomes('fejão')[0]);
+    if (!nomes('brocolis cozdo')[0]?.startsWith('Brócolis, cozido')) throw new Error('brocolis cozdo');
+    if (!nomes('ovos')[0]?.startsWith('Ovo')) throw new Error('ovos → ' + nomes('ovos')[0]);
+    if (!nomes('maçã')[0]?.startsWith('Maçã')) throw new Error('maçã → ' + nomes('maçã')[0]);
+    if (F12.distancia('arroz', 'aroz', 2) !== 1 || F12.distancia('abc', 'xyzw', 1) !== 2) throw new Error('distância');
+  });
+  t('Busca: frequência/recência/horário e escolha anterior sobem o alimento', () => {
+    const hoje = '2026-10-09';
+    const diarios = [{ data: '2026-10-08', refeicoes: { almoco: [{ foodId: 'taco-561' }, { foodId: 'taco-561' }] } },
+      { data: '2026-07-01', refeicoes: { cafe: [{ foodId: 'taco-560' }] } }, { data: '2026-10-08', refeicoes: { almoco: [{ foodId: 'taco-999', planejado: true }] } }];
+    const b = I12.pesosBusca(diarios, { refId: 'almoco', hoje });
+    if (!(b.get('taco-561') > b.get('taco-560'))) throw new Error('recente e frequente deve pesar mais');
+    if (b.has('taco-999')) throw new Error('planejado não conta');
+    if (b.get('taco-561') > 0.9) throw new Error('bônus acima de 0,9');
+    if (nomes('feijao', { bonus: b })[0] !== 'Feijão, carioca, cozido') throw new Error(nomes('feijao', { bonus: b })[0]);
+    if (nomes('arroz', { escolha: 'taco-4' })[0] !== foods12.find((f) => f.id === 'taco-4').nome) throw new Error('escolha');
+  });
+  t('Números por extenso e frações', () => {
+    const d = (s) => FR12.numerosParaDigitos(s.split(' ')).join(' ');
+    for (const [a, b] of [['duzentos e cinquenta', '250'], ['cento e vinte e cinco', '125'], ['um e meio', '1.5'], ['meia', '0.5'], ['um quarto', '0.25'], ['tres', '3'], ['2 e meia', '2.5']]) {
+      if (d(a) !== b) throw new Error(`${a} → ${d(a)}`);
+    }
+  });
+  const ctx12 = { indice: ind12, porcoesDe: (f) => F12.porcoesDe(f, tab12), densidade: (f) => F12.densidadeDe(f, tab12),
+    sinonimos: tab12.sinonimos, escolhas: HISTORICO.escolhas, bonus: new Map(HISTORICO.bonus), ultimaQtd: {} };
+  t(`Interpretador local: ${CASOS.length} frases reais`, () => {
+    if (CASOS.length < 40) throw new Error('menos de 40 frases');
+    const erros = [];
+    for (const [frase, esperado] of CASOS) {
+      const r = FR12.interpretar(frase, ctx12).map((i) => [i.food?.id ?? null, Math.round((i.g || 0) * 10) / 10, !!i.incerto]);
+      if (JSON.stringify(r) !== JSON.stringify(esperado)) erros.push(`"${frase}": ${JSON.stringify(r)} ≠ ${JSON.stringify(esperado)}`);
+    }
+    if (erros.length) throw new Error(erros.join('\n    '));
+  });
+  t('Interpretador usa a última quantidade do alimento quando a frase não diz a medida', () => {
+    const r = FR12.interpretar('2 bananas', { ...ctx12, ultimaQtd: { 'taco-182': { g: 100, porcao: { nome: 'unidade grande', g: 100, qtd: 1 } } } })[0];
+    if (r.g !== 200 || r.porcao.nome !== 'unidade grande' || r.incerto) throw new Error(JSON.stringify(r));
+  });
+  const D12 = await import('../js/diary.js');
+  t('Planejados: não somam, não marcam o dia, confirmam com horário', () => {
+    const dia = { data: '2026-10-10', nomes: {}, refeicoes: { almoco: [{ id: 'a', n: { kcal: 300, prot: 20 }, planejado: true }, { id: 'b', n: { kcal: 100, prot: 5 } }] } };
+    if (D12.totalDia(dia).kcal !== 100) throw new Error('planejado somou');
+    if (!D12.temConsumo(dia) || D12.temConsumo({ refeicoes: { a: [{ planejado: true }] } })) throw new Error('temConsumo');
+    const c = D12.confirmarPlanejado(dia, 'almoco', 'a');
+    if (c.refeicoes.almoco[0].planejado || !(c.refeicoes.almoco[0].ts > 0) || D12.totalDia(c).kcal !== 400) throw new Error('confirmar');
+    if (!dia.refeicoes.almoco[0].planejado) throw new Error('não pode alterar o original');
+  });
+  t('Copiar para vários dias: intervalo, dias da semana e cópia como planejada', () => {
+    const ds = D12.datasNoIntervalo('2026-10-09', '2026-10-15', [0, 1, 2, 3, 4]);   // sex 09 → qui 15, só seg–sex
+    if (ds.join() !== '2026-10-09,2026-10-12,2026-10-13,2026-10-14,2026-10-15') throw new Error(ds.join());
+    if (D12.datasNoIntervalo('2026-01-01', '2026-12-31').length !== 62) throw new Error('limite de 62 datas');
+    const origem = { data: '2026-10-09', nomes: { almoco: 'Almoço' }, refeicoes: { almoco: [{ id: 'x', ts: 5, n: { kcal: 500 } }] } };
+    const { dia: d, n } = D12.copiarPara({ data: '2026-10-12', nomes: {}, refeicoes: {} }, origem, 'almoco', { planejado: true });
+    const it = d.refeicoes.almoco[0];
+    if (n !== 1 || !it.planejado || it.ts !== undefined || it.id === 'x' || D12.totalDia(d).kcal !== 0) throw new Error(JSON.stringify(it));
+  });
+  t('pareceFrase: só com número ou separador', () => {
+    if (!FR12.pareceFrase('2 ovos') || !FR12.pareceFrase('arroz e feijão') || FR12.pareceFrase('arroz') || FR12.pareceFrase('feijão carioca')) throw new Error();
+  });
+}
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

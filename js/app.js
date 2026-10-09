@@ -19,8 +19,9 @@ const ROTAS = {
   perfil: () => import('./views/onboarding.js'),
   receita: () => import('./views/receita.js'),
   importar: () => import('./views/importar.js'),
+  compartilhado: () => import('./views/compartilhado.js'),
 };
-const ABA_DA_ROTA = { metas: 'config', perfil: 'config', importar: 'config', receita: 'adicionar' };
+const ABA_DA_ROTA = { metas: 'config', perfil: 'config', importar: 'config', receita: 'adicionar', compartilhado: 'diario' };
 
 // ---------- Tema ----------
 export function aplicarTema(tema) {
@@ -36,7 +37,7 @@ export function aplicarTema(tema) {
 // Cada tela define seus handlers em #tela (onclick etc.); zera todos antes de trocar de tela,
 // senão o handler da tela anterior continua ativo numa tela que não define o seu.
 const HANDLERS_TELA = ['onclick', 'oninput', 'onchange', 'onkeydown', 'onsubmit',
-  'onpointerdown', 'onpointermove', 'onpointerup', 'onpointercancel'];
+  'onpointerdown', 'onpointermove', 'onpointerup', 'onpointercancel', 'oncontextmenu'];
 function limparHandlers(tela) {
   for (const h of HANDLERS_TELA) tela[h] = null;
   tela.style.touchAction = ''; tela.style.transform = ''; tela.classList.remove('dia-esq', 'dia-dir');
