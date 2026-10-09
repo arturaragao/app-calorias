@@ -15,6 +15,7 @@ import { compartilharRelatorio } from './relatorio-img.js';
 import { tabelaMicros } from './micros-ui.js';
 import { gerarRelatorioPDF } from './relatorio-pdf.js';
 import { carregarBase } from '../foods.js';
+import { aplicarLayout, botaoOrganizar } from '../layout.js';
 import { topo, esc, $, seg, aviso, abrirFolha, fecharFolha, ICONES } from '../ui.js';
 import { chaveData, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, somarDias, DIAS_CURTOS } from '../utils.js';
 
@@ -69,8 +70,7 @@ export async function render(tela) {
     const comp = (atual, ant, f, un = '') => (atual == null || ant == null ? '<small>&nbsp;</small>' : (f(Math.abs(atual - ant)) === f(0) ? '<small>igual ao anterior</small>' : `<small>${sinal(atual - ant, f)}${un} vs anterior</small>`));
 
     tela.innerHTML = `${seg('periodo', PERIODOS, estado.periodoProg)}
-      <button class="btn bloco suave" data-pdf style="margin:-4px 0 12px">📄 Relatório em PDF (para nutricionista)</button>
-      <div class="kpis num">
+      <div class="kpis num" data-bloco="kpis">
         <div class="kpi"><b>${mm.n ? fk(mm.consumo.kcal) : '—'}</b><span>kcal/dia</span>${cmp ? comp(cmp.kcal[0], cmp.kcal[1], fk) : ''}</div>
         <div class="kpi"><b>${mm.n ? fmtNum(Math.round(mm.consumo.prot)) + ' g' : '—'}</b><span>proteína/dia</span>${cmp ? comp(cmp.prot[0], cmp.prot[1], (v) => fmtNum(Math.round(v)), ' g') : ''}</div>
         <div class="kpi"><b>${ad.total ? fmtNum(Math.round(ad.pct)) + '%' : '—'}</b><span>dias na meta</span><small>${ad.total ? `${ad.dentro} de ${ad.total}` : '&nbsp;'}</small></div>
@@ -80,19 +80,22 @@ export async function render(tela) {
       </div>
       ${cardPeso(tAtual, ritmo)}
       ${cardGasto()}
-      <div class="card"><h2 style="margin-bottom:4px">Calorias por semana</h2>
+      <div class="card" data-bloco="semanas"><h2 style="margin-bottom:4px">Calorias por semana</h2>
         <p class="mudo" style="margin:0 0 6px">Média dos dias com registro × meta (traço). Âmbar = mais de 10% acima.</p><div id="g-sem"></div></div>
-      <div class="card" id="c-cal"></div>
-      <div class="card" id="c-rel"></div>
+      <div class="card" id="c-cal" data-bloco="calendario"></div>
+      <div class="card" id="c-rel" data-bloco="relatorio"></div>
       ${cardMacros(mm)}
-      <div class="card" id="c-orig"></div>
-      <div class="card"><div class="card-tit"><h2>Composição corporal</h2>
+      <div class="card" id="c-orig" data-bloco="origem"></div>
+      <div class="card" data-bloco="composicao"><div class="card-tit"><h2>Composição corporal</h2>
         <select id="s-prot" style="width:auto;min-height:40px">${Object.entries(PROTOCOLOS).map(([k, p]) => `<option value="${k}" ${k === protSel ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
         <div id="comp-resumo"></div><div id="g-dobra"></div><div id="g-comp" style="margin-top:10px"></div></div>
-      <div class="card"><div class="card-tit"><h2>Circunferências</h2>
+      <div class="card" data-bloco="circ"><div class="card-tit"><h2>Circunferências</h2>
         <select id="s-circ" style="width:auto;min-height:40px">${defsCirc.map((d) => `<option value="${d.id}" ${d.id === circSel ? 'selected' : ''}>${esc(d.nome)}</option>`).join('')}</select></div>
         <div id="circ-resumo"></div><div id="g-circ"></div></div>
-      <p class="mudo" style="text-align:center">Arraste o dedo sobre os gráficos para ver os valores.</p>`;
+      <button class="btn bloco suave" data-bloco="pdf" data-pdf style="margin-bottom:12px">📄 Relatório em PDF (para nutricionista)</button>
+      <p class="mudo" style="text-align:center">Arraste o dedo sobre os gráficos para ver os valores.</p>
+      ${botaoOrganizar('progresso')}`;
+    aplicarLayout(tela, 'progresso');
 
     // peso: pontos = pesagens; linha 2 = tendência nas mesmas datas
     graficoLinha($('#g-peso', tela), pP.map((p) => ({ data: p.data, y: p.kg })), {
@@ -124,7 +127,7 @@ export async function render(tela) {
           pr && !pr.atingido ? ` · no ritmo atual, por volta de <b>${fmtData(pr.data)}</b> (${fmtNum(Math.round(pr.semanas))} semanas)` : ''}${
           !pr && Math.abs(falta) >= 0.05 ? ' · no ritmo atual o alvo ainda não se aproxima' : ''}</p></div>`;
     }
-    return `<div class="card"><div class="card-tit"><h2>Peso</h2>${tAtual != null ? `<span class="num mudo">tendência <b style="color:var(--txt)">${f1(tAtual)} kg</b></span>` : ''}</div>
+    return `<div class="card" data-bloco="peso"><div class="card-tit"><h2>Peso</h2>${tAtual != null ? `<span class="num mudo">tendência <b style="color:var(--txt)">${f1(tAtual)} kg</b></span>` : ''}</div>
       <div id="g-peso"></div>
       ${ritmo != null ? `<div class="sub-num num"><span>Ritmo real (4 semanas): <b>${sinal(ritmo, f2)} kg/sem</b></span>
         <span>Planejado: <b>${sinal(ritmoPlan, f2)} kg/sem</b></span></div>` : ''}
@@ -140,7 +143,7 @@ export async function render(tela) {
     if (!g) {
       const ini = somarDias(hoje, -27);
       const reg = dias.filter((d) => d.data >= ini).length, dPeso = P.noPeriodo(tend, 28, hoje).length;
-      return `<div class="card"><h2 style="margin-bottom:6px">Gasto real estimado</h2>
+      return `<div class="card" data-bloco="gasto"><h2 style="margin-bottom:6px">Gasto real estimado</h2>
         <p class="mudo" style="margin-top:0">Com 2 a 4 semanas de pesagens e alimentação registradas, o app calcula quanto você <b>realmente</b> gasta por dia
         — cruzando o que comeu com a tendência do peso — e sugere a meta certa para o seu objetivo.</p>
         <div class="sub-num num"><span>Dias com registro (28 d): <b>${reg}</b> de 14+</span><span>Dias de tendência de peso: <b>${dPeso}</b> de ${P.TDEE_MIN_DIAS}+</span></div>
@@ -152,7 +155,7 @@ export async function render(tela) {
     const emGramas = (m.modo === 'semana' ? m.semana : [m.base]).some((c) => c.macroModo !== 'pct');
     const dif = sug - atual;
     const obj = p.objetivo === 'perder' ? `perder ${f2(p.ritmo)} kg/semana` : p.objetivo === 'ganhar' ? `ganhar ${f2(p.ritmo)} kg/semana` : 'manter o peso';
-    return `<div class="card"><div class="card-tit"><h2>Gasto real estimado</h2><span class="selo ${g.confianca === 'alta' ? 'alta' : g.confianca === 'baixa' ? 'baixa' : ''}">confiança ${g.confianca}</span></div>
+    return `<div class="card" data-bloco="gasto"><div class="card-tit"><h2>Gasto real estimado</h2><span class="selo ${g.confianca === 'alta' ? 'alta' : g.confianca === 'baixa' ? 'baixa' : ''}">confiança ${g.confianca}</span></div>
       <p class="destaque num">${fk(g.tdee)} <span class="mudo" style="font-size:1rem;font-weight:500">kcal/dia</span></p>
       <div class="sub-num num"><span>Comeu em média <b>${fk(g.mediaKcal)}</b></span><span>Tendência <b>${sinal(g.deltaKg, f2)} kg</b> em ${g.periodo} dias</span>
         <span>Fórmula previa <b>${fk(mc.tdee)}</b> (${sinal(g.tdee - mc.tdee, fk)})</span></div>
@@ -220,13 +223,13 @@ export async function render(tela) {
 
   // ---------- Macros ----------
   function cardMacros(mm) {
-    if (!mm.n) return '<div class="card"><h2 style="margin-bottom:6px">Médias diárias × meta</h2><p class="mudo">Sem dias registrados no período.</p></div>';
+    if (!mm.n) return '<div class="card" data-bloco="macros"><h2 style="margin-bottom:6px">Médias diárias × meta</h2><p class="mudo">Sem dias registrados no período.</p></div>';
     const fmt = (v, un) => (un === 'kcal' ? fk(v) : un === 'mg' ? fmtMg(v) : fmtMacro(v));
     const linha = (cls, nome, v, meta, un = 'g') => `<div class="dist ${cls}"><div class="rot"><span>${nome}</span>
       <span class="num"><b>${fmt(v, un)}</b> / ${fmt(meta, un)} ${un} <span class="mudo">(${fmtNum(Math.round(meta ? (v / meta) * 100 : 0))}%)</span></span></div>
       <div class="trilho"><div class="enche" style="width:${meta ? Math.min(100, (v / meta) * 100) : 0}%"></div></div></div>`;
     const pesoRef = tend.at(-1)?.y || estado.perfil?.peso;
-    return `<div class="card"><h2 style="margin-bottom:6px">Médias diárias × meta</h2>
+    return `<div class="card" data-bloco="macros"><h2 style="margin-bottom:6px">Médias diárias × meta</h2>
       ${linha('', 'Calorias', mm.consumo.kcal, mm.meta.kcal, 'kcal')}
       ${linha('p', 'Proteína', mm.consumo.prot, mm.meta.prot)}
       ${linha('c', 'Carboidrato', mm.consumo.carb, mm.meta.carb)}

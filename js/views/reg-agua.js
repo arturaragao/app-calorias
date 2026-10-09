@@ -25,7 +25,7 @@ export async function render(el) {
         <button class="ico" data-dia="1" aria-label="Próximo dia" style="flex:0 0 44px" ${data >= chaveData() ? 'disabled' : ''}>›</button></div>
       <p class="num" style="font-size:1.8rem;font-weight:700;margin:4px 0;text-align:center">${fmtNum(total)} <span class="mudo" style="font-size:1rem">/ ${fmtNum(c.metaMl)} ml</span></p>
       <p class="mudo" style="text-align:center;margin:0 0 8px">${fmtNum(Math.round(copos * 10) / 10)} copo(s) de ${fmtNum(c.copoMl)} ml</p>
-      <div class="barra"><div class="trilho" style="height:12px"><div class="enche" style="width:${pct}%;background:var(--prot)"></div></div></div>
+      <div class="barra"><div class="trilho" style="height:12px"><div class="enche" style="width:${pct}%;background:var(--agua)"></div></div></div>
       <div class="grade2" style="margin-top:10px">
         <button class="btn prim" data-add="${c.copoMl}">+ 1 copo (${fmtNum(c.copoMl)} ml)</button>
         <button class="btn" data-add="500">+ 500 ml</button>

@@ -15,6 +15,8 @@
   <script>
     // aplica o tema antes de pintar (evita piscar)
     try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'escuro') document.documentElement.dataset.tema = t; } catch {}
+    // cores personalizadas (Ajustes › Aparência), também antes de pintar
+    try { const c = localStorage.getItem('coresCss'); if (c) document.write('<style id="cores-usuario">' + c + '</style>'); } catch {}
   </script>
 </head>
 <body>

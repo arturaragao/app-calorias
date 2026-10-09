@@ -62,6 +62,7 @@ No menu **⋯** de uma refeição → **Estimar por foto (IA)**, ou **Por foto**
 ## Desenvolvimento
 - HTML, CSS e JavaScript puros (ES modules), sem build e sem dependências.
 - Testes: `node tests/run.js`.
+- Ícones do app e dos atalhos: `node scripts/gerar_icones.mjs` (gera os PNG em `icons/`).
 - Servidor local: `python -m http.server 8765`, depois abra http://127.0.0.1:8765.
 - Publicar: `git add -A`, `git commit -m "…"`, `git push`. O GitHub Pages atualiza em cerca de 1 minuto.
 - Ao mudar qualquer arquivo publicado, incremente a versão (`sw.js` e `js/versao.js`). Os testes conferem se as duas batem e se o `sw.js` lista todos os arquivos.

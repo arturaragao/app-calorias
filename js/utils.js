@@ -53,7 +53,9 @@ const fmtN = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2, useGroup
 
 export const fmtKcal = (v) => (v == null ? '—' : fmt0.format(Math.round(v)));
 export const fmtMacro = (v) => (v == null ? '—' : fmt1.format(v));
-export const fmtMg = (v) => (v == null ? '—' : fmt0.format(Math.round(v)));
+/** Gramas inteiros só para exibição (o valor guardado continua com precisão total). */
+export const fmtG = (v) => (v == null ? '—' : fmt0.format(Math.round(v)));
+export const fmtMg =(v) => (v == null ? '—' : fmt0.format(Math.round(v)));
 export const fmtNum = (v) => (v == null || v === '' || Number.isNaN(v) ? '' : fmtN.format(v));
 
 /** Aceita "12,5", "12.5", "2.759" (milhar) e "2.759,5"; retorna NaN se inválido. */

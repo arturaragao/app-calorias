@@ -66,3 +66,11 @@
 - 2026-10-08 · Fotos corporais na store photos com chave "corpo|AAAA-MM-DD" (sem nova versão do IndexedDB); uma foto por posição e data.
 - 2026-10-08 · Leitor: EAN/UPC aceito na 1ª leitura se o dígito verificador GTIN confere; demais formatos exigem 2 leituras iguais.
 - 2026-10-08 · Quantidade: "1 grama" sempre listado como porção (não é salvo em porcoesUsuario).
+- 2026-10-09 · Pasta nesta máquina: `C:\Users\artur.aragao\Documents\Claude\app-calorias`. Instalados Git, GitHub CLI e Node 24 LTS via winget (autorizado). Sem Python: gerador de ícones portado para Node.
+- 2026-10-09 · Layout por tela em `config.layout[tela] = {ordem, ocultos}`; blocos trocam de "vaga" entre irmãos (avisos e conteúdos fixos não se movem). Bloco novo de versão futura entra na posição padrão. Aba escondida ainda abre por link direto (atalho do ícone).
+- 2026-10-09 · Cores em `config.cores` (só o que difere do padrão gera CSS). Escuro = cor do usuário misturada 72% com branco (macros) ou 60% (cor principal), via color-mix. Macros padrão: P #4f8a63, C #e3c868, G #e8955a.
+- 2026-10-09 · Cor dos macros só em preenchimentos (barras, pontos, roscas), nunca em texto, para manter contraste com tons pastel.
+- 2026-10-09 · Parcela das refeições (`config.distRef`, %): referência prática editável café 25 / almoço 35 / lanche 10 / jantar 25 / ceia 5; refeição sem valor divide a sobra (ou ganha parte igual) e tudo é normalizado. Mudar uma refeição redistribui as outras proporcionalmente.
+- 2026-10-09 · mL: densidade 1 g/mL (aproximação declarada na tela); item guarda `porcao {nome:"mL", g:1, qtd, ml:true}`. Abre em mL se o item/última vez era mL ou se o alimento é bebida (grupo "Bebidas" ou nome típico).
+- 2026-10-09 · Campos numéricos (`inputmode=decimal|numeric`) selecionam o valor ao receber foco (listener global em app.js).
+- 2026-10-09 · Exibição no Diário/Detalhes: gramas e macros inteiros (fmtG); cálculo e registro seguem com precisão total.

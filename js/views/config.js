@@ -13,6 +13,16 @@ import { cartaoDrive, ligarCartaoDrive, confirmarEImportar } from './drive-ui.js
 import { lerChave, salvarChave, chaveValida } from '../ia.js';
 import { kvGet } from '../db.js';
 import { VERSAO_APP } from '../versao.js';
+import { CORES_PADRAO, NOMES_CORES, PALETAS, aplicarCores } from '../cores.js';
+import { NOME_TELA } from '../layout.js';
+
+const cores = () => estado.config.cores || {};
+async function salvarCores(c) {
+  estado.config.cores = c;
+  aplicarCores(c);
+  aplicarTema(estado.config.tema);       // barra de status acompanha o novo fundo
+  await salvarConfig();
+}
 
 export async function render(tela) {
   topo('<h1 class="esq">Ajustes</h1>');
@@ -38,7 +48,18 @@ export async function render(tela) {
     </div>
     <p class="secao">Aparência</p>
     <div class="card">${seg('tema', [['sistema', 'Sistema'], ['escuro', 'Escuro'], ['claro', 'Claro']], estado.config.tema)}
-      <p class="mudo" style="margin:0">Escuro: verde e preto · Claro: verde e branco.</p></div>
+      <h2 style="margin:4px 0 8px">Cor principal</h2>
+      <div class="paletas">${PALETAS.map(([n, c]) => `<button type="button" data-paleta="${c}" aria-label="${n}" title="${n}"
+        aria-pressed="${(cores().acento || CORES_PADRAO.acento).toLowerCase() === c}" style="--c:${c}"></button>`).join('')}</div>
+      <h2 style="margin:14px 0 4px">Cores</h2>
+      <p class="mudo" style="margin:0 0 6px">Cada macronutriente aparece sempre na mesma cor (diário, detalhes, gráficos). No tema escuro o app clareia o tom automaticamente.</p>
+      <div class="cores-lista">${Object.entries(NOMES_CORES).map(([k, n]) => `<label class="cor-linha"><span><i style="background:var(--${k === 'acento' ? 'acento' : k})"></i>${n}</span>
+        <input type="color" data-cor="${k}" value="${cores()[k] || CORES_PADRAO[k]}" aria-label="Cor de ${n}"></label>`).join('')}</div>
+      <button class="btn peq suave" data-cores-padrao style="margin-top:10px">Restaurar cores padrão</button></div>
+    <p class="secao">Organizar telas</p>
+    <div class="card config-lista" style="padding:4px 16px">
+      ${Object.entries(NOME_TELA).map(([id, n]) => `<a role="button" tabindex="0" data-organizar="${id}"><span class="ref-ico" aria-hidden="true">⇅</span><span>${n}<small>Ordem dos blocos e o que aparece</small></span></a>`).join('')}
+    </div>
     <p class="secao">Diário</p>
     <div class="card"><div class="card-tit"><h2>Refeições</h2><button class="btn peq suave" data-nova>+ Nova</button></div>
       <ul class="lista" id="refs"></ul>
@@ -92,9 +113,24 @@ export async function render(tela) {
     salvarChave(c); aviso('Chave do Gemini salva'); render(tela);
   };
 
+  // cores: prévia ao arrastar o seletor, salva ao confirmar
+  tela.oninput = (e) => {
+    if (e.target.dataset.cor) aplicarCores({ ...cores(), [e.target.dataset.cor]: e.target.value });
+  };
+  tela.onchange = (e) => {
+    if (e.target.dataset.cor) salvarCores({ ...cores(), [e.target.dataset.cor]: e.target.value });
+  };
+
   tela.onclick = async (e) => {
     const b = e.target.closest('button');
     if (!b || b.closest('#drive')) return;
+    if (b.dataset.paleta) {
+      await salvarCores({ ...cores(), acento: b.dataset.paleta });
+      $$('[data-paleta]', tela).forEach((x) => x.setAttribute('aria-pressed', x === b));
+      $('[data-cor=acento]', tela).value = b.dataset.paleta;
+      return;
+    }
+    if ('coresPadrao' in b.dataset) { await salvarCores({}); aviso('Cores padrão restauradas'); return render(tela); }
     if (b.dataset.csv) {
       const diarios = (await db.getAll('diary')).map(([, d]) => d).filter((d) => Object.values(d.refeicoes).some((l) => l.length));
       if (!diarios.length) return aviso('Ainda não há dias registrados.');

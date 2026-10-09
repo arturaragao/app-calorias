@@ -172,3 +172,18 @@ export function sugestoesRefeicao(diarios, refId, max = 6) {
 // distribuído em ≥ 4 refeições para maximizar a síntese proteica muscular.
 export const PROT_G_KG_REFEICAO = 0.4;
 export const alvoProteinaRefeicao = (peso) => Math.round(PROT_G_KG_REFEICAO * (peso || 0));
+
+// ---------- Parcela de cada refeição no dia (painel da refeição) ----------
+// Referência prática editável (não é norma): café 25%, almoço 35%, lanche 10%, jantar 25%, ceia 5%.
+export const DIST_PADRAO = { cafe: 25, almoco: 35, lanche: 10, jantar: 25, ceia: 5 };
+
+/** Frações (somam 1) por refeição. Personalizada > padrão; refeições sem valor dividem a sobra igualmente. */
+export function distribuicaoRefeicoes(refs, personal = {}) {
+  const val = refs.map((r) => personal[r.id] ?? DIST_PADRAO[r.id] ?? null);
+  const conhecidos = val.filter((v) => v != null).reduce((s, v) => s + v, 0);
+  const semValor = val.filter((v) => v == null).length;
+  const resto = semValor ? Math.max(0, 100 - conhecidos) / semValor || 100 / refs.length : 0;
+  const brutos = val.map((v) => (v == null ? resto : Math.max(0, v)));
+  const soma = brutos.reduce((s, v) => s + v, 0) || 1;
+  return Object.fromEntries(refs.map((r, i) => [r.id, brutos[i] / soma]));
+}

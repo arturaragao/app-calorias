@@ -6,6 +6,8 @@ import { $, $$, aviso, fecharFolha } from './ui.js';
 import { chaveData } from './utils.js';
 import { carregarBase } from './foods.js';
 import { tentarAuto } from './drive.js';
+import { aplicarCores } from './cores.js';
+import { folhaOrganizar } from './layout.js';
 
 const ROTAS = {
   diario: () => import('./views/diario.js'),
@@ -25,8 +27,9 @@ export function aplicarTema(tema) {
   const r = document.documentElement;
   if (tema === 'claro' || tema === 'escuro') r.dataset.tema = tema; else delete r.dataset.tema;
   try { localStorage.setItem('tema', tema); } catch {}
-  const escuro = tema === 'escuro' || (tema !== 'claro' && matchMedia('(prefers-color-scheme: dark)').matches);
-  $('meta[name=theme-color]').content = escuro ? '#0a110d' : '#f2f6f3';
+  // barra de status do Android acompanha o fundo (inclusive com cores personalizadas)
+  const bg = getComputedStyle(document.body).backgroundColor;
+  if (bg) $('meta[name=theme-color]').content = bg;
 }
 
 // ---------- Roteamento ----------
@@ -89,9 +92,28 @@ async function iniciar() {
     aviso('Erro ao abrir o banco de dados.');
   }
   await carregarEstado();
+  aplicarCores(estado.config.cores);
   aplicarTema(estado.config.tema);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => aplicarTema(estado.config.tema));
   window.addEventListener('hashchange', navegar);
+  // "⇅ Organizar" no fim de cada tela (ordem e visibilidade dos blocos)
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-organizar]');
+    if (b) folhaOrganizar(b.dataset.organizar, navegar);
+  });
+  // campo numérico focado já vem com o número todo selecionado: digitar substitui o valor
+  // (o toque que deu o foco às vezes reposiciona o cursor depois: seleciona de novo nesse clique)
+  const NUM = 'input[inputmode=decimal], input[inputmode=numeric]';
+  let focoEm = 0;
+  document.addEventListener('focusin', (e) => {
+    const inp = e.target;
+    if (!inp.matches?.(NUM)) return;
+    focoEm = Date.now();
+    setTimeout(() => { try { inp.select(); } catch {} }, 0);
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.matches?.(NUM) && Date.now() - focoEm < 600) { try { e.target.select(); } catch {} }
+  });
   // app aberto em segundo plano de um dia para o outro: o diário passa para o novo "hoje"
   let hojeAntes = chaveData();
   document.addEventListener('visibilitychange', () => {

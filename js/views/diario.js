@@ -2,10 +2,11 @@
 
 import { estado, lerDia, gravarDia, pesoAtual, datasComRegistro } from '../state.js';
 import { db } from '../db.js';
-import { sequencia } from '../progress.js';
 import { totalAgua, AGUA_PADRAO } from './reg-agua.js';
+import { detalheDia, painelRefeicao } from './detalhe-dia.js';
+import { aplicarLayout, botaoOrganizar } from '../layout.js';
 import { metaDoDia } from '../goals.js';
-import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem, camposFaltando,
+import { totalDia, totalRefeicao, refeicoesDoDia, removerItem, alterarQuantidade, substituirItem,
   criarItemRapido, adicionarItem, copiarPara, criarItem, ETIQUETAS, ehTreino, alvoProteinaRefeicao } from '../diary.js';
 import { avisoKcalMacros, registrarRecente } from '../custom.js';
 import { abrirScanner } from './scanner.js';
@@ -13,13 +14,11 @@ import { diasDesdeUltima } from './reg-dobras.js';
 import { diasSemBackup } from '../backup.js';
 import { contagemDoDia } from '../photos.js';
 import { topo, esc, ICONES, iconeRef, $, aviso, abrirFolha, fecharFolha } from '../ui.js';
-import { chaveData, somarDias, fmtData, fmtKcal, fmtMacro, fmtMg, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
+import { chaveData, somarDias, fmtData, fmtKcal, fmtG, fmtNum, lerNumero, DIAS_SEMANA, DIAS_CURTOS, diaSemana } from '../utils.js';
 import { folhaQuantidade } from './quantidade.js';
 import { folhaFotos } from './fotos.js';
 import { folhaFotoIA, folhaTextoIA } from './foto-ia.js';
 import { folhaSalvarRefeicao, folhaSalvas } from './salvas.js';
-import { carregarBase } from '../foods.js';
-import { tabelaMicros } from './micros-ui.js';
 import { pendenteToque } from '../drive.js';
 import { enviarAgora } from './drive-ui.js';
 
@@ -61,7 +60,7 @@ function desenharTopo() {
 /** Faixa da semana (seg–dom) do dia aberto; o ponto indica dia com registro. */
 function faixaSemana(ativos) {
   const ini = somarDias(estado.dataAtual, -diaSemana(estado.dataAtual)), hoje = chaveData();
-  return `<nav class="semana" aria-label="Dias da semana">${Array.from({ length: 7 }, (_, i) => {
+  return `<nav class="semana" data-bloco="semana" aria-label="Dias da semana">${Array.from({ length: 7 }, (_, i) => {
     const c = somarDias(ini, i);
     return `<button data-ir="${c}" aria-pressed="${c === estado.dataAtual}" class="${ativos.has(c) ? 'tem' : ''} ${c === hoje ? 'hoje' : ''}"
       aria-label="${DIAS_SEMANA[i]}, ${fmtData(c)}${ativos.has(c) ? ', com registro' : ''}">
@@ -85,7 +84,7 @@ async function desenhar() {
   const restante = meta.kcal - tot.kcal;
   const frac = meta.kcal > 0 ? Math.min(tot.kcal / meta.kcal, 1) : 0;
   const C = 2 * Math.PI * 64;
-  const barra = (cls, nome, v, m, un = 'g', f = fmtMacro) => {
+  const barra = (cls, nome, v, m, un = 'g', f = fmtG) => {
     const pct = m > 0 ? Math.min((v / m) * 100, 100) : 0;
     return `<div class="barra ${cls} ${v > m * 1.0001 ? 'passou' : ''}"><div class="rot"><span>${nome}</span>
       <span class="num"><b>${f(v)}</b> / ${f(m)} ${un}</span></div><div class="trilho"><div class="enche" style="width:${pct}%"></div></div></div>`;
@@ -98,18 +97,17 @@ async function desenhar() {
     datasComRegistro(),
     db.get('water', estado.dataAtual),
   ]);
-  const seq = sequencia(ativos, chaveData());
   const ag = { ...AGUA_PADRAO, ...(estado.config.agua || {}) }, mlAgua = totalAgua(agua);
   tela.innerHTML = `
     ${faixaSemana(ativos)}
     ${ehHoje && pendenteToque() ? '<button class="nota" data-drive>☁️ Backup diário no Google Drive pendente — tocar para enviar.</button>' : ''}
     ${bk.dias > 30 && ehHoje ? `<a class="nota" href="#config">💾 ${bk.nunca ? `Você usa o app há ${bk.dias} dias sem backup` : `Último backup há ${bk.dias} dias`} — tocar para exportar.</a>` : ''}
     ${dias > 30 && ehHoje ? `<a class="nota" href="#registros?aba=dobras">📏 Última avaliação de dobras há ${dias} dias — tocar para registrar.</a>` : ''}
-    <section class="card" data-detalhe tabindex="0" role="button" aria-label="Resumo do dia. Toque para ver fibra, sódio e totais.">
+    <section class="card" data-bloco="resumo" data-detalhe tabindex="0" role="button" aria-label="Resumo do dia. Toque para ver os detalhes.">
       <div class="resumo">
         <div class="anel ${restante < 0 ? 'excesso' : ''}">
           <svg viewBox="0 0 150 150" aria-hidden="true"><defs><linearGradient id="grad-anel" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="var(--acento)"/><stop offset="1" stop-color="var(--prot)"/></linearGradient></defs>
+            <stop offset="0" stop-color="var(--acento)"/><stop offset="1" stop-color="var(--acento-forte)"/></linearGradient></defs>
             <circle class="fundo" cx="75" cy="75" r="64"/>
             <circle class="valor" cx="75" cy="75" r="64" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/></svg>
           <div class="centro"><span class="grande num">${fmtKcal(Math.abs(restante))}</span>
@@ -121,23 +119,24 @@ async function desenhar() {
           ${barra('gord', 'Gordura', tot.gord, meta.gord)}
         </div>
       </div>
-      <div class="equacao num"><div><b>${fmtKcal(meta.kcal)}</b><span>Meta</span></div>
-        <div><b>${fmtKcal(tot.kcal)}</b><span>Consumido</span></div>
-        <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)}</b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>
+      <div class="equacao num"><div><b>${fmtKcal(meta.kcal)} <small>kcal</small></b><span>Meta</span></div>
+        <div><b>${fmtKcal(tot.kcal)} <small>kcal</small></b><span>Consumido</span></div>
+        <div><b style="${restante < 0 ? 'color:var(--alerta)' : ''}">${restante < 0 ? '+' + fmtKcal(-restante) : fmtKcal(restante)} <small>kcal</small></b><span>${restante < 0 ? 'Acima' : 'Restante'}</span></div></div>
     </section>
     ${faixaEtiquetas()}
-    <section class="card agua-card" aria-label="Água">
+    <section class="card agua-card" data-bloco="agua" aria-label="Água">
       <div class="gota">${ICONES.gota}</div>
-      <div class="info"><div class="linha" style="justify-content:space-between"><b class="num">${fmtNum(mlAgua)} <span class="mudo">/ ${fmtNum(ag.metaMl)} ml</span></b>
-        ${seq >= 2 ? `<span class="chip" title="Dias seguidos com registro">🔥 ${seq} dias seguidos</span>` : ''}</div>
+      <div class="info"><b class="num">${fmtNum(mlAgua)} <span class="mudo">/ ${fmtNum(ag.metaMl)} ml</span></b>
         <div class="trilho"><div class="enche" style="width:${Math.min(100, (mlAgua / ag.metaMl) * 100)}%"></div></div></div>
       <button class="btn peq suave" data-agua aria-label="Adicionar 1 copo de ${ag.copoMl} ml">+ ${fmtNum(ag.copoMl)} ml</button>
     </section>
-    ${refs.map((r) => cartaoRefeicao(r)).join('')}
-    <button class="btn bloco suave" data-copiar-dia>${ICONES.copiar} Copiar o dia anterior</button>
-    <p class="mudo" style="text-align:center;margin-top:14px">Deslize um item para a esquerda para apagar.</p>`;
+    <div data-bloco="refeicoes">${refs.map((r) => cartaoRefeicao(r)).join('')}</div>
+    <button class="btn bloco suave" data-bloco="copiar" data-copiar-dia>${ICONES.copiar} Copiar o dia anterior</button>
+    <p class="mudo" style="text-align:center;margin-top:14px">Toque no nome da refeição para ver o painel dela. Deslize um item para a esquerda para apagar.</p>
+    ${botaoOrganizar('diario')}`;
+  aplicarLayout(tela, 'diario');
   tela.onclick = clique;
-  tela.onkeydown = (e) => { if (e.key === 'Enter' && e.target.matches('[data-detalhe]')) detalheDia(); };
+  tela.onkeydown = (e) => { if (e.key === 'Enter' && e.target.matches('[data-detalhe], [data-painel-ref]')) e.target.click(); };
   ligarDeslizar();
 }
 
@@ -182,22 +181,28 @@ function cartaoRefeicao(r) {
   const t = totalRefeicao(dia, r.id);
   const nf = fotosCont[r.id] || 0;
   return `<section class="card" data-ref="${r.id}">
-    <div class="ref-tit"><h2><span class="ref-ico" aria-hidden="true">${iconeRef(r.id)}</span><span>${esc(r.nome)}</span></h2>
+    <div class="ref-tit"><h2 data-painel-ref role="button" tabindex="0" aria-label="Painel de ${esc(r.nome)}"><span class="ref-ico" aria-hidden="true">${iconeRef(r.id)}</span><span>${esc(r.nome)}</span></h2>
       <span class="linha" style="flex:0;gap:0">
       ${nf ? `<button class="btn peq suave" data-fotos aria-label="${nf} foto(s) da refeição">${ICONES.camera}${nf}</button>` : ''}
       <span class="num" style="white-space:nowrap;margin:0 2px 0 8px"><b>${fmtKcal(t.kcal)}</b> <span class="mudo">kcal</span></span>
       <button class="ico" data-menu aria-label="Mais opções de ${esc(r.nome)}">${ICONES.pontos}</button></span></div>
-    ${itens.length ? `<div class="ref-tot num"><span class="${alvoProtRef && t.prot >= alvoProtRef ? 'prot-ok' : ''}" title="Alvo por refeição: ${alvoProtRef} g (0,4 g/kg)">P ${fmtMacro(t.prot)} g${alvoProtRef && t.prot >= alvoProtRef ? ' ✓' : ''}</span> · C ${fmtMacro(t.carb)} g · G ${fmtMacro(t.gord)} g</div>` : ''}
+    ${itens.length ? `<div class="ref-tot num"><span class="m-p ${alvoProtRef && t.prot >= alvoProtRef ? 'prot-ok' : ''}" title="Alvo por refeição: ${alvoProtRef} g (0,4 g/kg)">P ${fmtG(t.prot)} g${alvoProtRef && t.prot >= alvoProtRef ? ' ✓' : ''}</span><span class="m-c">C ${fmtG(t.carb)} g</span><span class="m-g">G ${fmtG(t.gord)} g</span></div>` : ''}
     ${itens.length ? `<ul class="itens">${itens.map((it) => `<li class="item-wrap"><div class="fundo-apagar" aria-hidden="true">Apagar</div>
       <div class="item" data-item="${it.id}">
       <div class="info" data-editar><div class="nome">${esc(it.nome)}</div>
-        <div class="mudo num">${it.rapido ? `Adição rápida · P ${fmtMacro(it.n.prot)} C ${fmtMacro(it.n.carb)} G ${fmtMacro(it.n.gord)}`
-          : `${it.porcao ? `${fmtNum(it.porcao.qtd)} × ${esc(it.porcao.nome)} · ` : ''}${fmtNum(Math.round(it.g * 10) / 10)} g${it.falta?.length ? ' · dados parciais' : ''}`}</div></div>
+        <div class="mudo num">${it.rapido ? `Adição rápida · P ${fmtG(it.n.prot)} C ${fmtG(it.n.carb)} G ${fmtG(it.n.gord)}`
+          : `${rotuloQtdItem(it)}${it.falta?.length ? ' · dados parciais' : ''}`}</div></div>
       <span class="kcal num">${fmtKcal(it.n.kcal)}</span>
       <button class="ico" data-apagar aria-label="Apagar ${esc(it.nome)}">${ICONES.lixo}</button></div></li>`).join('')}</ul>` : ''}
     <div class="add-linha"><button class="add-alim" data-add>+ Adicionar alimento</button>
       <button class="ico" data-scan aria-label="Ler código de barras para ${esc(r.nome)}">${ICONES.codigo}</button></div>
   </section>`;
+}
+
+/** "38 g", "200 mL" ou "2 × fatia · 50 g" (gramas sem casas decimais só na exibição). */
+function rotuloQtdItem(it) {
+  if (it.porcao?.ml) return `${fmtG(it.porcao.qtd)} mL`;
+  return `${it.porcao && it.porcao.nome !== 'grama' ? `${fmtNum(it.porcao.qtd)} × ${esc(it.porcao.nome)} · ` : ''}${fmtG(it.g)} g`;
 }
 
 async function clique(e) {
@@ -213,7 +218,7 @@ async function clique(e) {
     await desenhar();
     return aviso(`+${fmtNum(ag.copoMl)} ml de água`, { acao: async () => { r.itens.pop(); await db.put('water', estado.dataAtual, r); desenhar(); } });
   }
-  if (e.target.closest('[data-detalhe]')) return detalheDia();
+  if (e.target.closest('[data-detalhe]')) return abrirDetalhe();
   if (e.target.closest('[data-treino]')) return alternarTreino();
   if (e.target.closest('[data-nota]')) return folhaNota();
   const dr = e.target.closest('[data-drive]');
@@ -229,6 +234,7 @@ async function clique(e) {
     location.hash = '#adicionar';
     return;
   }
+  if (e.target.closest('[data-painel-ref]')) return painelRefeicao(dia, meta, refId, { aoMudar: desenhar });
   if (e.target.closest('[data-fotos]')) return folhaFotos(estado.dataAtual, refId, nomeRef, desenhar);
   if (e.target.closest('[data-scan]')) {
     return abrirScanner({
@@ -349,32 +355,8 @@ async function apagar(refId, itemId) {
   aviso(`${removido.nome} apagado`, { acao: async () => { await gravarDia(antes); desenhar(); } });
 }
 
-async function detalheDia() {
-  const base = await carregarBase().catch(() => null);
-  const tot = totalDia(dia);
-  const refs = refeicoesDoDia(dia, estado.config.refeicoes);
-  const falta = camposFaltando(Object.values(dia.refeicoes).flat());
-  const linha = (nome, v, m, f, un) => `<tr><td>${nome}</td><td><b>${f(v)}</b></td><td>${f(m)} ${un}</td><td>${m ? Math.round((v / m) * 100) + '%' : '—'}</td></tr>`;
-  abrirFolha(`Detalhes — ${rotuloData(estado.dataAtual)}`, `
-    <table class="tabela num">
-      <tr><th>Nutriente</th><th>Consumido</th><th>Meta</th><th>%</th></tr>
-      ${linha('Calorias', tot.kcal, meta.kcal, fmtKcal, 'kcal')}
-      ${linha('Proteína', tot.prot, meta.prot, fmtMacro, 'g')}
-      ${linha('Carboidrato', tot.carb, meta.carb, fmtMacro, 'g')}
-      ${linha('Gordura', tot.gord, meta.gord, fmtMacro, 'g')}
-      ${linha('Fibra', tot.fibra, meta.fibra, fmtMacro, 'g')}
-      ${linha('Sódio', tot.sodio_mg, meta.sodio, fmtMg, 'mg')}
-    </table>
-    ${falta.length ? `<p class="nota alerta">Alguns itens não têm todos os nutrientes na fonte (${falta.map((k) => ({ fibra: 'fibra', sodio_mg: 'sódio', kcal: 'kcal', prot: 'proteína', carb: 'carboidrato', gord: 'gordura' }[k])).join(', ')}); os totais podem estar subestimados.</p>` : ''}
-    <h2 style="margin-top:14px">Por refeição</h2>
-    <table class="tabela num"><tr><th></th><th>kcal</th><th>P</th><th>C</th><th>G</th><th>Fibra</th><th>Na</th></tr>
-      ${refs.map((r) => { const t = totalRefeicao(dia, r.id); return `<tr><td>${esc(r.nome)}</td><td>${fmtKcal(t.kcal)}</td><td>${fmtMacro(t.prot)}</td><td>${fmtMacro(t.carb)}</td><td>${fmtMacro(t.gord)}</td><td>${fmtMacro(t.fibra)}</td><td>${fmtMg(t.sodio_mg)}</td></tr>`; }).join('')}
-    </table>
-    ${tabelaMicros(Object.values(dia.refeicoes).flat(), 1, base)}
-    ${alvoProtRef ? `<p class="mudo">Proteína por refeição: alvo ≈ ${alvoProtRef} g (0,4 g/kg; Schoenfeld & Aragon, 2018), em 4 ou mais refeições.</p>` : ''}
-    ${meta.treinoExtra ? `<p class="nota">🏋️ Dia de treino: meta +${fmtKcal(meta.treinoExtra)} kcal (em carboidratos).</p>` : ''}
-    ${dia.nota ? `<p class="nota">📝 ${esc(dia.nota)}</p>` : ''}
-    ${meta.macroModo !== 'pct' && Math.abs(meta.diferenca) >= 1 ? `<p class="nota">Meta calórica derivada dos macros (${fmtKcal(meta.kcal)} kcal); a planejada era ${fmtKcal(meta.kcalPlanejada)} kcal.</p>` : ''}`);
+function abrirDetalhe() {
+  return detalheDia(dia, meta, { rotulo: rotuloData(estado.dataAtual), alvoProt: alvoProtRef });
 }
 
 // ---------- Etiquetas e nota do dia ----------
@@ -383,7 +365,7 @@ function faixaEtiquetas() {
   const tags = dia.tags || [];
   const extra = Number(estado.metas.treinoExtra) || 0;
   const outros = tags.filter((t) => t !== 'treino').map((t) => ETIQUETAS.find(([id]) => id === t)?.[1] || t);
-  return `<div class="etiquetas-dia">
+  return `<div class="etiquetas-dia" data-bloco="etiquetas">
     <button class="chip-tog" data-treino aria-pressed="${tags.includes('treino')}">🏋️ Treino${extra && tags.includes('treino') ? ` +${fmtKcal(extra)} kcal` : ''}</button>
     ${outros.map((r) => `<span class="chip">${esc(r)}</span>`).join('')}
     <button class="chip-tog" data-nota aria-label="Nota e etiquetas do dia">${dia.nota ? '📝 ' + esc(dia.nota.slice(0, 28)) + (dia.nota.length > 28 ? '…' : '') : '📝 Nota'}</button></div>`;

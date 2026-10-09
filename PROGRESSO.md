@@ -7,7 +7,18 @@
 - [x] Pacote 2 — Registrar mais rápido (v11): refeições salvas, sugestões pelo horário, dia de treino × descanso, notas/etiquetas do dia, proteína por refeição
 - [x] Pacote 3 — IA (v11): foto ligada à TACO (IA só identifica e pesa), foto do rótulo → Meus alimentos, lançar por texto livre
 - [x] Pacote 4 (v12) — Relatório PDF para nutricionista, exportar diário CSV, micronutrientes da TACO, fotos de progresso corporal (antes/depois), polimento visual
+- [x] Pacote 5 (v13) — telas organizáveis, cores editáveis, Detalhes do dia novo, painel da refeição, mL, ícone novo
 - [ ] Backup no Google Drive: ADIADO pelo Artur; passo a passo no README (falta o ID do cliente OAuth)
+
+**Pacote 5 (v13, 2026-10-09)**
+- Telas organizáveis (js/layout.js): Diário, Adicionar (abas e atalhos), Registros (abas) e Progresso têm blocos `data-bloco`; "⇅ Organizar" no fim de cada tela e em Ajustes › Organizar telas: segurar e arrastar (ou ▲▼) e chave para esconder sem apagar. PDF do Progresso agora é o último bloco por padrão.
+- Cores (js/cores.js): cor principal (7 paletas + seletor livre) gera toda a paleta clara/escura; uma cor fixa por macro (padrão: proteína verde-escuro, carboidrato amarelo-claro, gordura laranja, tons pastel) e água; aplicadas antes de pintar (localStorage `coresCss`).
+- Detalhes do dia (views/detalhe-dia.js): Meta/Consumido/Restante com "kcal", rosca de % das calorias por macro × meta, cartões por nutriente (toque → origem por refeição + alimentos que mais contribuíram), calorias por refeição em barras empilhadas, micronutrientes.
+- Painel da refeição (toque no nome da refeição): rosca de macros, consumido × sugerido para a refeição (parcela do dia editável) e itens com barra de macros.
+- Quantidade: modo mL (1 mL ≈ 1 g; bebidas abrem em mL), número selecionado ao focar qualquer campo numérico (digitar substitui).
+- Diário: gramas e macros sem casas decimais na exibição; água sem "🔥 dias seguidos".
+- Ícone: anel em 3 segmentos (cores dos macros) + folha; gerador portado para Node (scripts/gerar_icones.mjs; o .py foi removido).
+- Testes: 113 aprovados. Conferido no navegador (375 px): Diário, Detalhes, origem da proteína, painel da refeição, organizar (arrastar e esconder), paleta azul; sem erros no console.
 
 **Pacote 4 + ajustes (v12)**
 - Relatório PDF (views/relatorio-pdf.js): página de impressão A4 com perfil, metas, médias × meta, aderência, peso/tendência/gráfico, gasto real, dobras, circunferências, top alimentos, micronutrientes e anotações; botão no Progresso; "Salvar como PDF" do Chrome.
@@ -81,7 +92,7 @@
 - Atalhos do ícone: o Android só atualiza ícones/atalhos do app instalado quando renova o WebAPK (pode levar até 1 dia); reinstalar resolve na hora.
 
 ## Bugs conhecidos
-- Nenhum aberto.
+- Limitação da fonte: na TACO, "Leite, de vaca, integral" (taco-458) e "desnatado, UHT" (taco-457) não têm kcal/macros (NA) → lançam 0 kcal. Usar rótulo/Open Food Facts (Meus alimentos).
 
 ## Manutenção
 - Mudou arquivo publicado → incrementar `VERSAO` em `sw.js` **e** em `js/versao.js`; arquivo JS novo → incluir em `ARQUIVOS` (testes conferem os dois).

@@ -539,6 +539,32 @@ t('Base TACO traz micronutrientes (ex.: ovo cozido, laranja)', () => {
   if (base.filter((f) => f.mic).length < 500) throw new Error('poucos alimentos com micronutrientes');
 });
 
+// ---------- Pacote 5 ----------
+const C5 = await import('../js/cores.js');
+t('Cores: padrão não gera CSS; personalizadas geram claro e escuro', () => {
+  eq(C5.cssCores({}), '');
+  eq(C5.cssCores({ ...C5.CORES_PADRAO }), '');
+  const css = C5.cssCores({ prot: '#123456' });
+  if (!css.includes('--prot:#123456') || !css.includes('[data-tema="escuro"]') || css.includes('--acento')) throw new Error(css);
+  const a = C5.cssCores({ acento: '#2f5f9e' });
+  if (!a.includes('--acento:#2f5f9e') || !a.includes('--bg:') || !a.includes('prefers-color-scheme: dark')) throw new Error(a);
+});
+t('Parcela das refeições: padrão soma 100%, personalizada e refeição nova', () => {
+  const refs = [{ id: 'cafe' }, { id: 'almoco' }, { id: 'lanche' }, { id: 'jantar' }, { id: 'ceia' }];
+  const d = D2.distribuicaoRefeicoes(refs);
+  aprox(d.cafe, 0.25); aprox(d.almoco, 0.35); aprox(Object.values(d).reduce((s, v) => s + v, 0), 1);
+  const d2 = D2.distribuicaoRefeicoes([...refs, { id: 'pre' }], {});          // padrão já soma 100 → nova ganha parte igual e tudo é normalizado
+  aprox(Object.values(d2).reduce((s, v) => s + v, 0), 1); aprox(d2.pre, 1 / 7);
+  const d3 = D2.distribuicaoRefeicoes([{ id: 'a' }, { id: 'b' }]);           // sem referência: divide igual
+  aprox(d3.a, 0.5);
+  const d4 = D2.distribuicaoRefeicoes(refs, { cafe: 30, almoco: 33.3, lanche: 9.5, jantar: 23.8, ceia: 3.4 });
+  aprox(d4.cafe, 0.3);
+});
+const U5 = await import('../js/utils.js');
+t('Gramas sem casas decimais só na exibição', () => {
+  eq(U5.fmtG(38.2), '38'); eq(U5.fmtG(38.6), '39'); eq(U5.fmtG(null), '—');
+});
+
 // ---------- Resultado ----------
 console.log(`\n${ok} aprovados, ${falhas.length} reprovados`);
 falhas.forEach((f) => console.log('  ✗ ' + f));

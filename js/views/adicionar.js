@@ -14,6 +14,7 @@ import { abrirScanner } from './scanner.js';
 import { folhaFotoIA, folhaTextoIA, folhaRotulo } from './foto-ia.js';
 import { folhaSalvas } from './salvas.js';
 import { db } from '../db.js';
+import { aplicarLayout, ordemDe, visivel } from '../layout.js';
 
 const LOTE = 30;
 const ABAS = [['recentes', 'Recentes'], ['favoritos', 'Favoritos'], ['meus', 'Meus'], ['receitas', 'Receitas']];
@@ -38,17 +39,23 @@ export async function render(tela) {
       <input type="search" id="q" placeholder="Buscar alimento" aria-label="Buscar alimento" autocomplete="off" enterkeyhint="search" value="${esc(ultimaBusca)}">
       <button type="button" class="ico" data-scan aria-label="Ler código de barras com a câmera">${ICONES.codigo}</button></div>
       <div class="seg abas" role="tablist" style="margin:8px 0 0">${ABAS.map(([v, r]) =>
-        `<button type="button" role="tab" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
+        `<button type="button" role="tab" data-bloco="aba-${v}" data-aba="${v}" aria-pressed="${v === estado.abaAdicionar}">${r}</button>`).join('')}</div></div>
     <div class="acoes-rolar" role="group" aria-label="Outras formas de adicionar">
-      <button class="btn peq suave" data-foto-ia>${ICONES.camera} Foto do prato</button>
-      <button class="btn peq suave" data-texto-ia>✍️ Descrever</button>
-      <button class="btn peq suave" data-salvas>⭐ Refeições salvas</button>
-      <button class="btn peq suave" data-rotulo>🏷️ Ler rótulo</button>
-      <button class="btn peq suave" data-novo-alim>+ Novo alimento</button>
-      <a class="btn peq suave" href="#receita">+ Nova receita</a></div>
+      <button class="btn peq suave" data-bloco="foto" data-foto-ia>${ICONES.camera} Foto do prato</button>
+      <button class="btn peq suave" data-bloco="texto" data-texto-ia>✍️ Descrever</button>
+      <button class="btn peq suave" data-bloco="salvas" data-salvas>⭐ Refeições salvas</button>
+      <button class="btn peq suave" data-bloco="rotulo" data-rotulo>🏷️ Ler rótulo</button>
+      <button class="btn peq suave" data-bloco="novo" data-novo-alim>+ Novo alimento</button>
+      <a class="btn peq suave" data-bloco="receita" href="#receita">+ Nova receita</a>
+      <button class="btn peq" data-organizar="adicionar" aria-label="Organizar abas e atalhos">⇅</button></div>
     <div id="sug"></div>
     <p class="mudo" id="info"></p><ul class="lista" id="res"></ul><div id="mais" style="height:1px"></div>
     <div id="off" hidden><button class="btn bloco" data-off-buscar style="margin-top:10px"></button><ul class="lista" id="resoff"></ul></div>`;
+  aplicarLayout(tela, 'adicionar');
+  if (!visivel('adicionar', 'aba-' + estado.abaAdicionar) && !aba) {
+    estado.abaAdicionar = (ordemDe('adicionar').find((id) => id.startsWith('aba-') && visivel('adicionar', id)) || 'aba-recentes').slice(4);
+    $$('[data-aba]', tela).forEach((b) => b.setAttribute('aria-pressed', b.dataset.aba === estado.abaAdicionar));
+  }
   let cat = await catalogo();
   const ini30 = somarDias(chaveData(), -30);
   const recentesDiario = (await db.getAll('diary')).map(([, d]) => d).filter((d) => d.data >= ini30);
@@ -192,7 +199,8 @@ export async function render(tela) {
   }
 }
 
-const rotuloQtd = (u) => (u.porcao ? `${fmtNum(u.porcao.qtd)} × ${u.porcao.nome}` : `${fmtNum(Math.round(u.g))} g`);
+const rotuloQtd = (u) => (u.porcao?.ml ? `${fmtNum(Math.round(u.porcao.qtd))} mL`
+  : u.porcao && u.porcao.nome !== 'grama' ? `${fmtNum(u.porcao.qtd)} × ${u.porcao.nome}` : `${fmtNum(Math.round(u.g))} g`);
 
 /** Refeição provável pelo horário (só quando nenhuma foi escolhida). */
 function sugerirRefeicao(refs) {
