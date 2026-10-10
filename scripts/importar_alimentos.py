@@ -210,6 +210,47 @@ def importar_planilha(caminho):
         itens.append(item(f'{fonte.lower()}-p{k}', nome, '', fonte, vals))
     return itens, fonte
 
+# ---------- TBCA completa (JSON por linha) ----------
+# Cada linha: {"codigo", "classe", "descricao", "nutrientes": [{"Componente", "Unidades", "Valor por 100g"}]}.
+# Carboidrato = "Carboidrato total" (como a TACO, que inclui a fibra); vitamina A = RAE.
+TBCA_CAMPOS = {'kcal': 'Energia', 'prot': 'Proteína', 'gord': 'Lipídios',
+               'carb': 'Carboidrato total', 'fibra': 'Fibra alimentar', 'sodio_mg': 'Sódio'}
+TBCA_MIC = {'colest_mg': 'Colesterol', 'calcio_mg': 'Cálcio', 'magnesio_mg': 'Magnésio', 'fosforo_mg': 'Fósforo',
+            'ferro_mg': 'Ferro', 'potassio_mg': 'Potássio', 'zinco_mg': 'Zinco', 'vita_ug': 'Vitamina A (RAE)',
+            'tiamina_mg': 'Tiamina', 'riboflavina_mg': 'Riboflavina', 'piridoxina_mg': 'Vitamina B6',
+            'niacina_mg': 'Niacina', 'vitc_mg': 'Vitamina C'}
+# classes da TBCA -> grupos da TACO (para as porções por grupo em porcoes.json)
+TBCA_GRUPO = {'Vegetais e derivados': 'Verduras, hortaliças e derivados',
+              'Pescados e Frutos do mar': 'Pescados e frutos do mar',
+              'Bebidas': 'Bebidas (alcoólicas e não alcoólicas)', 'Sementes e Oleaginosas': 'Nozes e sementes',
+              'Alimentos industrializados': 'Outros alimentos industrializados', 'Açúcares e doces': 'Produtos açucarados'}
+
+def importar_tbca_jsonl(caminho):
+    itens = []
+    with open(caminho, encoding='utf-8') as f:
+        for linha in f:
+            if not linha.strip(): continue
+            o = json.loads(linha)
+            comp = {}
+            for n in o['nutrientes']:                    # energia vem em kJ e kcal; demais: 1ª ocorrência vale
+                k = 'Energia' if n['Componente'] == 'Energia' and n['Unidades'] == 'kcal' else n['Componente']
+                if n['Componente'] == 'Energia' and n['Unidades'] != 'kcal': continue
+                comp.setdefault(k, (n['Unidades'], n['Valor por 100g']))
+            vals = {c: comp.get(nome, (None, None))[1] for c, nome in TBCA_CAMPOS.items()}
+            nome = re.sub(r'\s+', ' ', o['descricao'].replace('c / ', 'c/ ').replace('s / ', 's/ ')).strip(' ,')
+            grupo = TBCA_GRUPO.get(o['classe'], o['classe'])
+            it = item(f"tbca-{o['codigo']}", nome, grupo, 'TBCA', vals)
+            mic = {}
+            for campo, nome_c in TBCA_MIC.items():
+                un, bruto = comp.get(nome_c, (None, None))
+                v, _ = valor(bruto)
+                if v is None: continue
+                if campo == 'colest_mg' and un == 'g': v *= 1000
+                mic[campo] = round(v, 3)
+            if mic: it['mic'] = mic
+            itens.append(it)
+    return itens
+
 # ---------- principal ----------
 
 def main():
@@ -220,18 +261,27 @@ def main():
         if nome.endswith('.pdf') and 'taco' in nome:
             itens = importar_taco_pdf(a); por_fonte['TACO'] += itens
             print(f'  TACO (PDF) {os.path.basename(a)}: {len(itens)}')
+        elif nome.endswith('.jsonl') and 'tbca' in nome:
+            itens = importar_tbca_jsonl(a); por_fonte['TBCA'] += itens
+            print(f'  TBCA (JSON) {os.path.basename(a)}: {len(itens)}')
         elif nome.endswith(('.csv', '.xlsx')):
             itens, fonte = importar_planilha(a)
             if fonte:
                 por_fonte[fonte] += itens; print(f'  {fonte} {os.path.basename(a)}: {len(itens)}')
         else:
             print(f'  (ignorado) {os.path.basename(a)}')
-    vistos, base, dup = set(), [], 0
+    vistos, base, dup = {}, [], 0
     for fonte in ('TBCA', 'TACO'):                      # TBCA primeiro: vence em conflito
         for it in por_fonte[fonte]:
             k = normalizar(it['nome'])
-            if k in vistos: dup += 1; continue
-            vistos.add(k); base.append(it)
+            if k in vistos:
+                dup += 1
+                v = vistos[k]
+                if it['id'].startswith('taco-') and v['id'].startswith('tbca-'):
+                    # TBCA vence, mas herda o id da TACO: favoritos, recentes e escolhas salvos continuam valendo
+                    v['tbca'] = v['id'][5:]; v['id'] = it['id']
+                continue
+            vistos[k] = it; base.append(it)
     with open(SAIDA, 'w', encoding='utf-8') as f:
         json.dump(base, f, ensure_ascii=False, separators=(',', ':'))
     # relatório

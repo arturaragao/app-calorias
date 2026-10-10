@@ -92,7 +92,7 @@ function desenharLacuna(el, H, hoje, baseAlim) {
   if (!l || l.frac >= 0.9 || !baseAlim) { el.hidden = true; return; }
   el.hidden = false;
   const comidos = new Set(H.todos.filter((d) => d.data >= somarDias(hoje, -59)).flatMap((d) => Object.values(d.refeicoes || {}).flat().map((i) => i.foodId)).filter(Boolean));
-  const r = alimentosRicos(l.campo, baseAlim.foods, comidos);
+  const r = alimentosRicos(l.campo, baseAlim.foods.filter((f) => f.fonte !== 'TBCA' || f.tbca || comidos.has(f.id)), comidos);   // sugestões novas só da TACO (comuns)
   const linha = (x) => `<li><button type="button" data-buscar-alim="${esc(x.f.nome)}"><span>${esc(x.f.nome)}</span>
     <span class="num mudo">${fmtMic(x.por100kcal)} ${l.un}/100 kcal</span></button></li>`;
   el.innerHTML = `<h2 style="margin-bottom:6px">${ic('leaf')} Micronutriente mais em falta</h2>

@@ -20,7 +20,8 @@ const ehPronto = (nome) => normalizar(nome).split(' ').some((p) => PREPAROS.incl
 /** Índice dos pares cru/pronto da base: chave → { cru, pronto }. */
 export function paresCoccao(foods) {
   const m = new Map();
-  for (const f of foods) {
+  // TACO primeiro: o par sai da mesma tabela sempre que ela tiver os dois lados
+  for (const f of [...foods].sort((a, b) => (a.fonte === 'TBCA') - (b.fonte === 'TBCA'))) {
     if (f.kcal == null || f.kcal <= 0 || String(f.id).startsWith('r-')) continue;
     const tipo = ehCru(f.nome) ? 'cru' : ehPronto(f.nome) ? 'pronto' : null;
     if (!tipo) continue;

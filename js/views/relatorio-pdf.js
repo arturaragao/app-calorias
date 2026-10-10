@@ -98,7 +98,7 @@ export async function gerarRelatorioPDF(n) {
       ${orig.topKcal.map((a) => `<tr><td>${esc(a.nome)}</td><td>${a.vezes}</td><td>${fmtKcal(a.kcal)}</td><td>${fmtMacro(a.prot)} g</td></tr>`).join('')}</table></section>` : ''}
     ${brP.length ? `<section class="micros-pdf">${tabelaMicros(brP.flatMap((d) => Object.values(d.refeicoes).flat()), brP.length, base).replace('<details class="micros">', '<div>').replace('</details>', '</div>').replace(/<summary>(.*?)<\/summary>/, '<h2>$1</h2>')}</section>` : ''}
     ${anot.length ? `<section><h2>Anotações</h2><ul>${anot.map((a) => `<li>${fmtData(a.data)}: ${esc([...a.tags.map(rotTag), a.nota].filter(Boolean).join(' · '))}</li>`).join('')}</ul></section>` : ''}
-    <footer>Composição dos alimentos: TACO 4ª ed. (NEPA/UNICAMP, 2011), Open Food Facts e rótulos. Valores registrados pelo próprio paciente;
+    <footer>Composição dos alimentos: TACO 4ª ed. (NEPA/UNICAMP, 2011), TBCA (USP/FoRC), Open Food Facts e rótulos. Valores registrados pelo próprio paciente;
       estimativas por foto/texto feitas com IA e conferidas por ele. Tendência de peso: média móvel exponencial (α = 0,1).</footer>`;
   document.body.appendChild(div);
   graficoBarras(div.querySelector('#pdf-sem'), P.semanas(dP).map((s) => ({ rotulo: fmtData(s.inicio).slice(0, 5), y: s.kcal, meta: s.meta })), { unidade: 'kcal' });

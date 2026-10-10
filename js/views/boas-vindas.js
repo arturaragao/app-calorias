@@ -36,7 +36,7 @@ export function render(tela) {
 
   const corpo = {
     inicio: () => `<div class="bv-hero">${ic('notebook-text', 'g')}<h2>Calorias e macros, do seu jeito</h2>
-      <p class="mudo">Base TACO, tudo no seu celular, sem conta e sem anúncio. São 7 perguntas rápidas para calcular a sua meta.</p></div>
+      <p class="mudo">Bases TACO e TBCA, tudo no seu celular, sem conta e sem anúncio. São 7 perguntas rápidas para calcular a sua meta.</p></div>
       ${blocoRestaurarInicio()}`,
     sexo: () => `<h2>Sexo</h2><p class="mudo">A fórmula do gasto (Mifflin-St Jeor) muda um pouco entre homens e mulheres.</p>
       <div class="bv-opcoes">${[['M', 'Masculino'], ['F', 'Feminino']].map(([v, r]) => `<button type="button" class="bv-op" data-v="sexo:${v}" aria-pressed="${d.sexo === v}">${r}</button>`).join('')}</div>`,

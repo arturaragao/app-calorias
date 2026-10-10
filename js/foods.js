@@ -5,10 +5,21 @@ import { normalizar } from './utils.js';
 
 // ---------- Índice e busca ----------
 
+/** Tira trechos entre parênteses (também aninhados): na TBCA são a lista de ingredientes, que não deve casar na busca. */
+export function semParenteses(s) {
+  let out = '', nivel = 0;
+  for (const c of s) {
+    if (c === '(') nivel++;
+    else if (c === ')') nivel = Math.max(0, nivel - 1);
+    else if (!nivel) out += c;
+  }
+  return out;
+}
+
 /** Cria índice normalizado (uma vez, em memória). */
 export function criarIndice(foods) {
   return foods.map((f) => {
-    const norm = normalizar(f.nome);
+    const norm = normalizar(f.fonte === 'TBCA' ? semParenteses(f.nome) : f.nome);
     return { f, norm, palavras: norm.split(' ') };
   });
 }
@@ -60,6 +71,9 @@ function bateTermo(t, p, tolerar) {
   return distancia(t, p.slice(0, t.length), max) <= max || distancia(raiz(t), p, max) <= max;
 }
 
+// TBCA (nomes longos, muitas preparações) fica uma faixa abaixo da TACO quando as duas batem de forma parecida.
+const PESO_TBCA = 1;
+
 /**
  * Ranqueia: começa com (0) > contém (1) > todas as palavras como início de palavra, também no singular (2)
  * > todas as palavras contidas (3) > com erro de digitação de 1–2 letras por palavra (4).
@@ -86,12 +100,15 @@ export function buscar(indice, consulta, { limite = 60, prioridade = null, bonus
         else if (termos.every((t) => e.norm.includes(t))) s = 3;
         else continue;
         exatos++;
-      } else if (termos.every((t) => e.palavras.some((p) => bateTermo(t, p, true)))) s = 4;
+      // na TBCA (10× maior) a tolerância só vale com a 1ª letra certa, para a busca seguir rápida
+      } else if (termos.every((t) => e.palavras.some((p) => bateTermo(t, p, e.f.fonte !== 'TBCA' || p[0] === t[0])))) s = 4;
       else continue;
       // nome que começa pela 1ª palavra buscada vem antes ("ovo" → "Ovo, …" antes de "Macarrão, … com ovos")
       if (s >= 1 && bateTermo(termos[0], e.palavras[0], pass)) s -= 1.1;
       // palavra inteira vale mais que só o começo ("maca" → Maçã antes de Macarrão)
       if (termos.every((t) => e.palavras.some((p) => p === t || p === raiz(t)))) s -= 0.6;
+      // o hábito do usuário (bônus/escolha) ainda sobe um item da TBCA
+      if (e.f.fonte === 'TBCA' && !e.f.tbca) s += PESO_TBCA;     // f.tbca = substituiu nome igual da TACO
       if (prioridade?.has(e.f.id)) s -= 0.5;
       if (bonus?.has(e.f.id)) s -= bonus.get(e.f.id);
       if (escolha && e.f.id === escolha) s = -2;

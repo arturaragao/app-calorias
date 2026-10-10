@@ -161,7 +161,7 @@ function cartaoHeroi({ tot, restante, frac, C }) {
     ${micros.length ? `<p class="secao" style="margin:12px 0 6px">Mais longe da referência hoje</p>
       ${micros.map((m) => barra('micro', m.nome, m.val, m.ref, m.un, (x) => fmtMicro(x))).join('')}
       ${micros[0].cobertura < 0.8 ? '<p class="mudo" style="margin:4px 0 0;font-size:var(--fs-12)">Parcial: há itens sem micronutrientes (adição rápida, rótulo).</p>' : ''}`
-      : '<p class="mudo" style="margin:12px 0 0">Micronutrientes aparecem quando houver alimentos da TACO no dia.</p>'}`;
+      : '<p class="mudo" style="margin:12px 0 0">Micronutrientes aparecem quando houver alimentos da TACO/TBCA no dia.</p>'}`;
   const pg = lerPagina();
   return `<section class="card heroi" data-bloco="resumo" aria-roledescription="carrossel" aria-label="Resumo do dia">
     <div class="heroi-pags">${[pag1, pag2, pag3].map((h, i) => `<div class="heroi-pag" data-detalhe data-pag="${i}" role="button" tabindex="0"

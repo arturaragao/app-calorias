@@ -7,7 +7,7 @@ export const HISTORICO = {
   bonus: [['taco-182', 0.6]],
 };
 export const CASOS = [
-  ["2 ovos mexidos e 1 pão francês com manteiga", [["taco-490",100,true],["taco-53",50,false],["taco-261",5,true]]],
+  ["2 ovos mexidos e 1 pão francês com manteiga", [["tbca-C0027J",100,true],["taco-53",50,false],["taco-261",5,true]]],
   ["200 ml de leite", [["taco-458",206,false]]],
   ["meia xícara de arroz", [["taco-3",80,false]]],
   ["um prato de feijão", [["taco-561",140,true]]],
@@ -52,5 +52,5 @@ export const CASOS = [
   ["jerimum cozido 100g", [["taco-64",100,false]]],
   ["2 unidades de pão de queijo", [["taco-140",80,false]]],
   ["um copo de suco de laranja + 1 pão francês", [["taco-209",200,true],["taco-53",50,false]]],
-  ["brigadeiro gourmet", [[null,0,false]]],
+  ["brigadeiro gourmet", [["tbca-C0010K",20,true]]],
 ];

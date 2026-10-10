@@ -134,3 +134,4 @@
 - 2026-10-09 · Web Worker para a busca: não usado — consulta ≤ 1,5 ms e índice 0,5 ms (limite do roteiro: 50 ms).
 - 2026-10-09 · Cópia automática diária: banco IndexedDB próprio ("calorias-instantaneos"), feita no 1º momento ocioso do dia após abrir o app (estado de antes das mudanças do dia), sem fotos, 7 dias; `montarBackup` não altera "último backup".
 - 2026-10-09 · Onboarding 2.0: valores padrão moderado / perder 0,5 kg; peso-alvo opcional vira config.alvo (início = peso informado); projeção linear pelo ritmo, só se a direção bate e ≤ 3 anos.
+- 2026-10-10 · TBCA completa: carboidrato = "Carboidrato total" (igual à TACO, inclui fibra), vitamina A = RAE, colesterol em g → mg; classes mapeadas para os grupos da TACO (porções). Em nome repetido a TBCA vence mas herda o id `taco-N`. Na busca a TBCA fica uma faixa abaixo da TACO (os nomes curtos e comuns da TACO são o que se quer na maioria das vezes).

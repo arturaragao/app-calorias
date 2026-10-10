@@ -22,6 +22,6 @@ export function tabelaMicros(itens, dias = 1, base = null) {
       return `<tr><td>${m[1]}</td><td><b>${fmt(v, m[2])}</b></td><td>${ref ? fmt(ref, m[2]) : '—'}</td>
         <td class="${pct != null && pct < 70 ? 'baixo' : ''}">${pct != null ? pct + '%' : ''}</td></tr>`;
     }).join('')}</table>
-    <p class="mudo">Valores da TACO; ${fmtNum(Math.round(cobertura * 100))}% das calorias vêm de alimentos com esses dados (rótulos, receitas e adições rápidas não entram,
+    <p class="mudo">Valores da TACO/TBCA; ${fmtNum(Math.round(cobertura * 100))}% das calorias vêm de alimentos com esses dados (rótulos, receitas e adições rápidas não entram,
     então os totais podem estar subestimados). “Tr” (traço) conta como 0. Referência: DRI (IOM/NASEM) para ${p.sexo === 'F' ? 'mulheres' : 'homens'} adultos.</p></details>`;
 }

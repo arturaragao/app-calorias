@@ -2,6 +2,13 @@
 
 **Etapa atual:** roteiro 2.0 concluído (Pacotes 10–16, v19–v27). Pendente só o backup no Drive (ID OAuth do Artur).
 
+**TBCA completa (v28, 2026-10-10)**
+- `dados/tbca_completa.jsonl` (5.668 alimentos, JSON por linha, enviado pelo Artur) lido por `importar_alimentos.py`: macros, sódio e os mesmos micronutrientes da TACO; ids `tbca-<código>`.
+- Base: 6.186 itens. 79 nomes repetidos: 52 da TACO trocados pela TBCA **mantendo o id `taco-N`** (campo `tbca` = código), 27 repetidos dentro da TBCA.
+- Busca: TBCA uma faixa abaixo da TACO (PESO_TBCA), lista de ingredientes entre parênteses fora do índice, tolerância a erro na TBCA só com a 1ª letra certa. Busca ≤ 12 ms, índice 14 ms, Diário 621 ms (CPU 4×).
+- "Mais ricos" sugere só TACO (+ o que já come); pares cru/cozido preferem a TACO. Interpretador: "ovos mexidos" → ovo mexido (TBCA), "brigadeiro" agora reconhecido.
+- Testes: 167 aprovados; fluxos OK.
+
 **Roteiro 2.0 (ROTEIRO-2.md; dois por vez, parar ao fim de cada um):**
 - [x] Pacote 10 — Sistema de design 2.0 (v19)
 - [x] Pacote 11 — Diário redesenhado (v20)

@@ -130,7 +130,21 @@ t('Formatação pt-BR', () => { eq(fmtMacro(12.345), '12,3'); eq(fmtKcal(1780.6)
 // ---------- Busca ----------
 const base = JSON.parse(readFileSync(new URL('../foods.json', import.meta.url), 'utf8'));
 const idx = criarIndice(base);
-t('Base TACO carregada (597 itens)', () => eq(base.length, 597));
+t('Base TACO + TBCA (6000+ itens, ids únicos, ids TACO preservados)', () => {
+  if (base.filter((f) => f.fonte === 'TBCA').length < 5600) throw new Error('TBCA incompleta');
+  eq(new Set(base.map((f) => f.id)).size, base.length, 'ids repetidos');
+  eq(base.filter((f) => f.id.startsWith('taco-')).length, 597, 'id TACO perdido');
+});
+t('TBCA: valores, micronutrientes e nome limpo (lentilha crua C0019T)', () => {
+  const l = base.find((f) => f.id === 'tbca-C0019T');
+  eq(l.kcal, 314); eq(l.prot, 23.5); eq(l.carb, 61); eq(l.fibra, 18.7); eq(l.mic.ferro_mg, 7.06);
+  if (/,$/.test(l.nome)) throw new Error('vírgula final no nome');
+});
+t('Busca: TACO antes da TBCA; ingredientes entre parênteses não casam', () => {
+  if (buscar(idx, 'banana prata')[0].fonte !== 'TACO') throw new Error('banana');
+  if (buscar(idx, 'tutu')[0]?.nome.startsWith('Tutu') !== true) throw new Error('tutu');
+  if (buscar(idx, 'mandioca cozida').some((f) => f.nome.startsWith('Tutu'))) throw new Error('ingrediente casou');
+});
 t('Normalização sem acento/caixa', () => eq(normalizar('FEIJÃO, Carioca'), 'feijao carioca'));
 t('Busca sem acento encontra "Feijão"', () => { const r = buscar(idx, 'feijao'); if (!r.length || !normalizar(r[0].nome).startsWith('feijao')) throw new Error(r[0]?.nome); });
 t('Ranking: começa com antes de contém', () => {

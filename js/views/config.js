@@ -111,11 +111,12 @@ export async function render(tela) {
       <button class="btn bloco suave" data-tour style="margin-top:10px">Rever o tour do app</button></div>
     <div class="card"><h2 style="margin-bottom:6px">Sobre</h2>
       <p class="mudo">Base de alimentos: <b>Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada</b>,
-      NEPA/UNICAMP, Campinas, 2011. Valores por 100 g de parte comestível. “Tr” (traço) conta como 0; valores ausentes na tabela
+      NEPA/UNICAMP, Campinas, 2011, e <b>Tabela Brasileira de Composição de Alimentos (TBCA)</b>, versão completa,
+      Universidade de São Paulo (USP) / Food Research Center (FoRC), www.fcf.usp.br/tbca. Valores por 100 g de parte comestível. “Tr” (traço) conta como 0; valores ausentes na tabela
       ficam em branco e marcados como “dados parciais”.</p>
       <p class="mudo">Produtos industrializados: <b>Open Food Facts</b> (openfoodfacts.org), base colaborativa sob licença
       Open Database License (ODbL). Confira sempre com o rótulo.</p>
-      <p class="mudo"><b>Licenças</b>: tabela TACO (NEPA/UNICAMP, uso com citação da fonte) · dados do Open Food Facts (ODbL; produtos salvos continuam sob ODbL) · ícones <b>Lucide</b> (lucide.dev, licença ISC) · fonte: Roboto do próprio sistema (o app não distribui fontes). Tudo feito para uso pessoal, sem anúncios e sem coleta de dados.</p>
+      <p class="mudo"><b>Licenças</b>: tabelas TACO (NEPA/UNICAMP) e TBCA (USP/FoRC), uso com citação da fonte · dados do Open Food Facts (ODbL; produtos salvos continuam sob ODbL) · ícones <b>Lucide</b> (lucide.dev, licença ISC) · fonte: Roboto do próprio sistema (o app não distribui fontes). Tudo feito para uso pessoal, sem anúncios e sem coleta de dados.</p>
       <p class="mudo">Porções caseiras são aproximadas e editáveis. TMB por Mifflin-St Jeor (Am J Clin Nutr 1990;51:241-7).
       Os dados ficam só neste aparelho (e no seu Google Drive, se conectar). Na estimativa por foto, a imagem vai ao Gemini (Google);
       na cota gratuita o Google pode usá-la para melhorar seus produtos.</p></div>`;

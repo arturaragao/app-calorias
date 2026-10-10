@@ -50,13 +50,14 @@ No menu **⋯** de uma refeição → **Estimar por foto (IA)**, ou **Por foto**
 
 ## Base de alimentos
 - **TACO 4ª ed.** (NEPA/UNICAMP, 2011): 597 alimentos, valores por 100 g.
+- **TBCA completa** (USP/FoRC): 5.668 alimentos e preparações, com micronutrientes. Junto com a TACO: 6.186 itens. Na busca, a TACO vem antes quando as duas batem de forma parecida.
 - **Open Food Facts**: produtos industrializados, por código de barras ou por nome (precisa de internet). O que você salva vai para *Meus alimentos* e passa a funcionar offline.
 - **Meus alimentos, receitas e CSV**: criados por você.
 
 ### Atualizar ou ampliar a base (no PC)
-1. Coloque a planilha oficial (TACO ou TBCA, `.csv` ou `.xlsx`) ou o PDF da TACO na pasta `dados/`.
+1. Coloque a planilha oficial (TACO ou TBCA, `.csv` ou `.xlsx`), o PDF da TACO ou a TBCA em JSON por linha (`tbca*.jsonl`) na pasta `dados/`.
 2. Rode `python scripts/importar_alimentos.py` (precisa de `pip install pdfplumber`; `openpyxl` para `.xlsx`).
-3. O script gera `foods.json` e mostra um relatório (total importado, duplicatas e campos faltando). Em nomes repetidos, a TBCA prevalece sobre a TACO.
+3. O script gera `foods.json` e mostra um relatório (total importado, duplicatas e campos faltando). Em nomes repetidos, a TBCA prevalece sobre a TACO, mas herda o id `taco-N` (favoritos e recentes continuam valendo).
 4. Incremente `VERSAO` em `sw.js` e em `js/versao.js` e publique.
 
 ## Desenvolvimento
