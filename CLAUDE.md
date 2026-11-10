@@ -1,6 +1,6 @@
 # CLAUDE.md — App pessoal de calorias e macros (estilo MyFitnessPal)
 
-Dono: Artur (médico residente de radiologia, português do Brasil). Celular: Samsung Galaxy S23+ (Android, Chrome). Uso só dele: sem login, sem servidor, sem conta.
+Dono: Artur (português do Brasil). Celular: Android, Chrome. Uso só dele: sem login, sem servidor, sem conta.
 
 Objetivo: um app rápido, confiável e bonito para registrar alimentação, metas, peso, água e composição corporal, com **custo zero de tokens/APIs no uso diário**.
 
@@ -26,12 +26,12 @@ Objetivo: um app rápido, confiável e bonito para registrar alimentação, meta
 * Web app estático, **HTML + CSS + JS puro (ES modules), sem build**, PWA instalável (manifest + service worker, offline).
 * Arquivos separados (mais barato de editar): `index.html`, `css/app.css`, `js/\*.js` (um módulo por área: db, foods, diary, goals, body, progress, scanner, settings, ui, utils), `foods.json`, `porcoes.json`, `manifest.webmanifest`, `sw.js`, `icons/`, `tests/`, `scripts/`, `dados/`.
 * **Caminhos relativos** em tudo (o app roda em subpasta do GitHub Pages, ex.: `/app-calorias/`).
-* Mobile-first (tela do S23+), boa também no desktop. Alvos de toque ≥ 44 px, poucos toques para registrar uma refeição.
+* Mobile-first (tela de celular), boa também no desktop. Alvos de toque ≥ 44 px, poucos toques para registrar uma refeição.
 * Navegação: barra inferior fixa com Diário · Adicionar · Registros · Progresso · Configurações (ou equivalente enxuto).
 * **Armazenamento:** IndexedDB (registros e fotos), fallback localStorage para o essencial, tratamento de erro se indisponível. Pedir `navigator.storage.persist()`.
 * **Versão de esquema** no banco (`schemaVersion`) com função de migração, para atualizações futuras não quebrarem dados antigos.
 * **Service worker:** cache versionado; quando houver versão nova, mostrar aviso discreto "Atualização disponível — tocar para atualizar". `foods.json` também em cache para uso offline.
-* **Desempenho:** abrir em < 2 s no S23+; busca responde em < 100 ms com 1000+ itens (índice normalizado em memória, carregado uma vez). Lista longa com renderização incremental.
+* **Desempenho:** abrir em < 2 s no celular; busca responde em < 100 ms com 1000+ itens (índice normalizado em memória, carregado uma vez). Lista longa com renderização incremental.
 
 ## 2\. Modelo de dados (resumo — ajuste se necessário e registre em DECISOES.md)
 

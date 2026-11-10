@@ -221,7 +221,7 @@
 
 ## Pendências / próximas etapas
 - Compartilhar para o app: o Android só passa a listar o app em "Compartilhar" quando renovar o WebAPK (até ~1 dia) ou ao reinstalar.
-- Etapa 5: entregue (scanner validado pelo Artur no S23+).
+- Etapa 5: entregue (scanner validado pelo Artur).
 - Atalhos do ícone: o Android só atualiza ícones/atalhos do app instalado quando renova o WebAPK (pode levar até 1 dia); reinstalar resolve na hora.
 
 ## Bugs conhecidos

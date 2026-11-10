@@ -1,6 +1,6 @@
 # DECISÕES (uma linha cada)
 
-- 2026-10-08 · Pasta do projeto: `C:\Users\Artur\app-calorias`. Instalados Node 24 LTS, Git e pdfplumber (autorizado).
+- 2026-10-08 · Pasta do projeto: `app-calorias/` (clone local). Instalados Node 24 LTS, Git e pdfplumber (autorizado).
 - 2026-10-08 · TACO extraída direto do PDF (Tabela 1) por posição de coluna; planilha oficial não foi necessária. Custo de tokens baixo (dados não passam pelo chat).
 - 2026-10-08 · O PDF "Tabelas complementares — Perfil de carboidratos" (TBCA) só traz frações de carboidrato de poucos alimentos; não serve como base e é ignorado pelo script.
 - 2026-10-08 · "NA" da TACO (não aplicável/não analisado) = ausente (null) e marcado; no somatório conta 0 e o total mostra "dados parciais". Ex.: fibra em carnes, sódio em óleos.
@@ -66,7 +66,7 @@
 - 2026-10-08 · Fotos corporais na store photos com chave "corpo|AAAA-MM-DD" (sem nova versão do IndexedDB); uma foto por posição e data.
 - 2026-10-08 · Leitor: EAN/UPC aceito na 1ª leitura se o dígito verificador GTIN confere; demais formatos exigem 2 leituras iguais.
 - 2026-10-08 · Quantidade: "1 grama" sempre listado como porção (não é salvo em porcoesUsuario).
-- 2026-10-09 · Pasta nesta máquina: `C:\Users\artur.aragao\Documents\Claude\app-calorias`. Instalados Git, GitHub CLI e Node 24 LTS via winget (autorizado). Sem Python: gerador de ícones portado para Node.
+- 2026-10-09 · Pasta nesta máquina: `app-calorias/` (outro PC). Instalados Git, GitHub CLI e Node 24 LTS via winget (autorizado). Sem Python: gerador de ícones portado para Node.
 - 2026-10-09 · Layout por tela em `config.layout[tela] = {ordem, ocultos}`; blocos trocam de "vaga" entre irmãos (avisos e conteúdos fixos não se movem). Bloco novo de versão futura entra na posição padrão. Aba escondida ainda abre por link direto (atalho do ícone).
 - 2026-10-09 · Cores em `config.cores` (só o que difere do padrão gera CSS). Escuro = cor do usuário misturada 72% com branco (macros) ou 60% (cor principal), via color-mix. Macros padrão: P #4f8a63, C #e3c868, G #e8955a.
 - 2026-10-09 · Cor dos macros só em preenchimentos (barras, pontos, roscas), nunca em texto, para manter contraste com tons pastel.
@@ -94,7 +94,7 @@
 - 2026-10-09 · Ícone do app: anel clássico refinado (opção A escolhida pelo Artur entre 4): trilho #24402f, arco #7ecc98 de 0° a 265°, ponto #e9f6ee na ponta, fundo #11231a→#0b1811; mesmo desenho no maskable (raio externo 0,35 < zona segura 0,40).
 - 2026-10-09 · Roteiro 2.0 salvo em ROTEIRO-2.md (Pacotes 10–16).
 - 2026-10-09 · Ícones: Lucide via sprite SVG externo (`<use href="icons/sprite.svg#nome">`), no cache do SW; traço 1,75; cor/traço herdados por CSS. Gráficos e ilustrações seguem com SVG próprio.
-- 2026-10-09 · Fonte: mantida a Roboto do sistema. No Android/S23+ ela já está instalada (0 KB, sem atraso de troca de fonte) e tem algarismos tabulares; Inter/Roboto Flex auto-hospedada custaria 45–100 KB no primeiro carregamento sem ganho visual perceptível no aparelho do Artur. Reavaliar só se o app passar a rodar fora do Android.
+- 2026-10-09 · Fonte: mantida a Roboto do sistema. No Android ela já está instalada (0 KB, sem atraso de troca de fonte) e tem algarismos tabulares; Inter/Roboto Flex auto-hospedada custaria 45–100 KB no primeiro carregamento sem ganho visual perceptível no aparelho do Artur. Reavaliar só se o app passar a rodar fora do Android.
 - 2026-10-09 · Tamanho do texto: `--escala-fonte` em `html { font-size }` (degraus 85/92/100/108/115/122/130%), por aparelho (localStorage `escalaFonte`); espaçamentos em px não escalam (só o texto).
 - 2026-10-09 · Camada de estado via `background-image` com `currentColor` a 8/12% (`!important`, pois muitas regras usam o atalho `background`); desabilitado = texto 40% + contêiner 8%.
 - 2026-10-09 · Confirmações com `<dialog>` próprio (ui.confirmar); "voltar"/Esc/toque fora = cancelar.
